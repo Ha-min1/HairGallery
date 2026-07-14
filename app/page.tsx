@@ -439,13 +439,10 @@ export default function Home() {
         {/* Editorial Hero Block */}
         <section className="bg-stone-950 text-stone-100 py-16 px-4 text-center border-b border-stone-800 animate-fadeIn">
           <div className="max-w-4xl mx-auto space-y-4">
-            <span className="text-lg sm:text-2xl font-mono tracking-[0.25em] text-gold-500 uppercase font-bold block mb-2">{t.heroSub}</span>
-            <h1 className="font-serif text-2xl sm:text-4xl font-normal tracking-tight text-white leading-tight">
+            <span className="text-2xl sm:text-5xl font-mono tracking-[0.25em] text-gold-500 uppercase font-extrabold block mb-4">{t.heroSub}</span>
+            <h1 className="font-serif text-lg sm:text-2xl font-light tracking-tight text-stone-300 leading-tight">
               {t.heroTitle}
             </h1>
-            <p className="text-xs sm:text-sm text-stone-400 font-light max-w-2xl mx-auto leading-relaxed">
-              {t.heroDesc}
-            </p>
           </div>
         </section>
 
@@ -711,6 +708,35 @@ export default function Home() {
           </div>
         </div>
       </main>
+
+      {/* Footer */}
+      <footer className="bg-stone-950 text-stone-300 py-12 border-t border-stone-800">
+        <div className="max-w-5xl mx-auto px-4 text-center space-y-4">
+          <div className="text-sm font-mono tracking-widest text-gold-500 uppercase font-bold">
+            THE HAIR GALLERY
+          </div>
+          <div className="text-xs text-stone-400 space-y-1">
+            <p className="font-light">
+              {lang === 'ko' 
+                ? '주소: 경기도 김포시 북변동 806번지 상가동 103호 풍년마을삼성3단지아파트' 
+                : 'Address: Room 103, Commercial Bldg, Pungnyeon Maeul Samsung 3-danji Apt, 806, Bukbyeon-dong, Gimpo-si, Gyeonggi-do, KR'}
+            </p>
+            <p className="pt-2">
+              <a 
+                href="https://maps.app.goo.gl/AzNDXDy9uLtMB5u3A" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-[11px] font-mono font-bold text-gold-500 hover:text-gold-400 hover:underline transition-colors bg-stone-900 border border-stone-800 px-3.5 py-1.5 rounded-lg hover:bg-stone-850"
+              >
+                <span>📍 Google Maps에서 위치 보기 (View on Google Maps)</span>
+              </a>
+            </p>
+          </div>
+          <p className="text-[10px] text-stone-600 font-mono pt-4">
+            © {new Date().getFullYear()} THE HAIR GALLERY. All rights reserved.
+          </p>
+        </div>
+      </footer>
 
       {/* Auth Modal (Google SignUp vs Login Tabs) */}
       {showAuthModal && (
