@@ -24,7 +24,7 @@ CREATE TABLE users (
 CREATE TABLE services (
     id VARCHAR(50) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    price INTEGER NOT NULL, -- Stored in KRW (e.g. 10000)
+    price INTEGER, -- Stored in KRW (e.g. 10000, can be NULL for custom mockup)
     duration_minutes INTEGER NOT NULL,
     category VARCHAR(100) NOT NULL, -- "Cut", "Color", "Treatment", "Styling"
     description TEXT,
@@ -41,6 +41,7 @@ CREATE TABLE reservations (
     date DATE NOT NULL,
     time VARCHAR(10) NOT NULL, -- "09:00", "14:00" etc.
     status reservation_status DEFAULT 'Pending',
+    price INTEGER, -- Custom overriding price for the reservation
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 

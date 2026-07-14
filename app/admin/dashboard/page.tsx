@@ -50,6 +50,7 @@ export default function AdminDashboard() {
   const [resDate, setResDate] = useState<string>('');
   const [resTime, setResTime] = useState<string>('10:00');
   const [resStatus, setResStatus] = useState<string>('Confirmed');
+  const [resPrice, setResPrice] = useState<string>('');
 
   // Work Records states
   const [workRecords, setWorkRecords] = useState<any[]>([]);
@@ -270,7 +271,8 @@ export default function AdminDashboard() {
             service_id: resServiceId,
             date: resDate,
             time: resTime,
-            status: resStatus
+            status: resStatus,
+            price: resPrice ? Number(resPrice) : null
           }
         ]);
 
@@ -289,6 +291,7 @@ export default function AdminDashboard() {
         setResDate(new Date().toISOString().split('T')[0]);
         setResTime('10:00');
         setResStatus('Confirmed');
+        setResPrice('');
         // Reload
         await loadReservations();
       }
@@ -310,6 +313,16 @@ export default function AdminDashboard() {
         setResCustomerName(selected.name || '');
         setResCustomerPhone(selected.phone || '');
       }
+    }
+  };
+
+  const handleServiceChange = (serviceId: string) => {
+    setResServiceId(serviceId);
+    const selected = servicesList.find(s => s.id === serviceId);
+    if (selected && selected.price !== null && selected.price !== undefined) {
+      setResPrice(String(selected.price));
+    } else {
+      setResPrice('');
     }
   };
 
@@ -1159,16 +1172,28 @@ WITH CHECK (
                 <select
                   required
                   value={resServiceId}
-                  onChange={e => setResServiceId(e.target.value)}
+                  onChange={e => handleServiceChange(e.target.value)}
                   className="w-full p-2.5 border border-stone-200 rounded-lg outline-none focus:border-stone-900 bg-stone-50 cursor-pointer text-stone-700"
                 >
                   <option value="" disabled>{t.selectServicePrompt}</option>
                   {servicesList.map(svc => (
                     <option key={svc.id} value={svc.id}>
-                      {svc.name} (₩{svc.price.toLocaleString()})
+                      {svc.name} {svc.price !== null && svc.price !== undefined ? `(₩${svc.price.toLocaleString()})` : ""}
                     </option>
                   ))}
                 </select>
+              </div>
+
+              {/* Custom Price / Price for reservation */}
+              <div className="space-y-1">
+                <label className="font-bold text-stone-600 block">{lang === 'ko' ? '예약 요금 / 금액' : 'Price / Amount'}</label>
+                <input 
+                  type="number"
+                  value={resPrice}
+                  onChange={e => setResPrice(e.target.value)}
+                  placeholder={lang === 'ko' ? "직접 금액 입력 (미입력 가능)" : "Enter custom price (optional)"}
+                  className="w-full p-2.5 border border-stone-200 rounded-lg outline-none focus:border-stone-900 bg-stone-50 text-stone-900 font-mono font-bold"
+                />
               </div>
 
               {/* Date */}

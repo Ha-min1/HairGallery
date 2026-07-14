@@ -503,7 +503,11 @@ export default function Home() {
                               </div>
                             </div>
                             <div className="text-right shrink-0">
-                              <span className="text-xs font-bold font-serif block">₩{s.price.toLocaleString()}</span>
+                               <span className="text-xs font-bold font-serif block">
+                                 {s.price !== null && s.price !== undefined 
+                                   ? `₩${s.price.toLocaleString()}` 
+                                   : (lang === 'ko' ? '가격 문의' : 'Inquiry')}
+                               </span>
                               <span className="text-[9px] text-stone-400 font-mono">{s.durationMinutes}m</span>
                             </div>
                           </div>

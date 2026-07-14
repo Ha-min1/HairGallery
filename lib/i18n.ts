@@ -1,7 +1,7 @@
 export interface Service {
   id: string;
   name: string;
-  price: number;
+  price: number | null;
   durationMinutes: number;
   category: string;
   description: string;
@@ -10,23 +10,23 @@ export interface Service {
 export const getLocalizedServices = (lang: 'ko' | 'en'): Service[] => {
   if (lang === 'ko') {
     return [
-      { id: 's1', name: '시그니처 컷 & 블로우아웃', price: 15000, durationMinutes: 60, category: '컷', description: '원장 엘레나가 설계하는 맞춤형 커트와 샴푸, 볼륨 있는 드라이 스타일링이 포함됩니다.' },
-      { id: 's2', name: '남성 정밀 컷', price: 10000, durationMinutes: 45, category: '컷', description: '깔끔하고 정교한 가위 및 클리퍼 컷, 스팀 타월 마무리와 프리미엄 왁스 스타일링.' },
-      { id: 's3', name: '앞머리 & 라인 정리', price: 8000, durationMinutes: 30, category: '컷', description: '앞머리나 구둣발 라인 등 삐져나온 부위를 가볍게 다음어 스타일을 유지시켜 줍니다.' },
-      { id: 's4', name: '발레아쥬 입체 컬러', price: 13000, durationMinutes: 120, category: '컬러', description: '손으로 그라데이션을 그리는 고급 염색 기법으로 자연스럽고 깊이감 있는 입체 하이라이트를 연출합니다.' },
-      { id: 's5', name: '뿌리 염색 & 토너 케어', price: 11000, durationMinutes: 75, category: '컬러', description: '새로 자라난 헤어 라인의 깔끔한 톤 일치와 윤기를 제공하는 단백질 보호막 코팅.' },
-      { id: 's6', name: '두피 진정 & 헤어 테라피', price: 12000, durationMinutes: 60, category: '트리트먼트', description: '두피를 진정시키고 영양을 집중 공급하여 모발 본연의 광택과 건강함을 되찾아주는 케어.' },
-      { id: 's7', name: '레드카펫 스타일링', price: 9000, durationMinutes: 45, category: '스타일링', description: '특별한 약속이나 이벤트를 위한 고급스러운 볼륨 드라이와 디테일 세팅.' }
+      { id: 's1', name: '시그니처 컷 & 블로우아웃', price: null, durationMinutes: 60, category: '컷', description: '원장 엘레나가 설계하는 맞춤형 커트와 샴푸, 볼륨 있는 드라이 스타일링이 포함됩니다.' },
+      { id: 's2', name: '남성 정밀 컷', price: null, durationMinutes: 45, category: '컷', description: '깔끔하고 정교한 가위 및 클리퍼 컷, 스팀 타월 마무리와 프리미엄 왁스 스타일링.' },
+      { id: 's3', name: '앞머리 & 라인 정리', price: null, durationMinutes: 30, category: '컷', description: '앞머리나 구둣발 라인 등 삐져나온 부위를 가볍게 다음어 스타일을 유지시켜 줍니다.' },
+      { id: 's4', name: '발레아쥬 입체 컬러', price: null, durationMinutes: 120, category: '컬러', description: '손으로 그라데이션을 그리는 고급 염색 기법으로 자연스럽고 깊이감 있는 입체 하이라이트를 연출합니다.' },
+      { id: 's5', name: '뿌리 염색 & 토너 케어', price: null, durationMinutes: 75, category: '컬러', description: '새로 자라난 헤어 라인의 깔끔한 톤 일치와 윤기를 제공하는 단백질 보호막 코팅.' },
+      { id: 's6', name: '두피 진정 & 헤어 테라피', price: null, durationMinutes: 60, category: '트리트먼트', description: '두피를 진정시키고 영양을 집중 공급하여 모발 본연의 광택과 건강함을 되찾아주는 케어.' },
+      { id: 's7', name: '레드카펫 스타일링', price: null, durationMinutes: 45, category: '스타일링', description: '특별한 약속이나 이벤트를 위한 고급스러운 볼륨 드라이와 디테일 세팅.' }
     ];
   } else {
     return [
-      { id: 's1', name: 'Signature Cut & Blowout', price: 15000, durationMinutes: 60, category: 'Cut', description: 'Bespoke cutting designed by Director Elena, complete with a wash and signature blowout.' },
-      { id: 's2', name: 'Gents Precision Cut', price: 10000, durationMinutes: 45, category: 'Cut', description: 'Detailed scissor and clipper work, hot towel finish, and premium matte styling.' },
-      { id: 's3', name: 'Quick Trim & Clean-up', price: 8000, durationMinutes: 30, category: 'Cut', description: 'A fast touch-up for split ends or bangs to keep your style fresh.' },
-      { id: 's4', name: 'Balayage Dimensional Color', price: 13000, durationMinutes: 120, category: 'Color', description: 'Hand-painted gradients creating low-maintenance dimensional transitions.' },
-      { id: 's5', name: 'Root Touch-up & Gloss', price: 11000, durationMinutes: 75, category: 'Color', description: 'Precise coverage of root growth or gray hair, complete with a protein glaze.' },
-      { id: 's6', name: 'Scalp & Hair Therapy', price: 12000, durationMinutes: 60, category: 'Treatment', description: 'Intense moisture therapy to soothe the scalp and restore high hair shine.' },
-      { id: 's7', name: 'Red Carpet Styling', price: 9000, durationMinutes: 45, category: 'Styling', description: 'Premium round-brush sculpting and thermal styling for your special events.' }
+      { id: 's1', name: 'Signature Cut & Blowout', price: null, durationMinutes: 60, category: 'Cut', description: 'Bespoke cutting designed by Director Elena, complete with a wash and signature blowout.' },
+      { id: 's2', name: 'Gents Precision Cut', price: null, durationMinutes: 45, category: 'Cut', description: 'Detailed scissor and clipper work, hot towel finish, and premium matte styling.' },
+      { id: 's3', name: 'Quick Trim & Clean-up', price: null, durationMinutes: 30, category: 'Cut', description: 'A fast touch-up for split ends or bangs to keep your style fresh.' },
+      { id: 's4', name: 'Balayage Dimensional Color', price: null, durationMinutes: 120, category: 'Color', description: 'Hand-painted gradients creating low-maintenance dimensional transitions.' },
+      { id: 's5', name: 'Root Touch-up & Gloss', price: null, durationMinutes: 75, category: 'Color', description: 'Precise coverage of root growth or gray hair, complete with a protein glaze.' },
+      { id: 's6', name: 'Scalp & Hair Therapy', price: null, durationMinutes: 60, category: 'Treatment', description: 'Intense moisture therapy to soothe the scalp and restore high hair shine.' },
+      { id: 's7', name: 'Red Carpet Styling', price: null, durationMinutes: 45, category: 'Styling', description: 'Premium round-brush sculpting and thermal styling for your special events.' }
     ];
   }
 };
