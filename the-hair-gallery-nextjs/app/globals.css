@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --gold-50: #fbf7f0;
+    --gold-100: #f4eae1;
+    --gold-500: #b89047;
+    --gold-600: #a07831;
+    --gold-700: #886221;
+  }
+}

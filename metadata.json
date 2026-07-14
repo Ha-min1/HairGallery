@@ -1,0 +1,6 @@
+{
+  "name": "The Hair Gallery",
+  "description": "Premium hair salon reservation and customer management system with client and admin dashboards.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
