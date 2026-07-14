@@ -111,6 +111,7 @@ export default function Home() {
                 name: draft.name,
                 phone: draft.phone,
                 provider: 'google',
+                role: 'USER',
                 is_admin: false,
                 consent_given: true,
                 consent_timestamp: consentTime
@@ -136,6 +137,7 @@ export default function Home() {
                 name: authUser.user_metadata.full_name || authUser.email.split('@')[0],
                 phone: '',
                 provider: 'google',
+                role: 'USER',
                 is_admin: false,
                 consent_given: true,
                 consent_timestamp: consentTime
@@ -360,8 +362,8 @@ export default function Home() {
           </Link>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Show Admin Dashboard Link only if currentUser.is_admin === true */}
-            {currentUser && currentUser.is_admin === true && (
+            {/* Show Admin Dashboard Link only if currentUser.role === 'ADMIN' */}
+            {currentUser && currentUser.role === 'ADMIN' && (
               <Link 
                 href="/admin/dashboard" 
                 className="text-[10px] sm:text-xs font-mono font-bold tracking-wider text-white bg-gold-600 hover:bg-gold-700 uppercase flex items-center gap-1 border border-gold-700 px-2.5 py-1.5 rounded-lg transition-colors shadow-sm"
@@ -437,7 +439,7 @@ export default function Home() {
         {/* Editorial Hero Block */}
         <section className="bg-stone-950 text-stone-100 py-16 px-4 text-center border-b border-stone-800 animate-fadeIn">
           <div className="max-w-4xl mx-auto space-y-4">
-            <span className="text-xs font-mono tracking-widest text-gold-500 uppercase">{t.heroSub}</span>
+            <span className="text-lg sm:text-2xl font-mono tracking-[0.25em] text-gold-500 uppercase font-bold block mb-2">{t.heroSub}</span>
             <h1 className="font-serif text-2xl sm:text-4xl font-normal tracking-tight text-white leading-tight">
               {t.heroTitle}
             </h1>

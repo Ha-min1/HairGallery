@@ -75,6 +75,7 @@ ALTER TABLE services ENABLE ROW LEVEL SECURITY;
 -- Users: Let authenticated guests view and update their own record, let admins see everything
 CREATE POLICY "Users can read own row" ON users FOR SELECT USING (auth.uid() = id OR role = 'ADMIN');
 CREATE POLICY "Users can update own row" ON users FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "Users can insert own row" ON users FOR INSERT WITH CHECK (auth.uid() = id);
 
 -- Services: Public read-only access
 CREATE POLICY "Services read public" ON services FOR SELECT TO public USING (true);
@@ -88,3 +89,67 @@ CREATE POLICY "Reservations insert public" ON reservations FOR INSERT WITH CHECK
 
 -- Users can update/cancel their own reservations if they are signed in (or we can let users manage their own if they have their user_id set)
 CREATE POLICY "Users update own reservations" ON reservations FOR UPDATE USING (auth.uid() = user_id OR user_id IS NULL);
+
+-- =====================================================================
+-- 11. Create 'work_records' table (Admin Work & Sales Management)
+-- =====================================================================
+CREATE TABLE work_records (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    customer_name VARCHAR(255) NOT NULL,
+    customer_phone VARCHAR(50) NOT NULL,
+    work_content TEXT NOT NULL,
+    amount INTEGER NOT NULL DEFAULT 0,
+    date DATE NOT NULL DEFAULT CURRENT_DATE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexing for search performance
+CREATE INDEX idx_work_records_search ON work_records (customer_name, customer_phone);
+-- Indexing for date sorting & range queries
+CREATE INDEX idx_work_records_date ON work_records (date ASC);
+
+-- Enable Row Level Security (RLS) on work_records
+ALTER TABLE work_records ENABLE ROW LEVEL SECURITY;
+
+-- Create policies: Only users with role = 'ADMIN' in 'users' table can perform CRUD operations
+CREATE POLICY "Admins can select work_records" 
+ON work_records FOR SELECT TO authenticated 
+USING (
+    EXISTS (
+        SELECT 1 FROM users 
+        WHERE users.id = auth.uid() AND users.role = 'ADMIN'
+    )
+);
+
+CREATE POLICY "Admins can insert work_records" 
+ON work_records FOR INSERT TO authenticated 
+WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM users 
+        WHERE users.id = auth.uid() AND users.role = 'ADMIN'
+    )
+);
+
+CREATE POLICY "Admins can update work_records" 
+ON work_records FOR UPDATE TO authenticated 
+USING (
+    EXISTS (
+        SELECT 1 FROM users 
+        WHERE users.id = auth.uid() AND users.role = 'ADMIN'
+    )
+)
+WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM users 
+        WHERE users.id = auth.uid() AND users.role = 'ADMIN'
+    )
+);
+
+CREATE POLICY "Admins can delete work_records" 
+ON work_records FOR DELETE TO authenticated 
+USING (
+    EXISTS (
+        SELECT 1 FROM users 
+        WHERE users.id = auth.uid() AND users.role = 'ADMIN'
+    )
+);
