@@ -1,0 +1,133 @@
+export interface Service {
+  id: string;
+  name: string;
+  price: number;
+  durationMinutes: number;
+  category: string;
+  description: string;
+}
+
+export const getLocalizedServices = (lang: 'ko' | 'en'): Service[] => {
+  if (lang === 'ko') {
+    return [
+      { id: 's1', name: '시그니처 컷 & 블로우아웃', price: 15000, durationMinutes: 60, category: '컷', description: '원장 엘레나가 설계하는 맞춤형 커트와 샴푸, 볼륨 있는 드라이 스타일링이 포함됩니다.' },
+      { id: 's2', name: '남성 정밀 컷', price: 10000, durationMinutes: 45, category: '컷', description: '깔끔하고 정교한 가위 및 클리퍼 컷, 스팀 타월 마무리와 프리미엄 왁스 스타일링.' },
+      { id: 's3', name: '앞머리 & 라인 정리', price: 8000, durationMinutes: 30, category: '컷', description: '앞머리나 구둣발 라인 등 삐져나온 부위를 가볍게 다음어 스타일을 유지시켜 줍니다.' },
+      { id: 's4', name: '발레아쥬 입체 컬러', price: 13000, durationMinutes: 120, category: '컬러', description: '손으로 그라데이션을 그리는 고급 염색 기법으로 자연스럽고 깊이감 있는 입체 하이라이트를 연출합니다.' },
+      { id: 's5', name: '뿌리 염색 & 토너 케어', price: 11000, durationMinutes: 75, category: '컬러', description: '새로 자라난 헤어 라인의 깔끔한 톤 일치와 윤기를 제공하는 단백질 보호막 코팅.' },
+      { id: 's6', name: '두피 진정 & 헤어 테라피', price: 12000, durationMinutes: 60, category: '트리트먼트', description: '두피를 진정시키고 영양을 집중 공급하여 모발 본연의 광택과 건강함을 되찾아주는 케어.' },
+      { id: 's7', name: '레드카펫 스타일링', price: 9000, durationMinutes: 45, category: '스타일링', description: '특별한 약속이나 이벤트를 위한 고급스러운 볼륨 드라이와 디테일 세팅.' }
+    ];
+  } else {
+    return [
+      { id: 's1', name: 'Signature Cut & Blowout', price: 15000, durationMinutes: 60, category: 'Cut', description: 'Bespoke cutting designed by Director Elena, complete with a wash and signature blowout.' },
+      { id: 's2', name: 'Gents Precision Cut', price: 10000, durationMinutes: 45, category: 'Cut', description: 'Detailed scissor and clipper work, hot towel finish, and premium matte styling.' },
+      { id: 's3', name: 'Quick Trim & Clean-up', price: 8000, durationMinutes: 30, category: 'Cut', description: 'A fast touch-up for split ends or bangs to keep your style fresh.' },
+      { id: 's4', name: 'Balayage Dimensional Color', price: 13000, durationMinutes: 120, category: 'Color', description: 'Hand-painted gradients creating low-maintenance dimensional transitions.' },
+      { id: 's5', name: 'Root Touch-up & Gloss', price: 11000, durationMinutes: 75, category: 'Color', description: 'Precise coverage of root growth or gray hair, complete with a protein glaze.' },
+      { id: 's6', name: 'Scalp & Hair Therapy', price: 12000, durationMinutes: 60, category: 'Treatment', description: 'Intense moisture therapy to soothe the scalp and restore high hair shine.' },
+      { id: 's7', name: 'Red Carpet Styling', price: 9000, durationMinutes: 45, category: 'Styling', description: 'Premium round-brush sculpting and thermal styling for your special events.' }
+    ];
+  }
+};
+
+export const TRANSLATIONS = {
+  ko: {
+    heroSub: "THE HAIR GALLERY",
+    heroTitle: "원장 엘레나가 처음부터 끝까지 1:1로 책임지는 프라이빗 미용실",
+    heroDesc: "나에게 딱 맞는 인생 머리를 찾는 1인 예약제 살롱입니다. 조용하고 편안한 공간에서 원장과의 세밀한 상담을 통해 오직 당신만을 위한 맞춤 스타일을 선사합니다.",
+    selectService: "원하는 헤어 시술을 선택해 주세요",
+    contactDetails: "예약자 연락처 정보",
+    fullName: "예약자 성함 *",
+    contactNumber: "휴대폰 번호 *",
+    selectDateTime: "예약 희망 일시 선택",
+    appointmentDate: "예약 날짜 선택",
+    availableSlots: "선택 가능한 시간대 (10:00 ~ 20:00)",
+    checkingSchedules: "일정을 불러오는 중입니다...",
+    bookSession: "위 정보로 예약 신청하기",
+    reservationSubmitted: "예약 접수 완료",
+    successDesc: "고객님의 예약 신청이 성공적으로 접수되었습니다. 엘레나 원장이 확인 후 1시간 이내에 최종 예약 확정을 도와드리겠습니다.",
+    bookAnother: "다른 예약 신청하기",
+    adminCockpit: "ADMINISTRATIVE COCKPIT",
+    adminTitle: "더 헤어 갤러리 관리자",
+    liveConnection: "실시간 연결",
+    supabaseConnected: "Supabase PostgreSQL 실시간 연결됨",
+    searchPlaceholder: "고객 이름 또는 전화번호로 검색...",
+    allStatuses: "모든 예약 상태",
+    reservationsRoster: "예약 관리 명단",
+    sortedBy: "예약 일시 기준 정렬",
+    loadingRecords: "예약 리스트를 불러오는 중...",
+    noRecords: "해당 조건의 예약 내역이 없습니다.",
+    confirmReservation: "예약 확정하기",
+    completeAppointment: "시술 완료하기",
+    cancelAppointment: "예약 취소하기",
+    statusPending: "접수대기",
+    statusConfirmed: "예약확정",
+    statusCompleted: "시술완료",
+    statusCancelled: "예약취소",
+    clientDashboard: "마이페이지",
+    adminConsole: "관리자 콘솔",
+    goToAdmin: "관리자 대시보드",
+    goToHome: "예약 신청 페이지",
+    noBookedSlots: "예약 정보 없음",
+    privacyConsent: "개인정보 수집 및 이용에 동의합니다 (필수)",
+    privacyConsentRequired: "예약을 진행하려면 개인정보 처리방침에 동의하셔야 합니다.",
+    privacyDetailsTitle: "개인정보 처리방침 요약 보기 (클릭)",
+    privacyDetailsContent: "1. 수집 항목: 이름, 연락처(전화번호), 예약 일시, 선택 시술 메뉴\n2. 수집 목적: 1인 헤어 살롱 예약 접수 및 스케줄 조율, 시술 상담\n3. 보유 및 이용 기간: 서비스 제공 완료 후 6개월 보관 후 파기 (고객 요청 시 즉시 파기 가능)\n4. 귀하는 개인정보 수집에 거부할 권리가 있으며, 동의 거부 시 예약 신청이 제한됩니다.",
+    consentTimelineTitle: "개인정보 동의 이력 (Audit Log)",
+    consentGivenText: "개인정보 수집 및 처리방침 동의 완료",
+    loginWithGoogle: "구글 로그인",
+    logout: "로그아웃",
+    simulatedUser: "인증된 고객 프로필",
+    notLoggedIn: "로그인 시 동의 이력 타임라인을 확인하실 수 있습니다.",
+  },
+  en: {
+    heroSub: "THE HAIR GALLERY",
+    heroTitle: "Private 1-on-1 Hair Salon Directed by Head Stylist Elena",
+    heroDesc: "A premium private salon where you can discover your lifetime hairstyle. Enjoy custom consulting and styling in a quiet, cozy individual booking environment.",
+    selectService: "Select Hair Styling Service",
+    contactDetails: "Contact Details",
+    fullName: "Full Name *",
+    contactNumber: "Phone Number *",
+    selectDateTime: "Select Date & Time Slot",
+    appointmentDate: "Select Appointment Date",
+    availableSlots: "Available Time Slots (10:00 - 20:00)",
+    checkingSchedules: "Checking slots...",
+    bookSession: "Request Reservation",
+    reservationSubmitted: "Reservation Requested",
+    successDesc: "Your styling request has been successfully submitted! Elena will confirm your slot within the hour.",
+    bookAnother: "Book Another Visit",
+    adminCockpit: "ADMINISTRATIVE COCKPIT",
+    adminTitle: "The Hair Gallery Manager",
+    liveConnection: "Live Connection",
+    supabaseConnected: "Directly connected to Supabase PostgreSQL",
+    searchPlaceholder: "Search clients by name or phone...",
+    allStatuses: "All Statuses",
+    reservationsRoster: "Reservations Roster",
+    sortedBy: "Sorted by date & time",
+    loadingRecords: "Loading styling records...",
+    noRecords: "No records matching queries.",
+    confirmReservation: "Confirm",
+    completeAppointment: "Complete",
+    cancelAppointment: "Cancel",
+    statusPending: "Pending",
+    statusConfirmed: "Confirmed",
+    statusCompleted: "Completed",
+    statusCancelled: "Cancelled",
+    clientDashboard: "My Account",
+    adminConsole: "Admin Console",
+    goToAdmin: "Go to Admin",
+    goToHome: "Go to Booking",
+    noBookedSlots: "No Booked Slots",
+    privacyConsent: "I agree to the collection and use of personal info (Required)",
+    privacyConsentRequired: "You must agree to the privacy policy to proceed.",
+    privacyDetailsTitle: "View Privacy Policy Summary (Click)",
+    privacyDetailsContent: "1. Collected Items: Name, contact number, date/time, and service selection.\n2. Purpose: Booking coordination and customer consultation.\n3. Retention Period: Kept for 6 months after service completion (destroyed immediately upon request).\n4. You have the right to refuse consent, though it will prevent you from reserving sessions.",
+    consentTimelineTitle: "Privacy Consent History (Audit Log)",
+    consentGivenText: "Agreed to Privacy Policy & Terms",
+    loginWithGoogle: "Login with Google",
+    logout: "Logout",
+    simulatedUser: "Authenticated Customer Profile",
+    notLoggedIn: "Log in to see your consent audit log timeline.",
+  }
+};

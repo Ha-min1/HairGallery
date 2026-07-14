@@ -20,58 +20,71 @@ CREATE TABLE users (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 4. Create 'service_menus' table
-CREATE TABLE service_menus (
+-- 4. Create 'services' table (8,000 KRW to 15,000 KRW pricing)
+CREATE TABLE services (
     id VARCHAR(50) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    price DECIMAL(10, 2) NOT NULL,
+    price INTEGER NOT NULL, -- Stored in KRW (e.g. 10000)
     duration_minutes INTEGER NOT NULL,
     category VARCHAR(100) NOT NULL, -- "Cut", "Color", "Treatment", "Styling"
-    description TEXT
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 5. Create 'reservations' table
 CREATE TABLE reservations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
     customer_name VARCHAR(255) NOT NULL,
     customer_phone VARCHAR(50) NOT NULL,
-    service_id VARCHAR(50) REFERENCES service_menus(id) ON DELETE RESTRICT,
+    service_id VARCHAR(50) REFERENCES services(id) ON DELETE RESTRICT,
     date DATE NOT NULL,
-    time VARCHAR(10) NOT NULL, -- "09:00", "18:00" etc.
+    time VARCHAR(10) NOT NULL, -- "09:00", "14:00" etc.
     status reservation_status DEFAULT 'Pending',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 6. Add Performance Indexes for slot lookup validator searches
+-- 6. Add Performance Indexes
 CREATE INDEX idx_reservations_date_time ON reservations(date, time);
 CREATE INDEX idx_reservations_user_id ON reservations(user_id);
 
--- 7. Seed Initial Service Registry (The Price List)
-INSERT INTO service_menus (id, name, price, duration_minutes, category, description) VALUES
-('s1', 'Signature Cut & Blowout', 90.00, 60, 'Cut', 'A bespoke cutting experience tailored to your facial structure, complete with a luxury wash and bouncy signature blowout.'),
-('s2', 'Gents Precision Cut', 55.00, 45, 'Cut', 'Clean scissor-and-clipper work, detailed texturizing, hot towel neck shave, and premium matte clay styling.'),
-('s3', 'Balayage Artistry', 240.00, 180, 'Color', 'Hand-painted premium sun-kissed highlights creating seamless, low-maintenance dimensional transitions.'),
-('s4', 'Full Dimensional Color', 170.00, 120, 'Color', 'All-over bespoke glossing, toning, and depth-building color treatment using ammonia-free formulas.'),
-('s5', 'Root Touch-up', 95.00, 75, 'Color', 'Precise coverage of gray growth or root matching, complete with a restorative protein glaze.'),
-('s6', 'Keratin Smooth Treatment', 280.00, 150, 'Treatment', 'Formaldehyde-free smoothing therapy that eliminates frizz, blocks humidity, and cuts style time in half.'),
-('s7', 'Caviar Deep Conditioning', 80.00, 45, 'Treatment', 'Intense micro-emulsion moisture therapy with black caviar extract to restore lipid protection and high shine.'),
-('s8', 'Red Carpet Blowout & Style', 75.00, 45, 'Styling', 'Premium red-carpet styling with thermal round-brush sculpting, high-gloss finish, and pin-set volume.');
+-- 7. DOUBLE-BOOKING PREVENTION CONSTRAINT (Database-Level Guarantee)
+-- A partial unique index ensures that no two active reservations can share the same date and time slot.
+-- If a reservation is 'Cancelled', it is excluded from the unique constraint, freeing up the slot.
+CREATE UNIQUE INDEX idx_reservations_prevent_double_booking
+ON reservations (date, time)
+WHERE (status <> 'Cancelled');
 
--- 8. Enable Row Level Security (RLS) on Supabase
+-- 8. Seed Initial Service Registry (KRW Price List: 8,000 to 15,000 KRW)
+INSERT INTO services (id, name, price, duration_minutes, category, description) VALUES
+('s1', 'Signature Cut & Blowout', 15000, 60, 'Cut', 'A bespoke cutting experience tailored to your facial structure, complete with a luxury wash and bouncy signature blowout.'),
+('s2', 'Gents Precision Cut', 10000, 45, 'Cut', 'Clean scissor-and-clipper work, detailed texturizing, hot towel neck shave, and premium styling.'),
+('s3', 'Quick Trim & Clean-up', 8000, 30, 'Cut', 'A fast touch-up for split ends or bangs to keep your current cut looking fresh.'),
+('s4', 'Balayage Color Touch', 13000, 120, 'Color', 'Hand-painted highlights creating seamless, low-maintenance dimensional transitions.'),
+('s5', 'Root Touch-up Gloss', 11000, 75, 'Color', 'Precise coverage of root growth or gray hair, complete with a restorative protein glaze.'),
+('s6', 'Scalp Therapy & Treatment', 12000, 60, 'Treatment', 'Intense micro-emulsion moisture therapy to restore lipid protection and high shine.'),
+('s7', 'Red Carpet Blowout & Style', 9000, 45, 'Styling', 'Premium styling with thermal round-brush sculpting, high-gloss finish, and pin-set volume.');
+
+-- 9. Enable Row Level Security (RLS) on Supabase
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE reservations ENABLE ROW LEVEL SECURITY;
-ALTER TABLE service_menus ENABLE ROW LEVEL SECURITY;
+ALTER TABLE services ENABLE ROW LEVEL SECURITY;
 
--- 9. Row Level Security Policies
+-- 10. Row Level Security Policies
+
 -- Users: Let authenticated guests view and update their own record, let admins see everything
 CREATE POLICY "Users can read own row" ON users FOR SELECT USING (auth.uid() = id OR role = 'ADMIN');
 CREATE POLICY "Users can update own row" ON users FOR UPDATE USING (auth.uid() = id);
 
--- Service Menus: Public read-only access
-CREATE POLICY "Service menus read public" ON service_menus FOR SELECT TO public USING (true);
+-- Services: Public read-only access
+CREATE POLICY "Services read public" ON services FOR SELECT TO public USING (true);
 
--- Reservations: Guests can read and insert their own reservations; Admins can do anything
-CREATE POLICY "Users read own reservations" ON reservations FOR SELECT USING (auth.uid() = user_id OR EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'ADMIN'));
-CREATE POLICY "Users create reservations" ON reservations FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users update/cancel own pending reservations" ON reservations FOR UPDATE USING (auth.uid() = user_id AND status = 'Pending');
+-- Reservations policies:
+-- Anyone can view reservations to check slot availability (necessary for the calendar to display disabled/booked slots)
+CREATE POLICY "Reservations read public" ON reservations FOR SELECT TO public USING (true);
+
+-- Anyone can insert a reservation (guests booking on the website)
+CREATE POLICY "Reservations insert public" ON reservations FOR INSERT WITH CHECK (true);
+
+-- Users can update/cancel their own reservations if they are signed in (or we can let users manage their own if they have their user_id set)
+CREATE POLICY "Users update own reservations" ON reservations FOR UPDATE USING (auth.uid() = user_id OR user_id IS NULL);
