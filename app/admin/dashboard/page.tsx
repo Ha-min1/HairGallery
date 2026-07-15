@@ -61,6 +61,7 @@ export default function AdminDashboard() {
   // Work Records Form states
   const [showWorkModal, setShowWorkModal] = useState<boolean>(false);
   const [editingRecord, setEditingRecord] = useState<any | null>(null);
+  const [workSelectedUserId, setWorkSelectedUserId] = useState<string>('');
   const [workCustomerName, setWorkCustomerName] = useState<string>('');
   const [workCustomerPhone, setWorkCustomerPhone] = useState<string>('');
   const [workContent, setWorkContent] = useState<string>('');
@@ -362,6 +363,7 @@ export default function AdminDashboard() {
   // Work records CRUD actions
   const openAddModal = () => {
     setEditingRecord(null);
+    setWorkSelectedUserId('');
     setWorkCustomerName('');
     setWorkCustomerPhone('');
     setWorkContent('');
@@ -372,12 +374,28 @@ export default function AdminDashboard() {
 
   const openEditModal = (record: any) => {
     setEditingRecord(record);
+    const matchedUser = registeredUsers.find(u => u.name === record.customer_name && u.phone === record.customer_phone);
+    setWorkSelectedUserId(matchedUser ? matchedUser.id : '');
     setWorkCustomerName(record.customer_name);
     setWorkCustomerPhone(record.customer_phone);
     setWorkContent(record.work_content);
     setWorkAmount(record.amount);
     setWorkDate(record.date);
     setShowWorkModal(true);
+  };
+
+  const handleWorkUserSelectChange = (userId: string) => {
+    setWorkSelectedUserId(userId);
+    if (!userId) {
+      setWorkCustomerName('');
+      setWorkCustomerPhone('');
+    } else {
+      const selected = registeredUsers.find(u => u.id === userId);
+      if (selected) {
+        setWorkCustomerName(selected.name || '');
+        setWorkCustomerPhone(selected.phone || '');
+      }
+    }
   };
 
   const handleSaveWorkRecord = async (e: React.FormEvent) => {
@@ -1289,6 +1307,23 @@ WITH CHECK (
 
             <form onSubmit={handleSaveWorkRecord} className="space-y-4 text-xs">
               
+              {/* Select Registered Customer */}
+              <div className="space-y-1">
+                <label className="font-bold text-stone-600 block">{t.selectUser}</label>
+                <select
+                  value={workSelectedUserId}
+                  onChange={e => handleWorkUserSelectChange(e.target.value)}
+                  className="w-full p-2.5 border border-stone-200 rounded-lg outline-none focus:border-stone-900 bg-stone-50 cursor-pointer text-stone-700"
+                >
+                  <option value="">{t.manualInput}</option>
+                  {registeredUsers.map(user => (
+                    <option key={user.id} value={user.id}>
+                      {user.name} ({user.email || user.phone})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {/* Customer Name */}
               <div className="space-y-1">
                 <label className="font-bold text-stone-600 block">{t.customerName} *</label>
@@ -1298,7 +1333,10 @@ WITH CHECK (
                   value={workCustomerName}
                   onChange={e => setWorkCustomerName(e.target.value)}
                   placeholder="예: 홍길동"
-                  className="w-full p-2.5 border border-stone-200 rounded-lg outline-none focus:border-stone-900 bg-stone-50"
+                  disabled={!!workSelectedUserId}
+                  className={`w-full p-2.5 border border-stone-200 rounded-lg outline-none focus:border-stone-900 ${
+                    workSelectedUserId ? 'bg-stone-100 text-stone-500 cursor-not-allowed' : 'bg-stone-50 text-stone-900'
+                  }`}
                 />
               </div>
 
@@ -1311,7 +1349,10 @@ WITH CHECK (
                   value={workCustomerPhone}
                   onChange={e => setWorkCustomerPhone(e.target.value)}
                   placeholder="예: 010-1234-5678"
-                  className="w-full p-2.5 border border-stone-200 rounded-lg outline-none focus:border-stone-900 bg-stone-50"
+                  disabled={!!workSelectedUserId}
+                  className={`w-full p-2.5 border border-stone-200 rounded-lg outline-none focus:border-stone-900 ${
+                    workSelectedUserId ? 'bg-stone-100 text-stone-500 cursor-not-allowed' : 'bg-stone-50 text-stone-900'
+                  }`}
                 />
               </div>
 
