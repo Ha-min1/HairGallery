@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Calendar as CalendarIcon, Scissors, CheckCircle, Info, LayoutDashboard, ChevronLeft, ChevronRight, User, Key, ShieldCheck, History } from 'lucide-react';
 import { TRANSLATIONS, getLocalizedServices } from '@/lib/i18n';
@@ -42,6 +42,22 @@ export default function Home() {
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(false);
   const [isWithdrawing, setIsWithdrawing] = useState<boolean>(false);
 
+  // Guards to prevent duplicate alerts and concurrent race conditions
+  const alertShownRef = useRef<boolean>(false);
+  const isProcessingAuth = useRef<boolean>(false);
+
+  // Auto phone number formatter for Korean mobile numbers (010-XXXX-XXXX)
+  const formatPhoneNumber = (value: string) => {
+    const cleaned = value.replace(/\D/g, '');
+    if (cleaned.length <= 3) {
+      return cleaned;
+    } else if (cleaned.length <= 7) {
+      return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
+    } else {
+      return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 7)}-${cleaned.slice(7, 11)}`;
+    }
+  };
+
   const supabase = getSupabaseClient();
 
   // Initialize lang and Supabase Session on Mount
@@ -51,20 +67,8 @@ export default function Home() {
       setLangState(savedLang);
     }
 
-    // Check current active session
-    async function checkSession() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          await handleSessionUser(session.user);
-        }
-      } catch (err) {
-        console.error('Session retrieve error:', err);
-      }
-    }
-    checkSession();
-
-    // Listen to Auth State Changes (Google OAuth Redirect callback catch)
+    // Listen to Auth State Changes (Google/Kakao OAuth Redirect callback catch)
+    // In Supabase v2, this listener automatically fires the initial event on subscription.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         await handleSessionUser(session.user);
@@ -80,6 +84,8 @@ export default function Home() {
 
   // Handle Session User: Sync auth user with database users profile table
   const handleSessionUser = async (authUser: any) => {
+    if (isProcessingAuth.current) return;
+    isProcessingAuth.current = true;
     try {
       // 1. Query users table
       const { data: profile, error: queryErr } = await supabase
@@ -93,7 +99,11 @@ export default function Home() {
       if (profile) {
         // Check if user is fully registered (has phone and consent, or is admin)
         if (!profile.is_admin && (!profile.phone || !profile.consent_given)) {
-          alert(lang === 'ko' ? '등록된 회원 정보가 없습니다. 회원가입을 먼저 진행해 주세요.' : 'No registered member information found. Please sign up first.');
+          if (!alertShownRef.current) {
+            alertShownRef.current = true;
+            alert(lang === 'ko' ? '등록된 회원 정보가 없습니다. 회원가입을 먼저 진행해 주세요.' : 'No registered member information found. Please sign up first.');
+            setTimeout(() => { alertShownRef.current = false; }, 2000);
+          }
           await supabase.auth.signOut();
           setCurrentUser(null);
           setCustomerName('');
@@ -139,7 +149,11 @@ export default function Home() {
           localStorage.removeItem('tg_signup_draft');
         } else {
           // 3. Login clicked directly without signup draft (Not registered)
-          alert(lang === 'ko' ? '등록된 회원 정보가 없습니다. 회원가입을 먼저 진행해 주세요.' : 'No registered member information found. Please sign up first.');
+          if (!alertShownRef.current) {
+            alertShownRef.current = true;
+            alert(lang === 'ko' ? '등록된 회원 정보가 없습니다. 회원가입을 먼저 진행해 주세요.' : 'No registered member information found. Please sign up first.');
+            setTimeout(() => { alertShownRef.current = false; }, 2000);
+          }
           await supabase.auth.signOut();
           setCurrentUser(null);
           setCustomerName('');
@@ -149,6 +163,8 @@ export default function Home() {
       }
     } catch (err: any) {
       console.error('Failed to sync auth user profile:', err.message);
+    } finally {
+      isProcessingAuth.current = false;
     }
   };
 
@@ -620,7 +636,7 @@ export default function Home() {
                           type="tel"
                           required
                           value={customerPhone}
-                          onChange={e => setCustomerPhone(e.target.value)}
+                          onChange={e => setCustomerPhone(formatPhoneNumber(e.target.value))}
                           placeholder={lang === 'ko' ? '010-1234-5678' : '+82-10-1234-5678'}
                           className="w-full px-3 py-2 border border-stone-200 rounded-lg text-xs outline-none bg-stone-50 focus:border-stone-400 transition-colors"
                         />
@@ -935,7 +951,7 @@ export default function Home() {
                       type="tel" 
                       required
                       value={authPhone}
-                      onChange={e => setAuthPhone(e.target.value)}
+                      onChange={e => setAuthPhone(formatPhoneNumber(e.target.value))}
                       placeholder="010-1234-5678"
                       className="w-full px-3 py-2 border border-stone-200 rounded-lg text-xs outline-none bg-stone-50 focus:border-stone-400 transition-colors"
                     />
