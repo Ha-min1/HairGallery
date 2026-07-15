@@ -34,8 +34,8 @@ export const getLocalizedServices = (lang: 'ko' | 'en'): Service[] => {
 export const TRANSLATIONS = {
   ko: {
     heroSub: "THE HAIR GALLERY",
-    heroTitle: "처음부터 끝까지 1:1로 책임지는 프라이빗 미용실",
-    heroDesc: "나에게 딱 맞는 인생 머리를 찾는 1인 예약제. 조용하고 편안한 공간에서 원장과의 세밀한 상담을 통해 오직 당신만을 위한 맞춤 스타일을 선사합니다.",
+    heroTitle: "처음부터 끝까지 1:1로 책임지는 미용실",
+    heroDesc: "나에게 딱 맞는 인생 머리를 찾는 예약제. 조용하고 편안한 공간에서 원장과의 세밀한 상담을 통해 오직 당신만을 위한 맞춤 스타일을 선사합니다.",
     selectService: "원하는 헤어 시술을 선택해 주세요",
     contactDetails: "예약자 연락처 정보",
     fullName: "예약자 성함 *",

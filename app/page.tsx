@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { Calendar as CalendarIcon, Scissors, CheckCircle, Info, LayoutDashboard, ChevronLeft, ChevronRight, User, Key, ShieldCheck, History } from 'lucide-react';
 import { TRANSLATIONS, getLocalizedServices } from '@/lib/i18n';
@@ -33,6 +33,8 @@ export default function Home() {
   // Auth & Onboarding states
   const [currentUser, setCurrentUser] = useState<any | null>(null);
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
+  const [editingService, setEditingService] = useState<any | null>(null);
+  const [currentSlide, setCurrentSlide] = useState<number>(0);
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(false);
   const [isWithdrawing, setIsWithdrawing] = useState<boolean>(false);
 
@@ -139,10 +141,96 @@ export default function Home() {
     }
   };
 
-  // Update services registry when language changes
+  // Load services with database fetching and localStorage fallback
+  const loadServices = async (currentLang: 'ko' | 'en') => {
+    // 1. Try local storage first to preserve any direct manual adjustments
+    const cached = localStorage.getItem(`custom_services_${currentLang}`);
+    if (cached) {
+      try {
+        setServices(JSON.parse(cached));
+        return;
+      } catch (e) {
+        console.error('Failed to parse cached services:', e);
+      }
+    }
+
+    // 2. Query Supabase
+    try {
+      const { data, error } = await supabase
+        .from('services')
+        .select('*')
+        .order('id', { ascending: true });
+      if (!error && data && data.length > 0) {
+        const mapped = data.map((s: any) => ({
+          id: s.id,
+          name: s.name,
+          price: s.price,
+          durationMinutes: s.duration_minutes,
+          category: s.category,
+          description: s.description
+        }));
+        setServices(mapped);
+        // Cache it in localStorage
+        localStorage.setItem(`custom_services_${currentLang}`, JSON.stringify(mapped));
+        return;
+      }
+    } catch (e) {
+      console.error('Failed to fetch services from Supabase:', e);
+    }
+
+    // 3. Static fallback
+    setServices(getLocalizedServices(currentLang));
+  };
+
   useEffect(() => {
-    setServices(getLocalizedServices(lang));
+    loadServices(lang);
   }, [lang]);
+
+  const handleUpdateService = async (updatedService: any) => {
+    // Update local state
+    const updatedServices = services.map(s => s.id === updatedService.id ? updatedService : s);
+    setServices(updatedServices);
+
+    // Save to local storage for persistence
+    localStorage.setItem(`custom_services_${lang}`, JSON.stringify(updatedServices));
+
+    // Try to update on Supabase via API route securely
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) return;
+
+      const res = await fetch('/api/admin/services', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(updatedService)
+      });
+      if (!res.ok) {
+        const errData = await res.json();
+        console.error('Failed to sync service to database:', errData.error);
+      }
+    } catch (e) {
+      console.error('Failed to sync service to database:', e);
+    }
+  };
+
+  // Shop interior preview slideshow slides
+  const slides = useMemo(() => [
+    { url: '/preview_01.jpg', title: lang === 'ko' ? '' : '' },
+    { url: '/preview_02.jpg', title: lang === 'ko' ? '' : '' },
+    { url: '/preview_03.jpg', title: lang === 'ko' ? '' : '' },
+    { url: '/preview_04.jpg', title: lang === 'ko' ? '' : '' }
+  ], [lang]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % 4);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
 
   const setLang = (newLang: 'ko' | 'en') => {
     setLangState(newLang);
@@ -492,7 +580,7 @@ export default function Home() {
         {/* Editorial Hero Block */}
         <section 
           className="relative bg-stone-950 text-stone-100 py-24 sm:py-32 px-4 text-center border-b border-stone-800 animate-fadeIn bg-cover bg-center bg-no-repeat overflow-hidden"
-          style={{ backgroundImage: "url('/banner_image.png')" }}
+          style={{ backgroundImage: "url('/banner_02.png')" }}
         >
           {/* Dark overlay to enhance text readability */}
           <div className="absolute inset-0 bg-black/60 z-0" />
@@ -508,6 +596,83 @@ export default function Home() {
             <p className="max-w-xl mx-auto text-xs sm:text-sm text-stone-300 font-light leading-relaxed drop-shadow-md pt-1">
               {t.heroDesc}
             </p>
+          </div>
+        </section>
+
+        {/* Shop Interior Slideshow Section */}
+        <section className="bg-stone-50 border-b border-stone-200 py-10">
+          <div className="max-w-5xl mx-auto px-4">
+            <div className="text-center space-y-2 mb-8">
+              <span className="text-[10px] font-mono tracking-[0.2em] text-gold-600 uppercase font-bold block">
+                {lang === 'ko' ? '공간 둘러보기' : 'SALON GALLERY'}
+              </span>
+              <h2 className="font-serif text-xl sm:text-2xl text-stone-900 font-normal">
+                {lang === 'ko' ? '더 헤어 갤러리 내부 전경' : 'Explore Our Space'}
+              </h2>
+              <div className="h-[1px] w-12 bg-gold-500/45 mx-auto mt-2" />
+            </div>
+
+            {/* Slideshow Container */}
+            <div className="relative aspect-[16/9] sm:aspect-[21/9] w-full overflow-hidden rounded-2xl border border-stone-200 shadow-lg bg-stone-900 group">
+              {/* Slide Images */}
+              {slides.map((slide, idx) => (
+                <div
+                  key={idx}
+                  className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                    idx === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'
+                  }`}
+                  style={{
+                    backgroundImage: `url('${slide.url}')`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat'
+                  }}
+                >
+                  {/* Dark overlay for readability */}
+                  <div className="absolute inset-0 bg-black/35 z-10" />
+
+                  {/* Caption */}
+                  <div className="absolute bottom-6 left-6 right-6 z-20 text-left">
+                    <p className="text-[10px] font-mono tracking-widest text-gold-400 uppercase font-semibold">
+                      {lang === 'ko' ? `갤러리 0${idx + 1}` : `SPACE 0${idx + 1}`}
+                    </p>
+                    <h3 className="font-serif text-sm sm:text-lg text-white font-medium drop-shadow-sm mt-0.5">
+                      {slide.title}
+                    </h3>
+                  </div>
+                </div>
+              ))}
+
+              {/* Navigation Arrows */}
+              <button
+                type="button"
+                onClick={() => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length)}
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-20 h-9 w-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white backdrop-blur-sm transition duration-300 opacity-0 group-hover:opacity-100 cursor-pointer shadow-sm"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setCurrentSlide((prev) => (prev + 1) % slides.length)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-20 h-9 w-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white backdrop-blur-sm transition duration-300 opacity-0 group-hover:opacity-100 cursor-pointer shadow-sm"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+
+              {/* Pagination Dots */}
+              <div className="absolute bottom-6 right-6 z-20 flex gap-1.5">
+                {slides.map((_, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setCurrentSlide(idx)}
+                    className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                      idx === currentSlide ? 'w-5 bg-gold-400' : 'w-1.5 bg-white/50 hover:bg-white/80'
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
         </section>
 
@@ -559,7 +724,22 @@ export default function Home() {
                                 className="mt-1 accent-stone-900"
                               />
                               <div>
-                                <span className="text-[9px] font-mono text-stone-400 uppercase tracking-widest font-semibold block">{s.category}</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[9px] font-mono text-stone-400 uppercase tracking-widest font-semibold block">{s.category}</span>
+                                  {currentUser && currentUser.role === 'ADMIN' && (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        e.preventDefault();
+                                        setEditingService(s);
+                                      }}
+                                      className="text-[9px] text-gold-600 hover:text-gold-700 hover:underline font-semibold flex items-center gap-0.5 cursor-pointer border-none bg-transparent p-0"
+                                    >
+                                      [수정 / Edit]
+                                    </button>
+                                  )}
+                                </div>
                                 <h3 className="text-xs font-bold text-stone-900">{s.name}</h3>
                                 <p className="text-[10px] text-stone-500 mt-1 leading-normal">{s.description}</p>
                               </div>
@@ -984,6 +1164,126 @@ export default function Home() {
                   className="flex-1 py-3 bg-stone-950 hover:bg-stone-850 text-stone-100 text-xs font-semibold rounded-lg shadow-md transition-all cursor-pointer active:scale-[0.99] disabled:opacity-50 text-center"
                 >
                   {isOnboardingLoading ? (lang === 'ko' ? '등록 중...' : 'Submitting...') : (lang === 'ko' ? '등록 완료' : 'Complete')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Service Edit Modal */}
+      {editingService && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-2xl border border-stone-200 shadow-2xl w-full max-w-md overflow-hidden">
+            {/* Header */}
+            <div className="bg-stone-950 p-6 text-white flex justify-between items-center">
+              <div>
+                <h3 className="font-serif text-base font-semibold flex items-center gap-2">
+                  <Scissors className="h-5 w-5 text-gold-500" />
+                  {lang === 'ko' ? '시술 선택지 수정' : 'Edit Service Option'}
+                </h3>
+                <p className="text-[10px] text-stone-400 font-mono mt-1">ID: {editingService.id}</p>
+              </div>
+              <button 
+                onClick={() => setEditingService(null)}
+                className="text-stone-400 hover:text-white text-lg font-bold cursor-pointer outline-none"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Form Body */}
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              await handleUpdateService(editingService);
+              setEditingService(null);
+            }} className="p-6 space-y-4">
+              {/* Category */}
+              <div className="space-y-1 text-left">
+                <label className="text-[10px] font-mono text-stone-400 uppercase tracking-widest font-semibold block">
+                  {lang === 'ko' ? '분류 (Category)' : 'Category'}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editingService.category}
+                  onChange={(e) => setEditingService({ ...editingService, category: e.target.value })}
+                  className="w-full px-3 py-2 border border-stone-200 rounded-lg text-xs focus:ring-1 focus:ring-gold-500 focus:border-gold-500 outline-none bg-stone-50"
+                />
+              </div>
+
+              {/* Name */}
+              <div className="space-y-1 text-left">
+                <label className="text-[10px] font-mono text-stone-400 uppercase tracking-widest font-semibold block">
+                  {lang === 'ko' ? '시술 명 (Name)' : 'Service Name'}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editingService.name}
+                  onChange={(e) => setEditingService({ ...editingService, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-stone-200 rounded-lg text-xs font-bold focus:ring-1 focus:ring-gold-500 focus:border-gold-500 outline-none bg-stone-50"
+                />
+              </div>
+
+              {/* Price */}
+              <div className="space-y-1 text-left">
+                <label className="text-[10px] font-mono text-stone-400 uppercase tracking-widest font-semibold block">
+                  {lang === 'ko' ? '가격 (Price) - 입력하지 않으면 가격문의' : 'Price (Empty for Inquiry)'}
+                </label>
+                <input
+                  type="number"
+                  placeholder={lang === 'ko' ? '가격 문의' : 'Inquiry'}
+                  value={editingService.price !== null && editingService.price !== undefined ? editingService.price : ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setEditingService({ ...editingService, price: val === '' ? null : Number(val) });
+                  }}
+                  className="w-full px-3 py-2 border border-stone-200 rounded-lg text-xs focus:ring-1 focus:ring-gold-500 focus:border-gold-500 outline-none bg-stone-50"
+                />
+              </div>
+
+              {/* Duration */}
+              <div className="space-y-1 text-left">
+                <label className="text-[10px] font-mono text-stone-400 uppercase tracking-widest font-semibold block">
+                  {lang === 'ko' ? '시술 시간 (분) (Duration minutes)' : 'Duration (minutes)'}
+                </label>
+                <input
+                  type="number"
+                  required
+                  value={editingService.durationMinutes}
+                  onChange={(e) => setEditingService({ ...editingService, durationMinutes: Number(e.target.value) })}
+                  className="w-full px-3 py-2 border border-stone-200 rounded-lg text-xs focus:ring-1 focus:ring-gold-500 focus:border-gold-500 outline-none bg-stone-50"
+                />
+              </div>
+
+              {/* Description */}
+              <div className="space-y-1 text-left">
+                <label className="text-[10px] font-mono text-stone-400 uppercase tracking-widest font-semibold block">
+                  {lang === 'ko' ? '상세 설명 (Description)' : 'Description'}
+                </label>
+                <textarea
+                  rows={3}
+                  value={editingService.description}
+                  onChange={(e) => setEditingService({ ...editingService, description: e.target.value })}
+                  className="w-full px-3 py-2 border border-stone-200 rounded-lg text-xs focus:ring-1 focus:ring-gold-500 focus:border-gold-500 outline-none resize-none leading-relaxed bg-stone-50"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingService(null)}
+                  className="flex-1 py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-850 text-xs font-semibold rounded-lg transition-colors tracking-wider"
+                >
+                  {lang === 'ko' ? '취소' : 'Cancel'}
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-stone-950 hover:bg-stone-850 text-white text-xs font-semibold rounded-lg transition-colors tracking-wider"
+                >
+                  {lang === 'ko' ? '저장' : 'Save'}
                 </button>
               </div>
             </form>
