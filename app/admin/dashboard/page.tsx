@@ -707,7 +707,7 @@ WITH CHECK (
                 {t.liveConnection}
               </span>
               {isUsingLocalStorage ? (
-                <span className="px-3 py-1 bg-amber-500/10 text-amber-300 border border-amber-500/20 text-xs font-mono font-bold rounded-lg flex items-center gap-1.5 self-start">
+                <span className="px-3 py-1 bg-amber-500/10 text-amber-305 border border-amber-500/20 text-xs font-mono font-bold rounded-lg flex items-center gap-1.5 self-start">
                   <AlertTriangle className="h-3 w-3 text-amber-400" />
                   {lang === 'ko' ? '임시 로컬 저장소 모드' : 'Local Storage Mode'}
                 </span>
@@ -800,13 +800,14 @@ WITH CHECK (
                   <select
                     value={filterStatus}
                     onChange={e => setFilterStatus(e.target.value)}
-                    className="py-2 px-3 bg-stone-950/60 border border-white/5 rounded-lg text-xs text-stone-300 outline-none cursor-pointer focus:border-indigo-500/80 w-32 sm:w-auto"
+                    className="py-2 px-3 bg-stone-900 border border-white/5 rounded-lg text-xs text-stone-300 outline-none cursor-pointer focus:border-indigo-500/80 w-32 sm:w-auto"
+                    style={{ colorScheme: 'dark' }}
                   >
-                    <option value="All" className="bg-stone-900">{t.allStatuses}</option>
-                    <option value="Pending" className="bg-stone-900">{t.statusPending}</option>
-                    <option value="Confirmed" className="bg-stone-900">{t.statusConfirmed}</option>
-                    <option value="Completed" className="bg-stone-900">{t.statusCompleted}</option>
-                    <option value="Cancelled" className="bg-stone-900">{t.statusCancelled}</option>
+                    <option value="All" className="bg-stone-900 text-white">{t.allStatuses}</option>
+                    <option value="Pending" className="bg-stone-900 text-white">{t.statusPending}</option>
+                    <option value="Confirmed" className="bg-stone-900 text-white">{t.statusConfirmed}</option>
+                    <option value="Completed" className="bg-stone-900 text-white">{t.statusCompleted}</option>
+                    <option value="Cancelled" className="bg-stone-900 text-white">{t.statusCancelled}</option>
                   </select>
                   <button
                     onClick={() => {
@@ -851,7 +852,7 @@ WITH CHECK (
                             <h3 className="font-serif text-sm font-semibold text-white">{res.customerName}</h3>
                           </div>
                           <p className="text-[10px] text-stone-400 font-mono flex items-center gap-1">
-                            <Phone className="h-3.5 w-3.5 text-stone-500" /> {res.customerPhone}
+                            <Phone className="h-3.5 w-3.5 text-stone-550" /> {res.customerPhone}
                           </p>
                         </div>
 
@@ -868,7 +869,7 @@ WITH CHECK (
                             {res.status === 'Pending' && (
                               <button
                                 onClick={() => handleUpdateStatus(res.id, 'Confirmed')}
-                                className="p-1.5 bg-sky-500/10 hover:bg-sky-600 text-sky-450 hover:text-white rounded border border-sky-500/20 transition-all cursor-pointer"
+                                className="p-1.5 bg-sky-500/10 hover:bg-sky-600 text-sky-400 hover:text-white rounded border border-sky-500/20 transition-all cursor-pointer"
                                 title={t.confirmReservation}
                               >
                                 <Check className="h-4 w-4" />
@@ -886,14 +887,14 @@ WITH CHECK (
                             {res.status !== 'Cancelled' && res.status !== 'Completed' && (
                               <button
                                 onClick={() => handleUpdateStatus(res.id, 'Cancelled')}
-                                className="p-1.5 bg-stone-855 hover:bg-rose-600 text-stone-450 hover:text-white rounded border border-white/5 hover:border-rose-500 transition-all cursor-pointer"
+                                className="p-1.5 bg-stone-850 hover:bg-rose-600 text-stone-400 hover:text-white rounded border border-white/5 hover:border-rose-500 transition-all cursor-pointer"
                                 title={t.cancelAppointment}
                               >
                                 <X className="h-4 w-4" />
                               </button>
                             )}
                             <span className={`text-[10px] font-mono font-bold tracking-wide uppercase px-2.5 py-1 rounded border ${
-                              res.status === 'Pending' ? 'bg-amber-500/10 text-amber-450 border-amber-500/20' :
+                              res.status === 'Pending' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
                               res.status === 'Confirmed' ? 'bg-sky-500/10 text-sky-450 border-sky-500/20' :
                               res.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
                               'bg-stone-800/80 text-stone-400 border-white/5'
@@ -944,7 +945,7 @@ WITH CHECK (
                 </div>
 
                 {isWorkLoading ? (
-                  <div className="text-center py-16 text-stone-550 text-xs font-mono tracking-wider">{t.loadingRecords}</div>
+                  <div className="text-center py-16 text-stone-500 text-xs font-mono tracking-wider">{t.loadingRecords}</div>
                 ) : filteredWorkRecords.length === 0 ? (
                   <div className="text-center py-16 text-stone-500 text-xs font-light">{t.noWorkRecords}</div>
                 ) : (
@@ -984,7 +985,7 @@ WITH CHECK (
                             </button>
                             <button
                               onClick={() => handleDeleteWorkRecord(rec.id)}
-                              className="p-2 text-rose-450 hover:text-white hover:bg-rose-650 rounded-lg border border-rose-500/20 hover:border-rose-500 transition-all cursor-pointer"
+                              className="p-2 text-rose-400 hover:text-white hover:bg-rose-600 rounded-lg border border-rose-500/20 hover:border-rose-500 transition-all cursor-pointer"
                               title={t.deleteRecord}
                             >
                               <Trash2 className="h-3.5 w-3.5" />
@@ -1018,7 +1019,8 @@ WITH CHECK (
                       type="date"
                       value={selectedDailyDate}
                       onChange={e => setSelectedDailyDate(e.target.value)}
-                      className="text-xs py-1.5 px-3 border border-white/5 rounded-lg bg-stone-955/60 outline-none text-stone-200 w-full focus:border-indigo-500/60"
+                      className="text-xs py-1.5 px-3 border border-white/5 rounded-lg bg-stone-900 text-white outline-none w-full focus:border-indigo-500/60"
+                      style={{ colorScheme: 'dark' }}
                     />
                   </div>
                   <div>
@@ -1043,19 +1045,21 @@ WITH CHECK (
                       <select
                         value={selectedMonthlyYear}
                         onChange={e => setSelectedMonthlyYear(Number(e.target.value))}
-                        className="text-xs py-1.5 px-2 bg-stone-955/60 border border-white/5 rounded-lg outline-none text-stone-300 cursor-pointer focus:border-indigo-500/60"
+                        className="text-xs py-1.5 px-2 bg-stone-900 border border-white/5 rounded-lg outline-none text-white cursor-pointer focus:border-indigo-500/60"
+                        style={{ colorScheme: 'dark' }}
                       >
                         {[2025, 2026, 2027, 2028].map(yr => (
-                          <option key={yr} value={yr} className="bg-stone-900">{yr}년</option>
+                          <option key={yr} value={yr} className="bg-stone-900 text-white">{yr}년</option>
                         ))}
                       </select>
                       <select
                         value={selectedMonthlyMonth}
                         onChange={e => setSelectedMonthlyMonth(Number(e.target.value))}
-                        className="text-xs py-1.5 px-2 bg-stone-955/60 border border-white/5 rounded-lg outline-none text-stone-300 cursor-pointer focus:border-indigo-500/60"
+                        className="text-xs py-1.5 px-2 bg-stone-900 border border-white/5 rounded-lg outline-none text-white cursor-pointer focus:border-indigo-500/60"
+                        style={{ colorScheme: 'dark' }}
                       >
                         {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                          <option key={m} value={m} className="bg-stone-900">{m}월</option>
+                          <option key={m} value={m} className="bg-stone-900 text-white">{m}월</option>
                         ))}
                       </select>
                     </div>
@@ -1084,10 +1088,11 @@ WITH CHECK (
                     <select
                       value={selectedYearlyYear}
                       onChange={e => setSelectedYearlyYear(Number(e.target.value))}
-                      className="text-xs py-1.5 px-3 border border-white/5 rounded-lg bg-stone-900/80 text-white outline-none cursor-pointer w-full focus:border-gold-500/50"
+                      className="text-xs py-1.5 px-3 border border-white/5 rounded-lg bg-stone-900 text-white outline-none cursor-pointer w-full focus:border-gold-500/50"
+                      style={{ colorScheme: 'dark' }}
                     >
                       {[2025, 2026, 2027, 2028].map(yr => (
-                        <option key={yr} value={yr} className="bg-stone-900">{yr}년</option>
+                        <option key={yr} value={yr} className="bg-stone-900 text-white">{yr}년</option>
                       ))}
                     </select>
                   </div>
@@ -1202,11 +1207,12 @@ WITH CHECK (
                 <select
                   value={resSelectedUserId}
                   onChange={e => handleUserSelectChange(e.target.value)}
-                  className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-stone-200 cursor-pointer"
+                  className="w-full p-2.5 bg-stone-955/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-stone-200 cursor-pointer"
+                  style={{ colorScheme: 'dark' }}
                 >
-                  <option value="" className="bg-stone-900">{t.manualInput}</option>
+                  <option value="" className="bg-stone-900 text-white">{t.manualInput}</option>
                   {registeredUsers.map(user => (
-                    <option key={user.id} value={user.id} className="bg-stone-900">
+                    <option key={user.id} value={user.id} className="bg-stone-900 text-white">
                       {user.name} ({user.email})
                     </option>
                   ))}
@@ -1225,7 +1231,7 @@ WITH CHECK (
                   disabled={!!resSelectedUserId}
                   className={`w-full p-2.5 border rounded-lg outline-none focus:border-indigo-500 ${
                     resSelectedUserId 
-                      ? 'bg-stone-955/40 border-white/5 text-stone-550 cursor-not-allowed' 
+                      ? 'bg-stone-955/40 border-white/5 text-stone-500 cursor-not-allowed' 
                       : 'bg-stone-950/80 border-white/5 text-white'
                   }`}
                 />
@@ -1243,7 +1249,7 @@ WITH CHECK (
                   disabled={!!resSelectedUserId}
                   className={`w-full p-2.5 border rounded-lg outline-none focus:border-indigo-500 ${
                     resSelectedUserId 
-                      ? 'bg-stone-955/40 border-white/5 text-stone-555 cursor-not-allowed' 
+                      ? 'bg-stone-955/40 border-white/5 text-stone-550 cursor-not-allowed' 
                       : 'bg-stone-950/80 border-white/5 text-white'
                   }`}
                 />
@@ -1256,11 +1262,12 @@ WITH CHECK (
                   required
                   value={resServiceId}
                   onChange={e => handleServiceChange(e.target.value)}
-                  className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-stone-200 cursor-pointer"
+                  className="w-full p-2.5 bg-stone-955/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-stone-200 cursor-pointer"
+                  style={{ colorScheme: 'dark' }}
                 >
-                  <option value="" disabled className="bg-stone-900">{t.selectServicePrompt}</option>
+                  <option value="" disabled className="bg-stone-900 text-white">{t.selectServicePrompt}</option>
                   {servicesList.map(svc => (
-                    <option key={svc.id} value={svc.id} className="bg-stone-900">
+                    <option key={svc.id} value={svc.id} className="bg-stone-900 text-white">
                       {svc.name} {svc.price !== null && svc.price !== undefined ? `(₩${svc.price.toLocaleString()})` : ""}
                     </option>
                   ))}
@@ -1288,7 +1295,8 @@ WITH CHECK (
                     required
                     value={resDate}
                     onChange={e => setResDate(e.target.value)}
-                    className="w-full p-2.5 bg-stone-955/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white"
+                    className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white"
+                    style={{ colorScheme: 'dark' }}
                   />
                 </div>
 
@@ -1299,9 +1307,10 @@ WITH CHECK (
                     value={resTime}
                     onChange={e => setResTime(e.target.value)}
                     className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-stone-200 cursor-pointer"
+                    style={{ colorScheme: 'dark' }}
                   >
                     {TIME_SLOTS.map(slot => (
-                      <option key={slot} value={slot} className="bg-stone-900">{slot}</option>
+                      <option key={slot} value={slot} className="bg-stone-900 text-white">{slot}</option>
                     ))}
                   </select>
                 </div>
@@ -1315,11 +1324,12 @@ WITH CHECK (
                   value={resStatus}
                   onChange={e => setResStatus(e.target.value)}
                   className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-stone-200 cursor-pointer"
+                  style={{ colorScheme: 'dark' }}
                 >
-                  <option value="Pending" className="bg-stone-900">{t.statusPending}</option>
-                  <option value="Confirmed" className="bg-stone-900">{t.statusConfirmed}</option>
-                  <option value="Completed" className="bg-stone-900">{t.statusCompleted}</option>
-                  <option value="Cancelled" className="bg-stone-900">{t.statusCancelled}</option>
+                  <option value="Pending" className="bg-stone-900 text-white">{t.statusPending}</option>
+                  <option value="Confirmed" className="bg-stone-900 text-white">{t.statusConfirmed}</option>
+                  <option value="Completed" className="bg-stone-900 text-white">{t.statusCompleted}</option>
+                  <option value="Cancelled" className="bg-stone-900 text-white">{t.statusCancelled}</option>
                 </select>
               </div>
 
@@ -1367,11 +1377,12 @@ WITH CHECK (
                 <select
                   value={workSelectedUserId}
                   onChange={e => handleWorkUserSelectChange(e.target.value)}
-                  className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-stone-200 cursor-pointer"
+                  className="w-full p-2.5 bg-stone-955/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-stone-200 cursor-pointer"
+                  style={{ colorScheme: 'dark' }}
                 >
-                  <option value="" className="bg-stone-900">{t.manualInput}</option>
+                  <option value="" className="bg-stone-900 text-white">{t.manualInput}</option>
                   {registeredUsers.map(user => (
-                    <option key={user.id} value={user.id} className="bg-stone-900">
+                    <option key={user.id} value={user.id} className="bg-stone-900 text-white">
                       {user.name} ({user.email || user.phone})
                     </option>
                   ))}
@@ -1386,11 +1397,12 @@ WITH CHECK (
                 <select
                   value={workSelectedPastKey}
                   onChange={e => handleWorkPastUserSelectChange(e.target.value)}
-                  className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-stone-200 cursor-pointer"
+                  className="w-full p-2.5 bg-stone-955/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-stone-200 cursor-pointer"
+                  style={{ colorScheme: 'dark' }}
                 >
-                  <option value="" className="bg-stone-900">{t.manualInput}</option>
+                  <option value="" className="bg-stone-900 text-white">{t.manualInput}</option>
                   {pastCustomersList.map(cust => (
-                    <option key={cust.key} value={cust.key} className="bg-[#09090b]">{cust.name} ({cust.phone})</option>
+                    <option key={cust.key} value={cust.key} className="bg-[#09090b] text-white">{cust.name} ({cust.phone})</option>
                   ))}
                 </select>
               </div>
@@ -1408,7 +1420,7 @@ WITH CHECK (
                   className={`w-full p-2.5 border rounded-lg outline-none focus:border-indigo-500 ${
                     (workSelectedUserId || workSelectedPastKey) 
                       ? 'bg-stone-955/40 border-white/5 text-stone-550 cursor-not-allowed' 
-                      : 'bg-stone-955/80 border-white/5 text-white'
+                      : 'bg-stone-950/80 border-white/5 text-white'
                   }`}
                 />
               </div>
@@ -1426,7 +1438,7 @@ WITH CHECK (
                   className={`w-full p-2.5 border rounded-lg outline-none focus:border-indigo-500 ${
                     (workSelectedUserId || workSelectedPastKey) 
                       ? 'bg-stone-955/40 border-white/5 text-stone-550 cursor-not-allowed' 
-                      : 'bg-stone-955/80 border-white/5 text-white'
+                      : 'bg-stone-950/80 border-white/5 text-white'
                   }`}
                 />
               </div>
@@ -1439,7 +1451,8 @@ WITH CHECK (
                   required
                   value={workDate}
                   onChange={e => setWorkDate(e.target.value)}
-                  className="w-full p-2.5 bg-stone-955/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white"
+                  className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white"
+                  style={{ colorScheme: 'dark' }}
                 />
               </div>
 
@@ -1452,7 +1465,7 @@ WITH CHECK (
                   value={workContent}
                   onChange={e => setWorkContent(e.target.value)}
                   placeholder="예: 시그니처 컷 + 볼륨 매직 시술 완료"
-                  className="w-full p-2.5 bg-stone-955/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white resize-none"
+                  className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white resize-none"
                 />
               </div>
 
@@ -1467,7 +1480,7 @@ WITH CHECK (
                     min={0}
                     value={workAmount}
                     onChange={e => setWorkAmount(Number(e.target.value))}
-                    className="w-full pl-7 pr-3 py-2.5 bg-stone-955/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white font-mono font-bold"
+                    className="w-full pl-7 pr-3 py-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white font-mono font-bold"
                   />
                 </div>
               </div>
