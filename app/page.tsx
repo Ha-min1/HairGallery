@@ -45,6 +45,7 @@ export default function Home() {
   // Guards to prevent duplicate alerts and concurrent race conditions
   const alertShownRef = useRef<boolean>(false);
   const isProcessingAuth = useRef<boolean>(false);
+  const currentUserIdRef = useRef<string | null>(null);
 
   // Auto phone number formatter for Korean mobile numbers (010-XXXX-XXXX)
   const formatPhoneNumber = (value: string) => {
@@ -71,8 +72,13 @@ export default function Home() {
     // In Supabase v2, this listener automatically fires the initial event on subscription.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
+        // Prevent duplicate execution if the user ID hasn't changed
+        if (currentUserIdRef.current === session.user.id) {
+          return;
+        }
         await handleSessionUser(session.user);
       } else {
+        currentUserIdRef.current = null;
         setCurrentUser(null);
       }
     });
@@ -105,6 +111,7 @@ export default function Home() {
             setTimeout(() => { alertShownRef.current = false; }, 2000);
           }
           await supabase.auth.signOut();
+          currentUserIdRef.current = null;
           setCurrentUser(null);
           setCustomerName('');
           setCustomerPhone('');
@@ -112,6 +119,7 @@ export default function Home() {
           return;
         }
         // Log in directly
+        currentUserIdRef.current = profile.id;
         setCurrentUser(profile);
         setCustomerName(profile.name || '');
         setCustomerPhone(profile.phone || '');
@@ -143,6 +151,7 @@ export default function Home() {
 
           if (insertErr) throw insertErr;
           
+          currentUserIdRef.current = newProfile.id;
           setCurrentUser(newProfile);
           setCustomerName(newProfile.name || '');
           setCustomerPhone(newProfile.phone || '');
@@ -155,6 +164,7 @@ export default function Home() {
             setTimeout(() => { alertShownRef.current = false; }, 2000);
           }
           await supabase.auth.signOut();
+          currentUserIdRef.current = null;
           setCurrentUser(null);
           setCustomerName('');
           setCustomerPhone('');
@@ -348,6 +358,7 @@ export default function Home() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    currentUserIdRef.current = null;
     setCurrentUser(null);
     setCustomerName('');
     setCustomerPhone('');
@@ -386,6 +397,7 @@ export default function Home() {
       alert(lang === 'ko' ? '회원 탈퇴 및 개인정보 삭제가 완료되었습니다.' : 'Membership withdrawal and personal data deletion completed.');
       
       await supabase.auth.signOut();
+      currentUserIdRef.current = null;
       setCurrentUser(null);
       setCustomerName('');
       setCustomerPhone('');
