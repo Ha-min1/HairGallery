@@ -597,69 +597,40 @@ WITH CHECK (
 );`;
 
   if (checkingAuth) {
-    return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center font-mono text-xs text-stone-400">
-        <span>Verifying Security Clearance (role: ADMIN)...</span>
-      </div>
-    );
-  }
+        return (
+    <div className="min-h-screen bg-[#09090b] text-stone-100 antialiased flex flex-col relative overflow-hidden select-none">
+      {/* Ambient background glows for Aura aesthetic */}
+      <div className="absolute top-[-10%] left-[20%] w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-[130px] pointer-events-none z-0" />
+      <div className="absolute bottom-[-10%] right-[10%] w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[120px] pointer-events-none z-0" />
+      <div className="absolute top-[30%] right-[25%] w-[350px] h-[350px] bg-[#d97706]/5 rounded-full blur-[100px] pointer-events-none z-0" />
 
-  if (isAdminAuthorized !== true) {
-    return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl border border-stone-200 shadow-xl p-8 max-w-md w-full text-center space-y-6 animate-fadeIn">
-          <div className="h-14 w-14 rounded-full bg-rose-50 flex items-center justify-center mx-auto border border-rose-200">
-            <Lock className="h-6 w-6 text-rose-600 animate-pulse" />
-          </div>
-          <div className="space-y-2">
-            <h2 className="font-serif text-xl font-bold text-stone-900">
-              {lang === 'ko' ? '비공개 관리자 구역' : 'Access Restricted'}
-            </h2>
-            <p className="text-xs text-stone-500 leading-relaxed">
-              {lang === 'ko' 
-                ? '이 페이지는 관리자(role: ADMIN)만 접근할 수 있는 영역입니다. 일반 계정은 접근이 제한됩니다.' 
-                : 'This page is restricted to salon administration (role = ADMIN) sessions only.'}
-            </p>
-          </div>
-          <Link 
-            href="/"
-            className="w-full py-3 bg-stone-950 text-white text-xs font-semibold rounded-lg hover:bg-stone-850 transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-sm active:scale-[0.99]"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>{t.goToHome}</span>
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-stone-50 text-stone-900 antialiased flex flex-col">
       {/* Sticky Header */}
-      <header className="sticky top-0 z-50 bg-white border-b border-stone-200 shadow-sm">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+      <header className="sticky top-0 z-50 bg-[#09090b]/85 backdrop-blur-md border-b border-white/5 shadow-lg">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between z-10 relative">
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 bg-stone-900 flex items-center justify-center rounded-sm">
-              <span className="text-gold-500 font-serif text-lg font-bold italic">G</span>
+            <div className="w-8 h-8 bg-white flex items-center justify-center rounded-sm transition-transform group-hover:scale-105">
+              <span className="text-stone-955 font-serif text-lg font-bold italic">G</span>
             </div>
-            <span className="font-serif text-sm sm:text-base font-bold tracking-tight text-stone-900">THE HAIR GALLERY</span>
+            <span className="font-serif text-sm sm:text-base font-bold tracking-tight text-white group-hover:text-gold-400 transition-colors">THE HAIR GALLERY</span>
           </Link>
 
           <div className="flex items-center gap-4">
             <Link 
               href="/" 
-              className="text-[10px] sm:text-xs font-mono font-bold tracking-wider text-stone-600 hover:text-stone-900 uppercase flex items-center gap-1.5 border border-stone-200 px-3 py-1.5 rounded-lg bg-stone-50 hover:bg-stone-100 transition-colors"
+              className="text-[10px] sm:text-xs font-mono font-bold tracking-wider text-stone-300 hover:text-white uppercase flex items-center gap-1.5 border border-white/5 px-3 py-1.5 rounded-lg bg-stone-900/50 hover:bg-stone-850 transition-all active:scale-[0.98]"
             >
               <LayoutDashboard className="h-3.5 w-3.5" />
               <span>{t.goToHome}</span>
             </Link>
 
             {/* Language Switcher */}
-            <div className="flex items-center gap-1 border border-stone-200 p-0.5 rounded-lg bg-stone-50 text-[10px] font-mono font-bold">
+            <div className="flex items-center gap-1 border border-white/5 p-0.5 rounded-lg bg-stone-900/60 text-[10px] font-mono font-bold">
               <button
                 onClick={() => setLang('ko')}
                 className={`px-2.5 py-1 rounded transition-all cursor-pointer ${
-                  lang === 'ko' ? 'bg-stone-900 text-white shadow-sm' : 'text-stone-400 hover:text-stone-900'
+                  lang === 'ko' 
+                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-[0_0_10px_rgba(109,40,217,0.3)]' 
+                    : 'text-stone-550 hover:text-stone-200'
                 }`}
               >
                 KO
@@ -667,7 +638,9 @@ WITH CHECK (
               <button
                 onClick={() => setLang('en')}
                 className={`px-2.5 py-1 rounded transition-all cursor-pointer ${
-                  lang === 'en' ? 'bg-stone-900 text-white shadow-sm' : 'text-stone-400 hover:text-stone-900'
+                  lang === 'en' 
+                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-[0_0_10px_rgba(109,40,217,0.3)]' 
+                    : 'text-stone-550 hover:text-stone-200'
                 }`}
               >
                 EN
@@ -677,29 +650,29 @@ WITH CHECK (
         </div>
       </header>
 
-      <div className="flex-1 p-6 sm:p-10">
+      <div className="flex-1 p-6 sm:p-10 z-10 relative">
         <div className="max-w-6xl mx-auto space-y-8 animate-fadeIn">
           
           {/* Title Bar */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-stone-200 pb-6 gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-white/5 pb-6 gap-4">
             <div>
-              <span className="text-xs font-mono tracking-widest text-gold-600 font-semibold uppercase block">{t.adminCockpit}</span>
-              <h1 className="font-serif text-3xl font-normal text-stone-900">{t.adminTitle}</h1>
-              <p className="text-xs text-stone-500 mt-1">{t.supabaseConnected}</p>
+              <span className="text-xs font-mono tracking-widest text-gold-500 font-semibold uppercase block">{t.adminCockpit}</span>
+              <h1 className="font-serif text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-white to-stone-400 mt-1">{t.adminTitle}</h1>
+              <p className="text-xs text-stone-400 mt-1 font-mono">{t.supabaseConnected}</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
-              <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-mono font-bold rounded-lg flex items-center gap-1.5 self-start">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-mono font-bold rounded-lg flex items-center gap-1.5 self-start shadow-[0_0_15px_rgba(16,185,129,0.05)]">
+                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
                 {t.liveConnection}
               </span>
               {isUsingLocalStorage ? (
-                <span className="px-3 py-1 bg-amber-50 text-amber-800 border border-amber-200 text-xs font-mono font-bold rounded-lg flex items-center gap-1.5 self-start">
-                  <AlertTriangle className="h-3 w-3 text-amber-600" />
+                <span className="px-3 py-1 bg-amber-500/10 text-amber-300 border border-amber-500/20 text-xs font-mono font-bold rounded-lg flex items-center gap-1.5 self-start">
+                  <AlertTriangle className="h-3 w-3 text-amber-400" />
                   {lang === 'ko' ? '임시 로컬 저장소 모드' : 'Local Storage Mode'}
                 </span>
               ) : (
-                <span className="px-3 py-1 bg-sky-50 text-sky-800 border border-sky-200 text-xs font-mono font-bold rounded-lg flex items-center gap-1.5 self-start">
-                  <Database className="h-3 w-3 text-sky-600" />
+                <span className="px-3 py-1 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 text-xs font-mono font-bold rounded-lg flex items-center gap-1.5 self-start">
+                  <Database className="h-3 w-3 text-indigo-400" />
                   {lang === 'ko' ? 'Supabase 연동 완료' : 'Supabase Connected'}
                 </span>
               )}
@@ -708,12 +681,12 @@ WITH CHECK (
 
           {/* Database Missing Warning Banner */}
           {isUsingLocalStorage && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between text-xs text-amber-900 animate-fadeIn">
+            <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-5 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between text-xs text-amber-200 backdrop-blur-md animate-fadeIn">
               <div className="flex gap-2.5 items-start">
-                <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-bold">{lang === 'ko' ? '작업 기록 테이블 필요' : 'Work Records Table Required'}</h4>
-                  <p className="mt-1 text-amber-800 leading-relaxed">
+                  <h4 className="font-bold font-serif">{lang === 'ko' ? '작업 기록 테이블 필요' : 'Work Records Table Required'}</h4>
+                  <p className="mt-1 text-stone-400 leading-relaxed font-sans font-light">
                     {t.dbErrorWarning}
                   </p>
                 </div>
@@ -723,7 +696,7 @@ WITH CHECK (
                   navigator.clipboard.writeText(sqlCode);
                   alert(lang === 'ko' ? 'SQL 스크립트가 클립보드에 복사되었습니다!' : 'SQL script copied to clipboard!');
                 }}
-                className="shrink-0 text-[10px] font-mono font-bold px-3 py-1.5 bg-amber-800 hover:bg-amber-900 text-white rounded-lg transition-colors cursor-pointer"
+                className="shrink-0 text-[10px] font-mono font-bold px-3.5 py-2 bg-amber-500 text-stone-950 hover:bg-amber-400 rounded-lg transition-colors cursor-pointer active:scale-[0.98]"
               >
                 {lang === 'ko' ? 'SQL 코드 복사' : 'Copy SQL Script'}
               </button>
@@ -731,13 +704,13 @@ WITH CHECK (
           )}
 
           {/* Navigation Tabs */}
-          <div className="bg-stone-200/60 p-1.5 rounded-xl border border-stone-300/40 flex gap-2 overflow-x-auto scrollbar-none shadow-inner max-w-lg">
+          <div className="bg-stone-900/50 p-1.5 rounded-xl border border-white/5 flex gap-2 overflow-x-auto scrollbar-none shadow-xl max-w-lg backdrop-blur-md">
             <button
               onClick={() => setActiveTab('reservations')}
-              className={`flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs font-mono font-bold tracking-wide transition-all cursor-pointer shrink-0 ${
+              className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-xs font-mono font-bold tracking-wide transition-all cursor-pointer shrink-0 ${
                 activeTab === 'reservations'
-                  ? 'bg-stone-950 text-white shadow-md'
-                  : 'text-stone-550 hover:text-stone-900 hover:bg-stone-300/30'
+                  ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-[0_0_15px_rgba(109,40,217,0.25)]'
+                  : 'text-stone-400 hover:text-white hover:bg-white/5'
               }`}
             >
               <Calendar className="h-4 w-4" />
@@ -745,10 +718,10 @@ WITH CHECK (
             </button>
             <button
               onClick={() => setActiveTab('work-records')}
-              className={`flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs font-mono font-bold tracking-wide transition-all cursor-pointer shrink-0 ${
+              className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-xs font-mono font-bold tracking-wide transition-all cursor-pointer shrink-0 ${
                 activeTab === 'work-records'
-                  ? 'bg-stone-950 text-white shadow-md'
-                  : 'text-stone-550 hover:text-stone-900 hover:bg-stone-300/30'
+                  ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-[0_0_15px_rgba(109,40,217,0.25)]'
+                  : 'text-stone-400 hover:text-white hover:bg-white/5'
               }`}
             >
               <FileSpreadsheet className="h-4 w-4" />
@@ -756,10 +729,10 @@ WITH CHECK (
             </button>
             <button
               onClick={() => setActiveTab('sales')}
-              className={`flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs font-mono font-bold tracking-wide transition-all cursor-pointer shrink-0 ${
+              className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-xs font-mono font-bold tracking-wide transition-all cursor-pointer shrink-0 ${
                 activeTab === 'sales'
-                  ? 'bg-stone-950 text-white shadow-md'
-                  : 'text-stone-550 hover:text-stone-900 hover:bg-stone-300/30'
+                  ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-[0_0_15px_rgba(109,40,217,0.25)]'
+                  : 'text-stone-400 hover:text-white hover:bg-white/5'
               }`}
             >
               <TrendingUp className="h-4 w-4" />
@@ -771,28 +744,28 @@ WITH CHECK (
           {activeTab === 'reservations' && (
             <div className="space-y-6 animate-fadeIn">
               {/* Controls & Add Button */}
-              <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center bg-white p-4 rounded-xl border border-stone-200 shadow-sm">
+              <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center bg-stone-900/30 p-4 rounded-xl border border-white/5 backdrop-blur-md shadow-lg">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-550" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                     placeholder={t.searchPlaceholder}
-                    className="w-full pl-9 pr-4 py-2 border border-stone-200 focus:border-stone-900 rounded-lg text-xs outline-none bg-stone-50 transition-colors animate-fadeIn"
+                    className="w-full pl-9 pr-4 py-2 bg-stone-950/60 border border-white/5 focus:border-indigo-500/80 rounded-lg text-xs outline-none text-stone-100 placeholder-stone-500 focus:ring-1 focus:ring-indigo-500/30 transition-all font-sans"
                   />
                 </div>
                 <div className="flex gap-2 shrink-0">
                   <select
                     value={filterStatus}
                     onChange={e => setFilterStatus(e.target.value)}
-                    className="py-2 px-3 border border-stone-200 rounded-lg text-xs bg-white outline-none cursor-pointer text-stone-700 w-32 sm:w-auto"
+                    className="py-2 px-3 bg-stone-950/60 border border-white/5 rounded-lg text-xs text-stone-300 outline-none cursor-pointer focus:border-indigo-500/80 w-32 sm:w-auto"
                   >
-                    <option value="All">{t.allStatuses}</option>
-                    <option value="Pending">{t.statusPending}</option>
-                    <option value="Confirmed">{t.statusConfirmed}</option>
-                    <option value="Completed">{t.statusCompleted}</option>
-                    <option value="Cancelled">{t.statusCancelled}</option>
+                    <option value="All" className="bg-stone-900">{t.allStatuses}</option>
+                    <option value="Pending" className="bg-stone-900">{t.statusPending}</option>
+                    <option value="Confirmed" className="bg-stone-900">{t.statusConfirmed}</option>
+                    <option value="Completed" className="bg-stone-900">{t.statusCompleted}</option>
+                    <option value="Cancelled" className="bg-stone-900">{t.statusCancelled}</option>
                   </select>
                   <button
                     onClick={() => {
@@ -804,7 +777,7 @@ WITH CHECK (
                       setResStatus('Confirmed');
                       setShowResModal(true);
                     }}
-                    className="bg-stone-900 hover:bg-stone-850 text-white text-xs font-mono font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.99] transition-all cursor-pointer whitespace-nowrap"
+                    className="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-mono font-bold py-2.5 px-4 rounded-lg flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(109,40,217,0.3)] active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap"
                   >
                     <Plus className="h-4 w-4" />
                     <span>{t.addReservation}</span>
@@ -813,48 +786,48 @@ WITH CHECK (
               </div>
 
               {/* Reservations List */}
-              <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm">
-                <div className="px-6 py-4 bg-stone-900 text-stone-100 flex justify-between items-center flex-wrap gap-2">
-                  <h2 className="font-serif text-base font-medium text-gold-500">{t.reservationsRoster}</h2>
-                  <span className="text-[10px] font-mono tracking-wider uppercase text-stone-400">
+              <div className="bg-stone-900/20 rounded-2xl border border-white/5 overflow-hidden shadow-xl backdrop-blur-md">
+                <div className="px-6 py-4.5 bg-[#121214] border-b border-white/5 flex justify-between items-center flex-wrap gap-2">
+                  <h2 className="font-serif text-base font-semibold text-gold-400 tracking-wide">{t.reservationsRoster}</h2>
+                  <span className="text-[10px] font-mono tracking-widest uppercase text-stone-400">
                     {t.sortedBy}
                   </span>
                 </div>
 
                 {isLoading ? (
-                  <div className="text-center py-12 text-stone-400 text-xs font-mono">{t.loadingRecords}</div>
+                  <div className="text-center py-16 text-stone-500 text-xs font-mono tracking-wider">{t.loadingRecords}</div>
                 ) : filteredReservations.length === 0 ? (
-                  <div className="text-center py-12 text-stone-400 text-xs font-light">{t.noRecords}</div>
+                  <div className="text-center py-16 text-stone-500 text-xs font-light">{t.noRecords}</div>
                 ) : (
-                  <div className="divide-y divide-stone-100 text-xs">
+                  <div className="divide-y divide-white/5 text-xs">
                     {filteredReservations.map(res => (
-                      <div key={res.id} className="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-stone-50 transition-colors">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-mono text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded">
+                      <div key={res.id} className="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-white/[0.02] transition-all duration-300">
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2.5 flex-wrap">
+                            <span className="font-mono text-[10px] font-bold text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-0.5 rounded">
                               {res.date} @ {res.time}
                             </span>
-                            <h3 className="font-serif text-sm font-semibold text-stone-950">{res.customerName}</h3>
+                            <h3 className="font-serif text-sm font-semibold text-white">{res.customerName}</h3>
                           </div>
-                          <p className="text-[10px] text-stone-500 font-mono flex items-center gap-1">
-                            <Phone className="h-3 w-3 text-stone-400" /> {res.customerPhone}
+                          <p className="text-[10px] text-stone-400 font-mono flex items-center gap-1">
+                            <Phone className="h-3.5 w-3.5 text-stone-500" /> {res.customerPhone}
                           </p>
                         </div>
 
-                        <div className="flex items-center gap-4 flex-wrap w-full sm:w-auto justify-between sm:justify-end">
+                        <div className="flex items-center gap-5 flex-wrap w-full sm:w-auto justify-between sm:justify-end">
                           <div className="text-left sm:text-right">
-                            <p className="font-semibold text-stone-900">{res.serviceName}</p>
-                            <p className="text-[10px] text-stone-400 mt-0.5">
+                            <p className="font-semibold text-stone-200">{res.serviceName}</p>
+                            <p className="text-[10px] text-stone-500 mt-0.5 font-mono">
                               {lang === 'ko' ? '요금: ' : 'Price: '}
                               {res.price > 1000 ? `₩${res.price.toLocaleString()}` : `$${res.price}`}
                             </p>
                           </div>
 
-                          <div className="flex items-center gap-1.5 border-l border-stone-200 pl-4">
+                          <div className="flex items-center gap-2 border-l border-white/5 pl-4.5">
                             {res.status === 'Pending' && (
                               <button
                                 onClick={() => handleUpdateStatus(res.id, 'Confirmed')}
-                                className="p-1.5 bg-sky-50 hover:bg-sky-500 text-sky-700 hover:text-white rounded border border-sky-200 transition-colors cursor-pointer"
+                                className="p-1.5 bg-sky-500/10 hover:bg-sky-600 text-sky-400 hover:text-white rounded border border-sky-500/20 transition-all cursor-pointer"
                                 title={t.confirmReservation}
                               >
                                 <Check className="h-4 w-4" />
@@ -863,7 +836,7 @@ WITH CHECK (
                             {res.status === 'Confirmed' && (
                               <button
                                 onClick={() => handleUpdateStatus(res.id, 'Completed')}
-                                className="p-1.5 bg-emerald-50 hover:bg-emerald-500 text-emerald-700 hover:text-white rounded border border-emerald-200 transition-colors cursor-pointer"
+                                className="p-1.5 bg-emerald-500/10 hover:bg-emerald-600 text-emerald-400 hover:text-white rounded border border-emerald-500/20 transition-all cursor-pointer"
                                 title={t.completeAppointment}
                               >
                                 <Check className="h-4 w-4" />
@@ -872,17 +845,17 @@ WITH CHECK (
                             {res.status !== 'Cancelled' && res.status !== 'Completed' && (
                               <button
                                 onClick={() => handleUpdateStatus(res.id, 'Cancelled')}
-                                className="p-1.5 bg-stone-50 hover:bg-rose-500 text-stone-500 hover:text-white rounded border border-stone-200 hover:border-rose-300 transition-colors cursor-pointer"
+                                className="p-1.5 bg-stone-850 hover:bg-rose-600 text-stone-400 hover:text-white rounded border border-white/5 hover:border-rose-500 transition-all cursor-pointer"
                                 title={t.cancelAppointment}
                               >
                                 <X className="h-4 w-4" />
                               </button>
                             )}
-                            <span className={`text-[10px] font-mono font-bold tracking-wide uppercase px-2 py-1 rounded block ${
-                              res.status === 'Pending' ? 'bg-amber-100 text-amber-800' :
-                              res.status === 'Confirmed' ? 'bg-sky-100 text-sky-800' :
-                              res.status === 'Completed' ? 'bg-emerald-100 text-emerald-800' :
-                              'bg-stone-100 text-stone-700'
+                            <span className={`text-[10px] font-mono font-bold tracking-wide uppercase px-2.5 py-1 rounded border ${
+                              res.status === 'Pending' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                              res.status === 'Confirmed' ? 'bg-sky-500/10 text-sky-400 border-sky-500/20' :
+                              res.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                              'bg-stone-800/80 text-stone-400 border-white/5'
                             }`}>
                               {getStatusText(res.status)}
                             </span>
@@ -902,18 +875,18 @@ WITH CHECK (
               {/* Controls & Add Button */}
               <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-555" />
                   <input
                     type="text"
                     value={searchWorkQuery}
                     onChange={e => setSearchWorkQuery(e.target.value)}
                     placeholder={t.searchWorkPlaceholder}
-                    className="w-full pl-9 pr-4 py-2 border border-stone-200 focus:border-stone-900 rounded-lg text-xs outline-none bg-white transition-colors"
+                    className="w-full pl-9 pr-4 py-2 bg-stone-950/60 border border-white/5 focus:border-indigo-500/80 rounded-lg text-xs outline-none text-stone-100 placeholder-stone-550 focus:ring-1 focus:ring-indigo-500/30 transition-all font-sans"
                   />
                 </div>
                 <button
                   onClick={openAddModal}
-                  className="bg-stone-900 hover:bg-stone-850 text-white text-xs font-mono font-bold py-2.5 px-4 rounded-lg flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.99] transition-all cursor-pointer whitespace-nowrap"
+                  className="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-mono font-bold py-2.5 px-4 rounded-lg flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(109,40,217,0.3)] active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap"
                 >
                   <Plus className="h-4 w-4" />
                   <span>{t.addRecord}</span>
@@ -921,56 +894,56 @@ WITH CHECK (
               </div>
 
               {/* Work Records List */}
-              <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm">
-                <div className="px-6 py-4 bg-stone-900 text-stone-100 flex justify-between items-center">
-                  <h2 className="font-serif text-base font-medium text-gold-500">{t.workRecordsTab}</h2>
-                  <span className="text-[10px] font-mono tracking-wider uppercase text-stone-400">
+              <div className="bg-stone-900/20 rounded-2xl border border-white/5 overflow-hidden shadow-xl backdrop-blur-md">
+                <div className="px-6 py-4.5 bg-[#121214] border-b border-white/5 flex justify-between items-center">
+                  <h2 className="font-serif text-base font-semibold text-gold-400 tracking-wide">{t.workRecordsTab}</h2>
+                  <span className="text-[10px] font-mono tracking-widest uppercase text-stone-400">
                     {lang === 'ko' ? '날짜 오름차순 정렬' : 'Sorted by date (asc)'}
                   </span>
                 </div>
 
                 {isWorkLoading ? (
-                  <div className="text-center py-12 text-stone-400 text-xs font-mono">{t.loadingRecords}</div>
+                  <div className="text-center py-16 text-stone-500 text-xs font-mono tracking-wider">{t.loadingRecords}</div>
                 ) : filteredWorkRecords.length === 0 ? (
-                  <div className="text-center py-12 text-stone-400 text-xs font-light">{t.noWorkRecords}</div>
+                  <div className="text-center py-16 text-stone-500 text-xs font-light">{t.noWorkRecords}</div>
                 ) : (
-                  <div className="divide-y divide-stone-100 text-xs">
+                  <div className="divide-y divide-white/5 text-xs">
                     {filteredWorkRecords.map(rec => (
-                      <div key={rec.id} className="p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:bg-stone-50 transition-colors">
-                        <div className="space-y-1.5 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-mono text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded">
+                      <div key={rec.id} className="p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:bg-white/[0.02] transition-all duration-300">
+                        <div className="space-y-2 flex-1 w-full">
+                          <div className="flex items-center gap-2.5 flex-wrap">
+                            <span className="font-mono text-[10px] font-bold text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-0.5 rounded">
                               {formatDisplayDate(rec.date)}
                             </span>
-                            <h3 className="font-serif text-sm font-semibold text-stone-950">{rec.customer_name}</h3>
+                            <h3 className="font-serif text-sm font-semibold text-white">{rec.customer_name}</h3>
                             <span className="text-[10px] text-stone-400 font-mono">({rec.customer_phone})</span>
                           </div>
-                          <p className="text-xs text-stone-700 leading-relaxed bg-stone-50 p-2.5 rounded-lg border border-stone-100">
+                          <p className="text-xs text-stone-300 leading-relaxed bg-stone-950/60 p-3 rounded-lg border border-white/5">
                             {rec.work_content}
                           </p>
                         </div>
 
-                        <div className="flex items-center justify-between md:justify-end gap-6 w-full md:w-auto shrink-0 border-t md:border-t-0 border-stone-100 pt-3 md:pt-0">
+                        <div className="flex items-center justify-between md:justify-end gap-6 w-full md:w-auto shrink-0 border-t md:border-t-0 border-white/5 pt-3.5 md:pt-0">
                           <div className="text-left md:text-right">
-                            <span className="text-[10px] font-mono text-stone-400 uppercase block tracking-wider">
+                            <span className="text-[10px] font-mono text-stone-500 uppercase block tracking-widest">
                               {lang === 'ko' ? '매출 금액' : 'Revenue'}
                             </span>
-                            <span className="font-serif font-bold text-stone-950 text-base">
+                            <span className="font-serif font-bold text-white text-base">
                               ₩{rec.amount.toLocaleString()}
                             </span>
                           </div>
 
-                          <div className="flex items-center gap-1.5 pl-4 border-l border-stone-200">
+                          <div className="flex items-center gap-1.5 pl-4.5 border-l border-white/5">
                             <button
                               onClick={() => openEditModal(rec)}
-                              className="p-2 text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-colors border border-stone-200 cursor-pointer"
+                              className="p-2 text-stone-300 hover:text-white hover:bg-white/5 rounded-lg border border-white/5 transition-all cursor-pointer"
                               title={t.editRecord}
                             >
                               <Edit className="h-3.5 w-3.5" />
                             </button>
                             <button
                               onClick={() => handleDeleteWorkRecord(rec.id)}
-                              className="p-2 text-rose-600 hover:text-white hover:bg-rose-600 rounded-lg transition-colors border border-rose-200 hover:border-rose-600 cursor-pointer"
+                              className="p-2 text-rose-400 hover:text-white hover:bg-rose-600 rounded-lg border border-rose-500/20 hover:border-rose-500 transition-all cursor-pointer"
                               title={t.deleteRecord}
                             >
                               <Trash2 className="h-3.5 w-3.5" />
@@ -993,92 +966,95 @@ WITH CHECK (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 
                 {/* 1. Daily Card */}
-                <div className="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm flex flex-col justify-between space-y-4">
-                  <div className="space-y-2">
+                <div className="bg-stone-900/30 border border-white/5 rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-5 backdrop-blur-md hover:border-white/10 transition-colors duration-350">
+                  <div className="space-y-3">
                     <div className="flex justify-between items-center">
-                      <span className="text-xs font-mono tracking-wider text-stone-400 font-bold uppercase">{t.dailySales}</span>
-                      <Calendar className="h-4 w-4 text-gold-600" />
+                      <span className="text-xs font-mono tracking-widest text-stone-400 font-bold uppercase">{t.dailySales}</span>
+                      <Calendar className="h-4.5 w-4.5 text-gold-500" />
                     </div>
                     {/* Date Selector */}
                     <input 
                       type="date"
                       value={selectedDailyDate}
                       onChange={e => setSelectedDailyDate(e.target.value)}
-                      className="text-xs py-1 px-2 border border-stone-200 rounded-lg bg-stone-50 outline-none text-stone-700 w-full"
+                      className="text-xs py-1.5 px-3 border border-white/5 rounded-lg bg-stone-955/60 outline-none text-stone-200 w-full focus:border-indigo-500/60"
                     />
                   </div>
                   <div>
-                    <span className="text-[10px] text-stone-400 block font-mono">
+                    <span className="text-[10px] text-stone-550 block font-mono">
                       {formatDisplayDate(selectedDailyDate)} {lang === 'ko' ? '합계' : 'Total'}
                     </span>
-                    <span className="text-2xl font-serif font-bold text-stone-900">
+                    <span className="text-2xl font-serif font-bold text-white">
                       ₩{dailySalesSum.toLocaleString()}
                     </span>
                   </div>
                 </div>
 
                 {/* 2. Monthly Card */}
-                <div className="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm flex flex-col justify-between space-y-4">
-                  <div className="space-y-2">
+                <div className="bg-stone-900/30 border border-white/5 rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-5 backdrop-blur-md hover:border-white/10 transition-colors duration-350">
+                  <div className="space-y-3">
                     <div className="flex justify-between items-center">
-                      <span className="text-xs font-mono tracking-wider text-stone-400 font-bold uppercase">{t.monthlySales}</span>
-                      <TrendingUp className="h-4 w-4 text-emerald-600" />
+                      <span className="text-xs font-mono tracking-widest text-stone-400 font-bold uppercase">{t.monthlySales}</span>
+                      <TrendingUp className="h-4.5 w-4.5 text-indigo-400" />
                     </div>
                     {/* Month Selector */}
                     <div className="grid grid-cols-2 gap-2">
                       <select
                         value={selectedMonthlyYear}
                         onChange={e => setSelectedMonthlyYear(Number(e.target.value))}
-                        className="text-xs py-1 px-2 border border-stone-200 rounded-lg bg-stone-50 outline-none text-stone-700 cursor-pointer"
+                        className="text-xs py-1.5 px-2 bg-stone-950/60 border border-white/5 rounded-lg outline-none text-stone-300 cursor-pointer focus:border-indigo-500/60"
                       >
                         {[2025, 2026, 2027, 2028].map(yr => (
-                          <option key={yr} value={yr}>{yr}년</option>
+                          <option key={yr} value={yr} className="bg-stone-900">{yr}년</option>
                         ))}
                       </select>
                       <select
                         value={selectedMonthlyMonth}
                         onChange={e => setSelectedMonthlyMonth(Number(e.target.value))}
-                        className="text-xs py-1 px-2 border border-stone-200 rounded-lg bg-stone-50 outline-none text-stone-700 cursor-pointer"
+                        className="text-xs py-1.5 px-2 bg-stone-950/60 border border-white/5 rounded-lg outline-none text-stone-300 cursor-pointer focus:border-indigo-500/60"
                       >
                         {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                          <option key={m} value={m}>{m}월</option>
+                          <option key={m} value={m} className="bg-stone-900">{m}월</option>
                         ))}
                       </select>
                     </div>
                   </div>
                   <div>
-                    <span className="text-[10px] text-stone-400 block font-mono">
+                    <span className="text-[10px] text-stone-550 block font-mono">
                       {selectedMonthlyYear}/{selectedMonthlyMonth} {lang === 'ko' ? '합계' : 'Total'}
                     </span>
-                    <span className="text-2xl font-serif font-bold text-emerald-700">
+                    <span className="text-2xl font-serif font-bold text-indigo-300">
                       ₩{monthlySalesSum.toLocaleString()}
                     </span>
                   </div>
                 </div>
 
                 {/* 3. Yearly Card */}
-                <div className="bg-gradient-to-br from-stone-900 to-stone-850 rounded-2xl p-6 shadow-md text-white flex flex-col justify-between space-y-4 border border-stone-950">
-                  <div className="space-y-2">
+                <div className="bg-gradient-to-br from-[#121214] to-[#09090b] rounded-2xl p-6 shadow-xl text-white flex flex-col justify-between space-y-5 border border-gold-500/20 relative overflow-hidden">
+                  <div className="absolute right-[-20px] bottom-[-20px] opacity-5 pointer-events-none">
+                    <DollarSign className="w-32 h-32 text-gold-500" />
+                  </div>
+                  <div className="space-y-3 relative z-10">
                     <div className="flex justify-between items-center">
-                      <span className="text-xs font-mono tracking-wider text-stone-400 font-bold uppercase">{t.yearlySales}</span>
-                      <DollarSign className="h-4 w-4 text-gold-500" />
+                      <span className="text-xs font-mono tracking-widest text-stone-400 font-bold uppercase">{t.yearlySales}</span>
+                      <DollarSign className="h-4.5 w-4.5 text-gold-500" />
                     </div>
                     {/* Year Selector */}
                     <select
                       value={selectedYearlyYear}
                       onChange={e => setSelectedYearlyYear(Number(e.target.value))}
-                      className="text-xs py-1 px-2 border border-stone-750 rounded-lg bg-stone-800 text-white outline-none cursor-pointer w-full"
+                      className="text-xs py-1.5 px-3 border border-white/5 rounded-lg bg-stone-900/80 text-white outline-none cursor-pointer w-full focus:border-gold-500/50"
                     >
                       {[2025, 2026, 2027, 2028].map(yr => (
-                        <option key={yr} value={yr}>{yr}년</option>
+                        <option key={yr} value={yr} className="bg-stone-900">{yr}년</option>
                       ))}
                     </select>
                   </div>
-                  <div>
-                    <span className="text-[10px] text-stone-400 block font-mono">
+                  <div className="relative z-10">
+                    <span className="text-[10px] text-stone-450 block font-mono">
                       {selectedYearlyYear}년 {lang === 'ko' ? '누적 합계' : 'Yearly Cumulative'}
                     </span>
-                    <span className="text-2xl font-serif font-bold text-gold-400">
+                    <span className="text-2xl font-serif font-bold text-gold-400 tracking-wide drop-shadow-[0_0_10px_rgba(245,158,11,0.15)]">
                       ₩{yearlySalesSum.toLocaleString()}
                     </span>
                   </div>
@@ -1090,28 +1066,28 @@ WITH CHECK (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 
                 {/* Selected Day Details */}
-                <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm">
-                  <div className="px-5 py-3.5 bg-stone-100 border-b border-stone-200 flex justify-between items-center">
-                    <h3 className="font-serif text-xs font-bold text-stone-700 flex items-center gap-1.5">
-                      <FileSpreadsheet className="h-3.5 w-3.5 text-stone-500" />
+                <div className="bg-stone-900/20 rounded-2xl border border-white/5 overflow-hidden shadow-xl backdrop-blur-md">
+                  <div className="px-5 py-4 bg-[#121214] border-b border-white/5 flex justify-between items-center">
+                    <h3 className="font-serif text-xs font-bold text-stone-200 flex items-center gap-1.5">
+                      <FileSpreadsheet className="h-3.5 w-3.5 text-stone-400" />
                       <span>{formatDisplayDate(selectedDailyDate)} {lang === 'ko' ? '매출 상세 내역' : 'Daily Transactions'}</span>
                     </h3>
-                    <span className="text-[10px] font-mono font-bold bg-stone-200 text-stone-700 px-2 py-0.5 rounded">
+                    <span className="text-[10px] font-mono font-bold bg-stone-850 text-stone-300 px-2 py-0.5 rounded border border-white/5">
                       {dailySalesRecords.length}건
                     </span>
                   </div>
                   <div className="p-4 max-h-[300px] overflow-y-auto">
                     {dailySalesRecords.length === 0 ? (
-                      <p className="text-center py-8 text-stone-400 text-xs font-light">{lang === 'ko' ? '해당 날짜에 기록된 매출이 없습니다.' : 'No transactions recorded on this day.'}</p>
+                      <p className="text-center py-10 text-stone-500 text-xs font-light">{lang === 'ko' ? '해당 날짜에 기록된 매출이 없습니다.' : 'No transactions recorded on this day.'}</p>
                     ) : (
-                      <div className="divide-y divide-stone-100 text-xs">
+                      <div className="divide-y divide-white/5 text-xs">
                         {dailySalesRecords.map(rec => (
-                          <div key={rec.id} className="py-2.5 flex justify-between items-center">
+                          <div key={rec.id} className="py-3 flex justify-between items-center">
                             <div>
-                              <p className="font-semibold text-stone-900">{rec.customer_name}</p>
+                              <p className="font-semibold text-white">{rec.customer_name}</p>
                               <p className="text-[10px] text-stone-400 max-w-[200px] truncate">{rec.work_content}</p>
                             </div>
-                            <span className="font-mono font-bold text-stone-900">₩{rec.amount.toLocaleString()}</span>
+                            <span className="font-mono font-bold text-stone-200">₩{rec.amount.toLocaleString()}</span>
                           </div>
                         ))}
                       </div>
@@ -1120,33 +1096,33 @@ WITH CHECK (
                 </div>
 
                 {/* Selected Month Details */}
-                <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm">
-                  <div className="px-5 py-3.5 bg-stone-100 border-b border-stone-200 flex justify-between items-center">
-                    <h3 className="font-serif text-xs font-bold text-stone-700 flex items-center gap-1.5">
-                      <FileSpreadsheet className="h-3.5 w-3.5 text-stone-500" />
+                <div className="bg-stone-900/20 rounded-2xl border border-white/5 overflow-hidden shadow-xl backdrop-blur-md">
+                  <div className="px-5 py-4 bg-[#121214] border-b border-white/5 flex justify-between items-center">
+                    <h3 className="font-serif text-xs font-bold text-stone-200 flex items-center gap-1.5">
+                      <FileSpreadsheet className="h-3.5 w-3.5 text-stone-400" />
                       <span>{selectedMonthlyYear}년 {selectedMonthlyMonth}월 {lang === 'ko' ? '매출 상세 내역' : 'Monthly Transactions'}</span>
                     </h3>
-                    <span className="text-[10px] font-mono font-bold bg-stone-200 text-stone-700 px-2 py-0.5 rounded">
+                    <span className="text-[10px] font-mono font-bold bg-stone-850 text-stone-300 px-2 py-0.5 rounded border border-white/5">
                       {monthlySalesRecords.length}건
                     </span>
                   </div>
                   <div className="p-4 max-h-[300px] overflow-y-auto">
                     {monthlySalesRecords.length === 0 ? (
-                      <p className="text-center py-8 text-stone-400 text-xs font-light">{lang === 'ko' ? '해당 월에 기록된 매출이 없습니다.' : 'No transactions recorded in this month.'}</p>
+                      <p className="text-center py-10 text-stone-500 text-xs font-light">{lang === 'ko' ? '해당 월에 기록된 매출이 없습니다.' : 'No transactions recorded in this month.'}</p>
                     ) : (
-                      <div className="divide-y divide-stone-100 text-xs">
+                      <div className="divide-y divide-white/5 text-xs">
                         {monthlySalesRecords.map(rec => (
-                          <div key={rec.id} className="py-2.5 flex justify-between items-center">
+                          <div key={rec.id} className="py-3 flex justify-between items-center">
                             <div>
-                              <div className="flex gap-1.5 items-center">
-                                <span className="font-mono text-[9px] bg-stone-100 border border-stone-200 px-1 py-0.2 rounded text-stone-500">
+                              <div className="flex gap-2 items-center">
+                                <span className="font-mono text-[9px] bg-stone-850 border border-white/5 px-1.5 py-0.2 rounded text-stone-400">
                                   {formatDisplayDate(rec.date)}
                                 </span>
-                                <p className="font-semibold text-stone-900">{rec.customer_name}</p>
+                                <p className="font-semibold text-white">{rec.customer_name}</p>
                               </div>
                               <p className="text-[10px] text-stone-400 max-w-[200px] truncate">{rec.work_content}</p>
                             </div>
-                            <span className="font-mono font-bold text-stone-900">₩{rec.amount.toLocaleString()}</span>
+                            <span className="font-mono font-bold text-stone-200">₩{rec.amount.toLocaleString()}</span>
                           </div>
                         ))}
                       </div>
@@ -1164,32 +1140,32 @@ WITH CHECK (
 
       {/* Add Manual Reservation Modal */}
       {showResModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/40 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white border border-stone-200 rounded-2xl w-full max-w-md shadow-2xl p-6 relative overflow-hidden animate-slideUp">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-stone-900 border border-white/10 rounded-2xl w-full max-w-md shadow-2xl p-6 relative overflow-hidden animate-slideUp">
             <button 
               onClick={() => setShowResModal(false)}
-              className="absolute top-4 right-4 text-stone-400 hover:text-stone-700 cursor-pointer"
+              className="absolute top-4 right-4 text-stone-400 hover:text-white cursor-pointer transition-colors"
             >
               <X className="h-5 w-5" />
             </button>
 
-            <h3 className="font-serif text-lg font-bold text-stone-900 border-b border-stone-100 pb-3 mb-5">
+            <h3 className="font-serif text-lg font-bold text-white border-b border-white/5 pb-3 mb-5">
               {t.addReservation}
             </h3>
 
             <form onSubmit={handleSaveReservation} className="space-y-4 text-xs">
               
               {/* Select Registered Customer */}
-              <div className="space-y-1">
-                <label className="font-bold text-stone-600 block">{t.selectUser}</label>
+              <div className="space-y-1.5">
+                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{t.selectUser}</label>
                 <select
                   value={resSelectedUserId}
                   onChange={e => handleUserSelectChange(e.target.value)}
-                  className="w-full p-2.5 border border-stone-200 rounded-lg outline-none focus:border-stone-900 bg-stone-50 cursor-pointer text-stone-700"
+                  className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-stone-200 cursor-pointer"
                 >
-                  <option value="">{t.manualInput}</option>
+                  <option value="" className="bg-stone-900">{t.manualInput}</option>
                   {registeredUsers.map(user => (
-                    <option key={user.id} value={user.id}>
+                    <option key={user.id} value={user.id} className="bg-stone-900">
                       {user.name} ({user.email})
                     </option>
                   ))}
@@ -1197,8 +1173,8 @@ WITH CHECK (
               </div>
 
               {/* Customer Name */}
-              <div className="space-y-1">
-                <label className="font-bold text-stone-600 block">{t.customerName} *</label>
+              <div className="space-y-1.5">
+                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{t.customerName} *</label>
                 <input 
                   type="text"
                   required
@@ -1206,15 +1182,17 @@ WITH CHECK (
                   onChange={e => setResCustomerName(e.target.value)}
                   placeholder="예: 홍길동"
                   disabled={!!resSelectedUserId}
-                  className={`w-full p-2.5 border border-stone-200 rounded-lg outline-none focus:border-stone-900 ${
-                    resSelectedUserId ? 'bg-stone-100 text-stone-500 cursor-not-allowed' : 'bg-stone-50 text-stone-900'
+                  className={`w-full p-2.5 border rounded-lg outline-none focus:border-indigo-500 ${
+                    resSelectedUserId 
+                      ? 'bg-stone-955/40 border-white/5 text-stone-500 cursor-not-allowed' 
+                      : 'bg-stone-950/80 border-white/5 text-white'
                   }`}
                 />
               </div>
 
               {/* Customer Phone */}
-              <div className="space-y-1">
-                <label className="font-bold text-stone-600 block">{t.customerPhone} *</label>
+              <div className="space-y-1.5">
+                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{t.customerPhone} *</label>
                 <input 
                   type="text"
                   required
@@ -1222,83 +1200,85 @@ WITH CHECK (
                   onChange={e => setResCustomerPhone(e.target.value)}
                   placeholder="예: 010-1234-5678"
                   disabled={!!resSelectedUserId}
-                  className={`w-full p-2.5 border border-stone-200 rounded-lg outline-none focus:border-stone-900 ${
-                    resSelectedUserId ? 'bg-stone-100 text-stone-500 cursor-not-allowed' : 'bg-stone-50 text-stone-900'
+                  className={`w-full p-2.5 border rounded-lg outline-none focus:border-indigo-500 ${
+                    resSelectedUserId 
+                      ? 'bg-stone-955/40 border-white/5 text-stone-555 cursor-not-allowed' 
+                      : 'bg-stone-950/80 border-white/5 text-white'
                   }`}
                 />
               </div>
 
               {/* Hair Service */}
-              <div className="space-y-1">
-                <label className="font-bold text-stone-600 block">{t.service} *</label>
+              <div className="space-y-1.5">
+                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{t.service} *</label>
                 <select
                   required
                   value={resServiceId}
                   onChange={e => handleServiceChange(e.target.value)}
-                  className="w-full p-2.5 border border-stone-200 rounded-lg outline-none focus:border-stone-900 bg-stone-50 cursor-pointer text-stone-700"
+                  className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-stone-200 cursor-pointer"
                 >
-                  <option value="" disabled>{t.selectServicePrompt}</option>
+                  <option value="" disabled className="bg-stone-900">{t.selectServicePrompt}</option>
                   {servicesList.map(svc => (
-                    <option key={svc.id} value={svc.id}>
+                    <option key={svc.id} value={svc.id} className="bg-stone-900">
                       {svc.name} {svc.price !== null && svc.price !== undefined ? `(₩${svc.price.toLocaleString()})` : ""}
                     </option>
                   ))}
                 </select>
               </div>
 
-              {/* Custom Price / Price for reservation */}
-              <div className="space-y-1">
-                <label className="font-bold text-stone-600 block">{lang === 'ko' ? '예약 요금 / 금액' : 'Price / Amount'}</label>
+              {/* Custom Price */}
+              <div className="space-y-1.5">
+                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{lang === 'ko' ? '예약 요금 / 금액' : 'Price / Amount'}</label>
                 <input 
                   type="number"
                   value={resPrice}
                   onChange={e => setResPrice(e.target.value)}
                   placeholder={lang === 'ko' ? "직접 금액 입력 (미입력 가능)" : "Enter custom price (optional)"}
-                  className="w-full p-2.5 border border-stone-200 rounded-lg outline-none focus:border-stone-900 bg-stone-50 text-stone-900 font-mono font-bold"
+                  className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white font-mono font-bold"
                 />
               </div>
 
               {/* Date */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="font-bold text-stone-600 block">{t.date} *</label>
+                <div className="space-y-1.5">
+                  <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{t.date} *</label>
                   <input 
                     type="date"
                     required
                     value={resDate}
                     onChange={e => setResDate(e.target.value)}
-                    className="w-full p-2.5 border border-stone-200 rounded-lg outline-none focus:border-stone-900 bg-stone-50"
+                    className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white"
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <label className="font-bold text-stone-600 block">{t.time} *</label>
+                <div className="space-y-1.5">
+                  <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{t.time} *</label>
                   <select
                     required
                     value={resTime}
                     onChange={e => setResTime(e.target.value)}
-                    className="w-full p-2.5 border border-stone-200 rounded-lg outline-none focus:border-stone-900 bg-stone-50 cursor-pointer text-stone-700"
+                    className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-stone-200 cursor-pointer"
                   >
                     {TIME_SLOTS.map(slot => (
-                      <option key={slot} value={slot}>{slot}</option>
+                      <option key={slot} value={slot} className="bg-stone-900">{slot}</option>
                     ))}
                   </select>
                 </div>
               </div>
 
               {/* Status */}
-              <div className="space-y-1">
-                <label className="font-bold text-stone-600 block">{t.status} *</label>
+              <div className="space-y-1.5">
+                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{t.status} *</label>
                 <select
                   required
                   value={resStatus}
                   onChange={e => setResStatus(e.target.value)}
-                  className="w-full p-2.5 border border-stone-200 rounded-lg outline-none focus:border-stone-900 bg-stone-50 cursor-pointer text-stone-700"
+                  className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-stone-200 cursor-pointer"
                 >
-                  <option value="Pending">{t.statusPending}</option>
-                  <option value="Confirmed">{t.statusConfirmed}</option>
-                  <option value="Completed">{t.statusCompleted}</option>
-                  <option value="Cancelled">{t.statusCancelled}</option>
+                  <option value="Pending" className="bg-stone-900">{t.statusPending}</option>
+                  <option value="Confirmed" className="bg-stone-900">{t.statusConfirmed}</option>
+                  <option value="Completed" className="bg-stone-900">{t.statusCompleted}</option>
+                  <option value="Cancelled" className="bg-stone-900">{t.statusCancelled}</option>
                 </select>
               </div>
 
@@ -1306,13 +1286,13 @@ WITH CHECK (
                 <button
                   type="button"
                   onClick={() => setShowResModal(false)}
-                  className="flex-1 py-2.5 border border-stone-200 hover:bg-stone-50 rounded-lg text-stone-600 font-semibold transition-colors cursor-pointer text-center"
+                  className="flex-1 py-2.5 bg-stone-850 hover:bg-stone-800 border border-white/5 rounded-lg text-stone-300 font-semibold transition-all cursor-pointer text-center active:scale-[0.98]"
                 >
                   {t.cancel}
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 bg-stone-950 hover:bg-stone-850 text-white rounded-lg font-semibold transition-colors cursor-pointer text-center"
+                  className="flex-1 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-lg font-semibold transition-all cursor-pointer text-center active:scale-[0.98] shadow-[0_0_10px_rgba(109,40,217,0.2)]"
                 >
                   {t.save}
                 </button>
@@ -1325,32 +1305,32 @@ WITH CHECK (
 
       {/* Add / Edit Work Record Modal */}
       {showWorkModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/40 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white border border-stone-200 rounded-2xl w-full max-w-md shadow-2xl p-6 relative overflow-hidden animate-slideUp">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-955/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-stone-900 border border-white/10 rounded-2xl w-full max-w-md shadow-2xl p-6 relative overflow-hidden animate-slideUp">
             <button 
               onClick={() => setShowWorkModal(false)}
-              className="absolute top-4 right-4 text-stone-400 hover:text-stone-700 cursor-pointer"
+              className="absolute top-4 right-4 text-stone-400 hover:text-white cursor-pointer transition-colors"
             >
               <X className="h-5 w-5" />
             </button>
 
-            <h3 className="font-serif text-lg font-bold text-stone-900 border-b border-stone-100 pb-3 mb-5">
+            <h3 className="font-serif text-lg font-bold text-white border-b border-white/5 pb-3 mb-5">
               {editingRecord ? t.editRecord : t.addRecord}
             </h3>
 
             <form onSubmit={handleSaveWorkRecord} className="space-y-4 text-xs">
               
               {/* Select Registered Customer */}
-              <div className="space-y-1">
-                <label className="font-bold text-stone-600 block">{t.selectUser}</label>
+              <div className="space-y-1.5">
+                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{t.selectUser}</label>
                 <select
                   value={workSelectedUserId}
                   onChange={e => handleWorkUserSelectChange(e.target.value)}
-                  className="w-full p-2.5 border border-stone-200 rounded-lg outline-none focus:border-stone-900 bg-stone-50 cursor-pointer text-stone-700"
+                  className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-stone-200 cursor-pointer"
                 >
-                  <option value="">{t.manualInput}</option>
+                  <option value="" className="bg-stone-900">{t.manualInput}</option>
                   {registeredUsers.map(user => (
-                    <option key={user.id} value={user.id}>
+                    <option key={user.id} value={user.id} className="bg-stone-900">
                       {user.name} ({user.email || user.phone})
                     </option>
                   ))}
@@ -1358,27 +1338,25 @@ WITH CHECK (
               </div>
 
               {/* Load from Past Records */}
-              <div className="space-y-1">
-                <label className="font-bold text-stone-600 block font-sans">
+              <div className="space-y-1.5">
+                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">
                   {lang === 'ko' ? '지난 기록으로부터 불러오기' : 'Load from Past Records'}
                 </label>
                 <select
                   value={workSelectedPastKey}
                   onChange={e => handleWorkPastUserSelectChange(e.target.value)}
-                  className="w-full p-2.5 border border-stone-200 rounded-lg outline-none focus:border-stone-900 bg-stone-50 cursor-pointer text-stone-700"
+                  className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-stone-200 cursor-pointer"
                 >
-                  <option value="">{t.manualInput}</option>
+                  <option value="" className="bg-stone-900">{t.manualInput}</option>
                   {pastCustomersList.map(cust => (
-                    <option key={cust.key} value={cust.key}>
-                      {cust.name} ({cust.phone})
-                    </option>
+                    <option key={cust.key} value={cust.key} className="bg-[#09090b]">{cust.name} ({cust.phone})</option>
                   ))}
                 </select>
               </div>
 
               {/* Customer Name */}
-              <div className="space-y-1">
-                <label className="font-bold text-stone-600 block">{t.customerName} *</label>
+              <div className="space-y-1.5">
+                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{t.customerName} *</label>
                 <input 
                   type="text"
                   required
@@ -1386,15 +1364,17 @@ WITH CHECK (
                   onChange={e => setWorkCustomerName(e.target.value)}
                   placeholder="예: 홍길동"
                   disabled={!!workSelectedUserId || !!workSelectedPastKey}
-                  className={`w-full p-2.5 border border-stone-200 rounded-lg outline-none focus:border-stone-900 ${
-                    (workSelectedUserId || workSelectedPastKey) ? 'bg-stone-100 text-stone-500 cursor-not-allowed' : 'bg-stone-50 text-stone-900'
+                  className={`w-full p-2.5 border rounded-lg outline-none focus:border-indigo-500 ${
+                    (workSelectedUserId || workSelectedPastKey) 
+                      ? 'bg-stone-955/40 border-white/5 text-stone-550 cursor-not-allowed' 
+                      : 'bg-stone-955/80 border-white/5 text-white'
                   }`}
                 />
               </div>
 
               {/* Customer Phone */}
-              <div className="space-y-1">
-                <label className="font-bold text-stone-600 block">{t.customerPhone} *</label>
+              <div className="space-y-1.5">
+                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{t.customerPhone} *</label>
                 <input 
                   type="text"
                   required
@@ -1402,49 +1382,51 @@ WITH CHECK (
                   onChange={e => setWorkCustomerPhone(e.target.value)}
                   placeholder="예: 010-1234-5678"
                   disabled={!!workSelectedUserId || !!workSelectedPastKey}
-                  className={`w-full p-2.5 border border-stone-200 rounded-lg outline-none focus:border-stone-900 ${
-                    (workSelectedUserId || workSelectedPastKey) ? 'bg-stone-100 text-stone-500 cursor-not-allowed' : 'bg-stone-50 text-stone-900'
+                  className={`w-full p-2.5 border rounded-lg outline-none focus:border-indigo-500 ${
+                    (workSelectedUserId || workSelectedPastKey) 
+                      ? 'bg-stone-955/40 border-white/5 text-stone-550 cursor-not-allowed' 
+                      : 'bg-stone-955/80 border-white/5 text-white'
                   }`}
                 />
               </div>
 
               {/* Date */}
-              <div className="space-y-1">
-                <label className="font-bold text-stone-600 block">{t.date} *</label>
+              <div className="space-y-1.5">
+                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{t.date} *</label>
                 <input 
                   type="date"
                   required
                   value={workDate}
                   onChange={e => setWorkDate(e.target.value)}
-                  className="w-full p-2.5 border border-stone-200 rounded-lg outline-none focus:border-stone-900 bg-stone-50"
+                  className="w-full p-2.5 bg-stone-955/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white"
                 />
               </div>
 
               {/* Work Details */}
-              <div className="space-y-1">
-                <label className="font-bold text-stone-600 block">{t.workContent} *</label>
+              <div className="space-y-1.5">
+                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{t.workContent} *</label>
                 <textarea 
                   required
                   rows={3}
                   value={workContent}
                   onChange={e => setWorkContent(e.target.value)}
                   placeholder="예: 시그니처 컷 + 볼륨 매직 시술 완료"
-                  className="w-full p-2.5 border border-stone-200 rounded-lg outline-none focus:border-stone-900 bg-stone-50 resize-none"
+                  className="w-full p-2.5 bg-stone-955/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white resize-none"
                 />
               </div>
 
               {/* Sales Amount */}
-              <div className="space-y-1">
-                <label className="font-bold text-stone-600 block">{t.salesAmount} *</label>
+              <div className="space-y-1.5">
+                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{t.salesAmount} *</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 font-mono">₩</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 font-mono">₩</span>
                   <input 
                     type="number"
                     required
                     min={0}
                     value={workAmount}
                     onChange={e => setWorkAmount(Number(e.target.value))}
-                    className="w-full pl-7 pr-3 py-2.5 border border-stone-200 rounded-lg outline-none focus:border-stone-900 bg-stone-50 font-mono font-bold"
+                    className="w-full pl-7 pr-3 py-2.5 bg-stone-955/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white font-mono font-bold"
                   />
                 </div>
               </div>
@@ -1453,13 +1435,13 @@ WITH CHECK (
                 <button
                   type="button"
                   onClick={() => setShowWorkModal(false)}
-                  className="flex-1 py-2.5 border border-stone-200 hover:bg-stone-50 rounded-lg text-stone-600 font-semibold transition-colors cursor-pointer text-center"
+                  className="flex-1 py-2.5 bg-stone-850 hover:bg-stone-800 border border-white/5 rounded-lg text-stone-300 font-semibold transition-all cursor-pointer text-center active:scale-[0.98]"
                 >
                   {t.cancel}
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 bg-stone-950 hover:bg-stone-850 text-white rounded-lg font-semibold transition-colors cursor-pointer text-center"
+                  className="flex-1 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-lg font-semibold transition-all cursor-pointer text-center active:scale-[0.98] shadow-[0_0_10px_rgba(109,40,217,0.2)]"
                 >
                   {t.save}
                 </button>
@@ -1472,4 +1454,6 @@ WITH CHECK (
 
     </div>
   );
+}
+
 }
