@@ -93,11 +93,11 @@ export default function Home() {
     if (isProcessingAuth.current) return;
     isProcessingAuth.current = true;
     try {
-      // 1. Query users table
+      // 1. Query users table by unique auth ID (immune to missing emails/OAuth provider quirks)
       const { data: profile, error: queryErr } = await supabase
         .from('users')
         .select('*')
-        .eq('email', authUser.email)
+        .eq('id', authUser.id)
         .maybeSingle();
 
       if (queryErr) throw queryErr;
@@ -131,12 +131,14 @@ export default function Home() {
         if (signupDraftStr) {
           const draft = JSON.parse(signupDraftStr);
           // Insert complete profile with name, phone, and consent
+          // Generate fallback email for providers like Kakao that might not supply it
+          const fallbackEmail = authUser.email || `${authUser.id}@user.oauth`;
           const { data: newProfile, error: insertErr } = await supabase
             .from('users')
             .insert([
               {
                 id: authUser.id,
-                email: authUser.email,
+                email: fallbackEmail,
                 name: draft.name,
                 phone: draft.phone,
                 provider: authUser.app_metadata?.provider || 'google',
