@@ -597,7 +597,48 @@ WITH CHECK (
 );`;
 
   if (checkingAuth) {
-        return (
+    return (
+      <div className="min-h-screen bg-[#09090b] text-stone-100 flex flex-col items-center justify-center font-mono text-xs relative overflow-hidden select-none">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-indigo-600/10 rounded-full blur-[100px] pointer-events-none" />
+        <div className="h-6 w-6 rounded-full border-2 border-indigo-500/20 border-t-indigo-500 animate-spin mb-4" />
+        <span className="text-stone-400 tracking-widest uppercase animate-pulse">
+          {lang === 'ko' ? '보안 인증을 확인하고 있습니다 (role: ADMIN)...' : 'Verifying Security Clearance (role: ADMIN)...'}
+        </span>
+      </div>
+    );
+  }
+
+  if (isAdminAuthorized !== true) {
+    return (
+      <div className="min-h-screen bg-[#09090b] text-stone-100 flex items-center justify-center p-4 relative overflow-hidden select-none">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-rose-600/5 rounded-full blur-[120px] pointer-events-none" />
+        <div className="bg-stone-900/40 backdrop-blur-md border border-white/5 rounded-2xl p-8 max-w-md w-full text-center space-y-6 shadow-2xl relative z-10">
+          <div className="h-14 w-14 rounded-full bg-rose-500/10 flex items-center justify-center mx-auto border border-rose-500/25 shadow-[0_0_15px_rgba(239,68,68,0.1)]">
+            <Lock className="h-6 w-6 text-rose-500 animate-pulse" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="font-serif text-xl font-bold tracking-tight text-white">
+              {lang === 'ko' ? '비공개 관리자 구역' : 'Access Restricted'}
+            </h2>
+            <p className="text-xs text-stone-450 leading-relaxed font-sans font-light">
+              {lang === 'ko' 
+                ? '이 페이지는 관리자(role: ADMIN)만 접근할 수 있는 영역입니다. 일반 계정은 접근이 제한됩니다.' 
+                : 'This page is restricted to salon administration (role = ADMIN) sessions only.'}
+            </p>
+          </div>
+          <Link 
+            href="/"
+            className="w-full py-3 bg-gradient-to-r from-stone-900 to-stone-800 border border-white/5 hover:bg-stone-850 text-stone-200 text-xs font-mono font-bold tracking-wider rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-[0.98]"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>{t.goToHome}</span>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
     <div className="min-h-screen bg-[#09090b] text-stone-100 antialiased flex flex-col relative overflow-hidden select-none">
       {/* Ambient background glows for Aura aesthetic */}
       <div className="absolute top-[-10%] left-[20%] w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-[130px] pointer-events-none z-0" />
@@ -696,7 +737,7 @@ WITH CHECK (
                   navigator.clipboard.writeText(sqlCode);
                   alert(lang === 'ko' ? 'SQL 스크립트가 클립보드에 복사되었습니다!' : 'SQL script copied to clipboard!');
                 }}
-                className="shrink-0 text-[10px] font-mono font-bold px-3.5 py-2 bg-amber-500 text-stone-950 hover:bg-amber-400 rounded-lg transition-colors cursor-pointer active:scale-[0.98]"
+                className="shrink-0 text-[10px] font-mono font-bold px-3.5 py-2 bg-amber-500 text-stone-955 hover:bg-amber-400 rounded-lg transition-colors cursor-pointer active:scale-[0.98]"
               >
                 {lang === 'ko' ? 'SQL 코드 복사' : 'Copy SQL Script'}
               </button>
@@ -827,7 +868,7 @@ WITH CHECK (
                             {res.status === 'Pending' && (
                               <button
                                 onClick={() => handleUpdateStatus(res.id, 'Confirmed')}
-                                className="p-1.5 bg-sky-500/10 hover:bg-sky-600 text-sky-400 hover:text-white rounded border border-sky-500/20 transition-all cursor-pointer"
+                                className="p-1.5 bg-sky-500/10 hover:bg-sky-600 text-sky-450 hover:text-white rounded border border-sky-500/20 transition-all cursor-pointer"
                                 title={t.confirmReservation}
                               >
                                 <Check className="h-4 w-4" />
@@ -845,15 +886,15 @@ WITH CHECK (
                             {res.status !== 'Cancelled' && res.status !== 'Completed' && (
                               <button
                                 onClick={() => handleUpdateStatus(res.id, 'Cancelled')}
-                                className="p-1.5 bg-stone-850 hover:bg-rose-600 text-stone-400 hover:text-white rounded border border-white/5 hover:border-rose-500 transition-all cursor-pointer"
+                                className="p-1.5 bg-stone-855 hover:bg-rose-600 text-stone-450 hover:text-white rounded border border-white/5 hover:border-rose-500 transition-all cursor-pointer"
                                 title={t.cancelAppointment}
                               >
                                 <X className="h-4 w-4" />
                               </button>
                             )}
                             <span className={`text-[10px] font-mono font-bold tracking-wide uppercase px-2.5 py-1 rounded border ${
-                              res.status === 'Pending' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
-                              res.status === 'Confirmed' ? 'bg-sky-500/10 text-sky-400 border-sky-500/20' :
+                              res.status === 'Pending' ? 'bg-amber-500/10 text-amber-450 border-amber-500/20' :
+                              res.status === 'Confirmed' ? 'bg-sky-500/10 text-sky-450 border-sky-500/20' :
                               res.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
                               'bg-stone-800/80 text-stone-400 border-white/5'
                             }`}>
@@ -903,7 +944,7 @@ WITH CHECK (
                 </div>
 
                 {isWorkLoading ? (
-                  <div className="text-center py-16 text-stone-500 text-xs font-mono tracking-wider">{t.loadingRecords}</div>
+                  <div className="text-center py-16 text-stone-550 text-xs font-mono tracking-wider">{t.loadingRecords}</div>
                 ) : filteredWorkRecords.length === 0 ? (
                   <div className="text-center py-16 text-stone-500 text-xs font-light">{t.noWorkRecords}</div>
                 ) : (
@@ -943,7 +984,7 @@ WITH CHECK (
                             </button>
                             <button
                               onClick={() => handleDeleteWorkRecord(rec.id)}
-                              className="p-2 text-rose-400 hover:text-white hover:bg-rose-600 rounded-lg border border-rose-500/20 hover:border-rose-500 transition-all cursor-pointer"
+                              className="p-2 text-rose-450 hover:text-white hover:bg-rose-650 rounded-lg border border-rose-500/20 hover:border-rose-500 transition-all cursor-pointer"
                               title={t.deleteRecord}
                             >
                               <Trash2 className="h-3.5 w-3.5" />
@@ -970,7 +1011,7 @@ WITH CHECK (
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-xs font-mono tracking-widest text-stone-400 font-bold uppercase">{t.dailySales}</span>
-                      <Calendar className="h-4.5 w-4.5 text-gold-500" />
+                      <Calendar className="h-4.5 w-4.5 text-gold-550" />
                     </div>
                     {/* Date Selector */}
                     <input 
@@ -1002,7 +1043,7 @@ WITH CHECK (
                       <select
                         value={selectedMonthlyYear}
                         onChange={e => setSelectedMonthlyYear(Number(e.target.value))}
-                        className="text-xs py-1.5 px-2 bg-stone-950/60 border border-white/5 rounded-lg outline-none text-stone-300 cursor-pointer focus:border-indigo-500/60"
+                        className="text-xs py-1.5 px-2 bg-stone-955/60 border border-white/5 rounded-lg outline-none text-stone-300 cursor-pointer focus:border-indigo-500/60"
                       >
                         {[2025, 2026, 2027, 2028].map(yr => (
                           <option key={yr} value={yr} className="bg-stone-900">{yr}년</option>
@@ -1011,7 +1052,7 @@ WITH CHECK (
                       <select
                         value={selectedMonthlyMonth}
                         onChange={e => setSelectedMonthlyMonth(Number(e.target.value))}
-                        className="text-xs py-1.5 px-2 bg-stone-950/60 border border-white/5 rounded-lg outline-none text-stone-300 cursor-pointer focus:border-indigo-500/60"
+                        className="text-xs py-1.5 px-2 bg-stone-955/60 border border-white/5 rounded-lg outline-none text-stone-300 cursor-pointer focus:border-indigo-500/60"
                       >
                         {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
                           <option key={m} value={m} className="bg-stone-900">{m}월</option>
@@ -1032,12 +1073,12 @@ WITH CHECK (
                 {/* 3. Yearly Card */}
                 <div className="bg-gradient-to-br from-[#121214] to-[#09090b] rounded-2xl p-6 shadow-xl text-white flex flex-col justify-between space-y-5 border border-gold-500/20 relative overflow-hidden">
                   <div className="absolute right-[-20px] bottom-[-20px] opacity-5 pointer-events-none">
-                    <DollarSign className="w-32 h-32 text-gold-500" />
+                    <DollarSign className="w-32 h-32 text-gold-550" />
                   </div>
                   <div className="space-y-3 relative z-10">
                     <div className="flex justify-between items-center">
                       <span className="text-xs font-mono tracking-widest text-stone-400 font-bold uppercase">{t.yearlySales}</span>
-                      <DollarSign className="h-4.5 w-4.5 text-gold-500" />
+                      <DollarSign className="h-4.5 w-4.5 text-gold-550" />
                     </div>
                     {/* Year Selector */}
                     <select
@@ -1184,7 +1225,7 @@ WITH CHECK (
                   disabled={!!resSelectedUserId}
                   className={`w-full p-2.5 border rounded-lg outline-none focus:border-indigo-500 ${
                     resSelectedUserId 
-                      ? 'bg-stone-955/40 border-white/5 text-stone-500 cursor-not-allowed' 
+                      ? 'bg-stone-955/40 border-white/5 text-stone-550 cursor-not-allowed' 
                       : 'bg-stone-950/80 border-white/5 text-white'
                   }`}
                 />
@@ -1247,7 +1288,7 @@ WITH CHECK (
                     required
                     value={resDate}
                     onChange={e => setResDate(e.target.value)}
-                    className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white"
+                    className="w-full p-2.5 bg-stone-955/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white"
                   />
                 </div>
 
@@ -1419,7 +1460,7 @@ WITH CHECK (
               <div className="space-y-1.5">
                 <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{t.salesAmount} *</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 font-mono">₩</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-550 font-mono">₩</span>
                   <input 
                     type="number"
                     required
@@ -1454,6 +1495,4 @@ WITH CHECK (
 
     </div>
   );
-}
-
 }
