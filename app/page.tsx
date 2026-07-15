@@ -481,12 +481,24 @@ export default function Home() {
       {/* Main Content */}
       <main className="flex-1">
         {/* Editorial Hero Block */}
-        <section className="bg-stone-950 text-stone-100 py-16 px-4 text-center border-b border-stone-800 animate-fadeIn">
-          <div className="max-w-4xl mx-auto space-y-4">
-            <span className="text-2xl sm:text-5xl font-mono tracking-[0.25em] text-gold-500 uppercase font-extrabold block mb-4">{t.heroSub}</span>
-            <h1 className="font-serif text-lg sm:text-2xl font-light tracking-tight text-stone-300 leading-tight">
+        <section 
+          className="relative bg-stone-950 text-stone-100 py-24 sm:py-32 px-4 text-center border-b border-stone-800 animate-fadeIn bg-cover bg-center bg-no-repeat overflow-hidden"
+          style={{ backgroundImage: "url('/banner_image.png')" }}
+        >
+          {/* Dark overlay to enhance text readability */}
+          <div className="absolute inset-0 bg-black/60 z-0" />
+          
+          <div className="relative z-10 max-w-4xl mx-auto space-y-5">
+            <span className="text-2xl sm:text-5xl font-mono tracking-[0.25em] text-gold-500 uppercase font-extrabold block drop-shadow-md">
+              {t.heroSub}
+            </span>
+            <div className="h-[1px] w-16 bg-gold-500/50 mx-auto" />
+            <h1 className="font-serif text-lg sm:text-3xl font-normal tracking-tight text-white leading-tight drop-shadow-lg">
               {t.heroTitle}
             </h1>
+            <p className="max-w-xl mx-auto text-xs sm:text-sm text-stone-300 font-light leading-relaxed drop-shadow-md pt-1">
+              {t.heroDesc}
+            </p>
           </div>
         </section>
 
