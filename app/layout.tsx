@@ -13,9 +13,25 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="scroll-smooth">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                var userAgent = navigator.userAgent.toLowerCase();
+                if (userAgent.indexOf('kakaotalk') !== -1 && userAgent.indexOf('android') !== -1) {
+                  var targetUrl = window.location.href;
+                  window.location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(targetUrl);
+                }
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className="bg-stone-50 text-stone-900 antialiased min-h-screen flex flex-col">
         {children}
       </body>
     </html>
   );
 }
+

@@ -110,7 +110,7 @@ export default function Home() {
                 email: authUser.email,
                 name: draft.name,
                 phone: draft.phone,
-                provider: 'google',
+                provider: authUser.app_metadata?.provider || 'google',
                 role: 'USER',
                 is_admin: false,
                 consent_given: true,
@@ -127,7 +127,7 @@ export default function Home() {
           setCustomerPhone(newProfile.phone || '');
           localStorage.removeItem('tg_signup_draft');
         } else {
-          // 3. Google Login clicked directly without signup draft (Auto-create profile)
+          // 3. Login clicked directly without signup draft (Auto-create profile)
           const { data: defaultProfile, error: defaultErr } = await supabase
             .from('users')
             .insert([
@@ -136,7 +136,7 @@ export default function Home() {
                 email: authUser.email,
                 name: authUser.user_metadata.full_name || authUser.email.split('@')[0],
                 phone: '',
-                provider: 'google',
+                provider: authUser.app_metadata?.provider || 'google',
                 role: 'USER',
                 is_admin: false,
                 consent_given: true,
@@ -255,9 +255,25 @@ export default function Home() {
     }
   };
 
+  // Kakao OAuth Login
+  const handleKakaoLogin = async () => {
+    setIsAuthLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'kakao',
+        options: {
+          redirectTo: window.location.origin
+        }
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      alert(err.message || 'Failed to initialize Kakao Login.');
+      setIsAuthLoading(false);
+    }
+  };
+
   // Google OAuth Sign Up (with custom metadata pre-stored in local storage)
-  const handleGoogleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGoogleSignUp = async () => {
     if (!authConsent) {
       alert(lang === 'ko' ? '개인정보 활용 동의에 체크해 주세요.' : 'Please consent to the privacy policy.');
       return;
@@ -284,6 +300,38 @@ export default function Home() {
       if (error) throw error;
     } catch (err: any) {
       alert(err.message || 'Failed to initialize Google Sign Up.');
+      setIsAuthLoading(false);
+    }
+  };
+
+  // Kakao OAuth Sign Up
+  const handleKakaoSignUp = async () => {
+    if (!authConsent) {
+      alert(lang === 'ko' ? '개인정보 활용 동의에 체크해 주세요.' : 'Please consent to the privacy policy.');
+      return;
+    }
+    if (!authName || !authPhone) {
+      alert(lang === 'ko' ? '이름과 연락처를 입력해 주세요.' : 'Please provide your name and phone number.');
+      return;
+    }
+
+    setIsAuthLoading(true);
+    try {
+      // Save details to draft store in localStorage
+      localStorage.setItem('tg_signup_draft', JSON.stringify({
+        name: authName,
+        phone: authPhone
+      }));
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'kakao',
+        options: {
+          redirectTo: window.location.origin
+        }
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      alert(err.message || 'Failed to initialize Kakao Sign Up.');
       setIsAuthLoading(false);
     }
   };
@@ -786,25 +834,33 @@ export default function Home() {
             {/* Tab Body */}
             <div className="p-6">
               {authMode === 'login' ? (
-                // Google Login tab
-                <div className="space-y-6 text-center">
-                  <p className="text-xs text-stone-500 leading-relaxed">
+                // Social Login tab
+                <div className="space-y-4 text-center">
+                  <p className="text-xs text-stone-500 leading-relaxed mb-2">
                     {lang === 'ko' 
-                      ? '기존 구글 연동 계정으로 바로 로그인하고 예약을 간편하게 관리하세요.' 
-                      : 'Log in with your existing Google account to manage reservations.'}
+                      ? '기존 연동 계정으로 바로 로그인하고 예약을 간편하게 관리하세요.' 
+                      : 'Log in with your existing social account to manage reservations.'}
                   </p>
                   <button
                     onClick={handleGoogleLogin}
                     disabled={isAuthLoading}
-                    className="w-full py-3.5 border border-stone-300 hover:bg-stone-50 text-stone-900 text-xs font-semibold rounded-lg shadow-sm transition-all flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99]"
+                    className="w-full py-3.5 border border-stone-300 hover:bg-stone-50 text-stone-900 text-xs font-semibold rounded-lg shadow-sm transition-all flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99] disabled:opacity-50"
                   >
                     <GoogleLogo />
                     <span>{lang === 'ko' ? '구글 계정으로 로그인' : 'Log in with Google'}</span>
                   </button>
+                  <button
+                    onClick={handleKakaoLogin}
+                    disabled={isAuthLoading}
+                    className="w-full py-3.5 bg-[#FEE500] hover:bg-[#FEE500]/90 text-[#191919] text-xs font-semibold rounded-lg shadow-sm transition-all flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99] disabled:opacity-50"
+                  >
+                    <KakaoLogo />
+                    <span>{lang === 'ko' ? '카카오 계정으로 로그인' : 'Log in with Kakao'}</span>
+                  </button>
                 </div>
               ) : (
-                // Google Sign Up tab (Consent Checkbox required here ONLY)
-                <form onSubmit={handleGoogleSignUp} className="space-y-4">
+                // Social Sign Up tab (Consent Checkbox required here ONLY)
+                <div className="space-y-4">
                   <div className="space-y-1.5 text-left">
                     <label className="text-[10px] uppercase font-mono text-stone-400 block">{lang === 'ko' ? '고객 성함 *' : 'Full Name *'}</label>
                     <input 
@@ -853,19 +909,36 @@ export default function Home() {
                     </details>
                   </div>
 
-                  <button
-                    type="submit"
-                    disabled={!authConsent || isAuthLoading}
-                    className={`w-full py-3.5 text-xs font-semibold rounded-lg shadow-md transition-colors flex items-center justify-center gap-2.5 ${
-                      authConsent && !isAuthLoading
-                        ? 'bg-stone-950 text-stone-100 hover:bg-stone-850 cursor-pointer'
-                        : 'bg-stone-200 text-stone-400 cursor-not-allowed'
-                    }`}
-                  >
-                    <span className="bg-white p-0.5 rounded-sm shrink-0"><GoogleLogo /></span>
-                    <span>{isAuthLoading ? (lang === 'ko' ? '로딩중...' : 'Authenticating...') : (lang === 'ko' ? '구글 계정으로 회원가입 완료' : 'Complete Sign Up with Google')}</span>
-                  </button>
-                </form>
+                  <div className="flex flex-col gap-2 pt-2">
+                    <button
+                      type="button"
+                      disabled={!authConsent || isAuthLoading}
+                      onClick={handleGoogleSignUp}
+                      className={`w-full py-3.5 text-xs font-semibold rounded-lg shadow-md transition-all flex items-center justify-center gap-2.5 ${
+                        authConsent && !isAuthLoading
+                          ? 'bg-stone-950 text-stone-100 hover:bg-stone-850 cursor-pointer active:scale-[0.99]'
+                          : 'bg-stone-200 text-stone-400 cursor-not-allowed'
+                      }`}
+                    >
+                      <span className="bg-white p-0.5 rounded-sm shrink-0"><GoogleLogo /></span>
+                      <span>{isAuthLoading ? (lang === 'ko' ? '로딩중...' : 'Authenticating...') : (lang === 'ko' ? '구글 계정으로 회원가입 완료' : 'Complete Sign Up with Google')}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={!authConsent || isAuthLoading}
+                      onClick={handleKakaoSignUp}
+                      className={`w-full py-3.5 text-xs font-semibold rounded-lg shadow-md transition-all flex items-center justify-center gap-2.5 ${
+                        authConsent && !isAuthLoading
+                          ? 'bg-[#FEE500] text-[#191919] hover:bg-[#FEE500]/90 cursor-pointer active:scale-[0.99]'
+                          : 'bg-stone-200 text-stone-400 cursor-not-allowed'
+                      }`}
+                    >
+                      <span className="shrink-0"><KakaoLogo /></span>
+                      <span>{isAuthLoading ? (lang === 'ko' ? '로딩중...' : 'Authenticating...') : (lang === 'ko' ? '카카오 계정으로 회원가입 완료' : 'Complete Sign Up with Kakao')}</span>
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           </div>
@@ -892,6 +965,14 @@ function GoogleLogo() {
       <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
       <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
       <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
+    </svg>
+  );
+}
+
+function KakaoLogo() {
+  return (
+    <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 3c-5.52 0-10 3.48-10 7.78 0 2.76 1.83 5.17 4.59 6.55-.18.66-.66 2.4-0.76 2.79-.13.51.18.5.38.37.16-.11 2.59-1.76 3.65-2.48.69.09 1.4.15 2.14.15 5.52 0 10-3.48 10-7.78S17.52 3 12 3z"/>
     </svg>
   );
 }
