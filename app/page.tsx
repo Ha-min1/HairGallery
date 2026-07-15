@@ -428,6 +428,15 @@ export default function Home() {
               </Link>
             )}
 
+            {/* Show MyPage/Client Dashboard Link */}
+            <Link 
+              href="/mypage" 
+              className="text-[10px] sm:text-xs font-mono font-bold tracking-wider text-stone-700 hover:text-stone-950 flex items-center gap-1 border border-stone-200 hover:border-stone-300 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer bg-white"
+            >
+              <History className="h-3.5 w-3.5 text-stone-600" />
+              <span>{t.clientDashboard}</span>
+            </Link>
+
             {/* Simulated Auth Menu */}
             {currentUser ? (
               <div className="flex items-center gap-2">
