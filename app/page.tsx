@@ -40,6 +40,7 @@ export default function Home() {
   const [authPhone, setAuthPhone] = useState<string>('');
   const [authConsent, setAuthConsent] = useState<boolean>(false);
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(false);
+  const [isWithdrawing, setIsWithdrawing] = useState<boolean>(false);
 
   const supabase = getSupabaseClient();
 
@@ -90,6 +91,16 @@ export default function Home() {
       if (queryErr) throw queryErr;
 
       if (profile) {
+        // Check if user is fully registered (has phone and consent, or is admin)
+        if (!profile.is_admin && (!profile.phone || !profile.consent_given)) {
+          alert(lang === 'ko' ? '등록된 회원 정보가 없습니다. 회원가입을 먼저 진행해 주세요.' : 'No registered member information found. Please sign up first.');
+          await supabase.auth.signOut();
+          setCurrentUser(null);
+          setCustomerName('');
+          setCustomerPhone('');
+          setIsAuthLoading(false);
+          return;
+        }
         // Log in directly
         setCurrentUser(profile);
         setCustomerName(profile.name || '');
@@ -127,30 +138,13 @@ export default function Home() {
           setCustomerPhone(newProfile.phone || '');
           localStorage.removeItem('tg_signup_draft');
         } else {
-          // 3. Login clicked directly without signup draft (Auto-create profile)
-          const { data: defaultProfile, error: defaultErr } = await supabase
-            .from('users')
-            .insert([
-              {
-                id: authUser.id,
-                email: authUser.email,
-                name: authUser.user_metadata.full_name || authUser.email.split('@')[0],
-                phone: '',
-                provider: authUser.app_metadata?.provider || 'google',
-                role: 'USER',
-                is_admin: false,
-                consent_given: true,
-                consent_timestamp: consentTime
-              }
-            ])
-            .select()
-            .single();
-
-          if (defaultErr) throw defaultErr;
-
-          setCurrentUser(defaultProfile);
-          setCustomerName(defaultProfile.name || '');
-          setCustomerPhone(defaultProfile.phone || '');
+          // 3. Login clicked directly without signup draft (Not registered)
+          alert(lang === 'ko' ? '등록된 회원 정보가 없습니다. 회원가입을 먼저 진행해 주세요.' : 'No registered member information found. Please sign up first.');
+          await supabase.auth.signOut();
+          setCurrentUser(null);
+          setCustomerName('');
+          setCustomerPhone('');
+          setIsAuthLoading(false);
         }
       }
     } catch (err: any) {
@@ -341,6 +335,50 @@ export default function Home() {
     setCurrentUser(null);
     setCustomerName('');
     setCustomerPhone('');
+  };
+
+  const handleWithdrawMembership = async () => {
+    if (!currentUser) return;
+    
+    const confirmMsg = lang === 'ko'
+      ? '정말로 회원 탈퇴를 진행하시겠습니까?\n이름과 연락처를 포함한 회원 정보가 즉시 영구 삭제되며, 예약 정보와의 연결이 끊어집니다. 이 작업은 취소할 수 없습니다.'
+      : 'Are you sure you want to withdraw your membership?\nYour personal details (name, phone) will be immediately and permanently deleted. This action cannot be undone.';
+      
+    if (!confirm(confirmMsg)) return;
+    
+    setIsWithdrawing(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      
+      if (!token) {
+        throw new Error(lang === 'ko' ? '로그인 세션 만료. 다시 로그인해 주세요.' : 'Session expired. Please log in again.');
+      }
+      
+      const res = await fetch('/api/users', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Failed to delete account.');
+      }
+      
+      alert(lang === 'ko' ? '회원 탈퇴 및 개인정보 삭제가 완료되었습니다.' : 'Membership withdrawal and personal data deletion completed.');
+      
+      await supabase.auth.signOut();
+      setCurrentUser(null);
+      setCustomerName('');
+      setCustomerPhone('');
+      
+    } catch (err: any) {
+      alert(err.message || (lang === 'ko' ? '계정 삭제 중 오류가 발생했습니다.' : 'Failed to delete account.'));
+    } finally {
+      setIsWithdrawing(false);
+    }
   };
 
   const handleBookingSubmit = async (e: React.FormEvent) => {
@@ -728,7 +766,7 @@ export default function Home() {
                 </h3>
                 
                 {currentUser ? (
-                  <div className="space-y-3 font-mono text-[11px]">
+                  <div className="space-y-4 font-mono text-[11px]">
                     <div className="flex gap-3 items-start relative pb-2">
                       <div className="h-full w-0.5 bg-stone-200 absolute left-2.5 top-3.5 z-0"></div>
                       <div className="h-5 w-5 rounded-full bg-emerald-50 border-2 border-emerald-500 flex items-center justify-center shrink-0 z-10">
@@ -743,6 +781,24 @@ export default function Home() {
                           🛡️ Provider: {currentUser.provider === 'google' ? 'Google OAuth' : 'Credentials'} (ID: {currentUser.id.substring(0, 8)}...)
                         </div>
                       </div>
+                    </div>
+
+                    {/* Account Withdrawal / Data Deletion Widget */}
+                    <div className="pt-3 border-t border-stone-100 flex flex-col gap-2">
+                      <button
+                        onClick={handleWithdrawMembership}
+                        disabled={isWithdrawing}
+                        className="w-full text-center py-2 px-3 text-xs font-semibold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100/80 rounded-lg transition duration-200 disabled:opacity-50"
+                      >
+                        {isWithdrawing 
+                          ? (lang === 'ko' ? '탈퇴 처리 중...' : 'Processing...') 
+                          : (lang === 'ko' ? '내 정보 및 계정 삭제 (회원 탈퇴)' : 'Delete My Data & Account (Withdrawal)')}
+                      </button>
+                      <p className="text-[10px] text-stone-400 font-sans font-light leading-relaxed">
+                        {lang === 'ko' 
+                          ? '※ 정보 삭제 시 이름과 연락처는 즉시 파기되며, 예약 내역은 비식별화(무기명) 처리되어 안전하게 지워집니다.' 
+                          : '※ Upon deletion, your name and phone number are immediately destroyed, and reservation history is unlinked (anonymized) safely.'}
+                      </p>
                     </div>
                   </div>
                 ) : (
