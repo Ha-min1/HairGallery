@@ -1,9 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseClient } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 
 export const runtime = 'edge';
 
-// 1. GET: Fetch existing active reservations for slot validation
+// Helper to get admin Supabase client to bypass strict RLS for server-side proxy
+function getAdminSupabase() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Missing environment variables for admin Supabase client');
+  }
+  return createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { persistSession: false }
+  });
+}
+
+// 1. GET: Fetch existing active reservations for slot validation (Proxy via Admin client to avoid RLS leak)
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -13,10 +25,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Date query param is required' }, { status: 400 });
     }
 
-    const supabase: any = getSupabaseClient();
+    const adminClient = getAdminSupabase();
 
     // Query active (non-cancelled) reservations for the selected date
-    const { data, error } = await supabase
+    const { data, error } = await adminClient
       .from('reservations')
       .select('time, status')
       .eq('date', date)
@@ -45,10 +57,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required reservation fields' }, { status: 400 });
     }
 
-    const supabase: any = getSupabaseClient();
+    const adminClient = getAdminSupabase();
 
-    // A. Client-side/Pre-insert check for double booking (User-friendly message before DB error)
-    const { data: duplicateCheck, error: checkError } = await supabase
+    // A. Pre-insert check for double booking
+    const { data: duplicateCheck, error: checkError } = await adminClient
       .from('reservations')
       .select('id')
       .eq('date', date)
@@ -67,9 +79,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // B. Insert reservation. The database-level partial unique index (idx_reservations_prevent_double_booking)
-    // guarantees that even in case of a race condition, two concurrent insertions for the same slot cannot succeed.
-    const { data, error } = await supabase
+    // B. Insert reservation. Database partial unique index handles concurrency.
+    const { data, error } = await adminClient
       .from('reservations')
       .insert([
         {

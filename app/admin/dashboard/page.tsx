@@ -134,7 +134,12 @@ export default function AdminDashboard() {
   const loadReservations = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/admin/reservations'); // Secured dashboard route
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      
+      const response = await fetch('/api/admin/reservations', {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      }); // Secured dashboard route
       if (response.ok) {
         const data = await response.json();
         setReservations(data.reservations || []);
@@ -328,9 +333,15 @@ export default function AdminDashboard() {
 
   const handleUpdateStatus = async (id: string, newStatus: 'Confirmed' | 'Completed' | 'Cancelled') => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
       const response = await fetch(`/api/admin/reservations/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({ status: newStatus }),
       });
 

@@ -1,0 +1,2 @@
+# Ignore SQL query files to prevent credential/schema leaks in git history
+*.sql
