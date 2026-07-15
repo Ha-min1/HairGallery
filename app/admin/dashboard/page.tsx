@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { 
   Search, 
@@ -62,6 +62,7 @@ export default function AdminDashboard() {
   const [showWorkModal, setShowWorkModal] = useState<boolean>(false);
   const [editingRecord, setEditingRecord] = useState<any | null>(null);
   const [workSelectedUserId, setWorkSelectedUserId] = useState<string>('');
+  const [workSelectedPastKey, setWorkSelectedPastKey] = useState<string>('');
   const [workCustomerName, setWorkCustomerName] = useState<string>('');
   const [workCustomerPhone, setWorkCustomerPhone] = useState<string>('');
   const [workContent, setWorkContent] = useState<string>('');
@@ -364,6 +365,7 @@ export default function AdminDashboard() {
   const openAddModal = () => {
     setEditingRecord(null);
     setWorkSelectedUserId('');
+    setWorkSelectedPastKey('');
     setWorkCustomerName('');
     setWorkCustomerPhone('');
     setWorkContent('');
@@ -376,6 +378,8 @@ export default function AdminDashboard() {
     setEditingRecord(record);
     const matchedUser = registeredUsers.find(u => u.name === record.customer_name && u.phone === record.customer_phone);
     setWorkSelectedUserId(matchedUser ? matchedUser.id : '');
+    const pastKey = `${record.customer_name}|||${record.customer_phone}`;
+    setWorkSelectedPastKey(!matchedUser ? pastKey : '');
     setWorkCustomerName(record.customer_name);
     setWorkCustomerPhone(record.customer_phone);
     setWorkContent(record.work_content);
@@ -386,6 +390,7 @@ export default function AdminDashboard() {
 
   const handleWorkUserSelectChange = (userId: string) => {
     setWorkSelectedUserId(userId);
+    setWorkSelectedPastKey(''); // Clear past customer selection
     if (!userId) {
       setWorkCustomerName('');
       setWorkCustomerPhone('');
@@ -397,6 +402,34 @@ export default function AdminDashboard() {
       }
     }
   };
+
+  const handleWorkPastUserSelectChange = (key: string) => {
+    setWorkSelectedPastKey(key);
+    setWorkSelectedUserId(''); // Clear registered user
+    if (!key) {
+      setWorkCustomerName('');
+      setWorkCustomerPhone('');
+    } else {
+      const [name, phone] = key.split('|||');
+      setWorkCustomerName(name || '');
+      setWorkCustomerPhone(phone || '');
+    }
+  };
+
+  const pastCustomersList = useMemo(() => {
+    const seen = new Set<string>();
+    const list: { name: string; phone: string; key: string }[] = [];
+    workRecords.forEach(r => {
+      const name = r.customer_name || '';
+      const phone = r.customer_phone || '';
+      const key = `${name}|||${phone}`;
+      if (name && phone && !seen.has(key)) {
+        seen.add(key);
+        list.push({ name, phone, key });
+      }
+    });
+    return list.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+  }, [workRecords]);
 
   const handleSaveWorkRecord = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1324,6 +1357,25 @@ WITH CHECK (
                 </select>
               </div>
 
+              {/* Load from Past Records */}
+              <div className="space-y-1">
+                <label className="font-bold text-stone-600 block font-sans">
+                  {lang === 'ko' ? '지난 기록으로부터 불러오기' : 'Load from Past Records'}
+                </label>
+                <select
+                  value={workSelectedPastKey}
+                  onChange={e => handleWorkPastUserSelectChange(e.target.value)}
+                  className="w-full p-2.5 border border-stone-200 rounded-lg outline-none focus:border-stone-900 bg-stone-50 cursor-pointer text-stone-700"
+                >
+                  <option value="">{t.manualInput}</option>
+                  {pastCustomersList.map(cust => (
+                    <option key={cust.key} value={cust.key}>
+                      {cust.name} ({cust.phone})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {/* Customer Name */}
               <div className="space-y-1">
                 <label className="font-bold text-stone-600 block">{t.customerName} *</label>
@@ -1333,9 +1385,9 @@ WITH CHECK (
                   value={workCustomerName}
                   onChange={e => setWorkCustomerName(e.target.value)}
                   placeholder="예: 홍길동"
-                  disabled={!!workSelectedUserId}
+                  disabled={!!workSelectedUserId || !!workSelectedPastKey}
                   className={`w-full p-2.5 border border-stone-200 rounded-lg outline-none focus:border-stone-900 ${
-                    workSelectedUserId ? 'bg-stone-100 text-stone-500 cursor-not-allowed' : 'bg-stone-50 text-stone-900'
+                    (workSelectedUserId || workSelectedPastKey) ? 'bg-stone-100 text-stone-500 cursor-not-allowed' : 'bg-stone-50 text-stone-900'
                   }`}
                 />
               </div>
@@ -1349,9 +1401,9 @@ WITH CHECK (
                   value={workCustomerPhone}
                   onChange={e => setWorkCustomerPhone(e.target.value)}
                   placeholder="예: 010-1234-5678"
-                  disabled={!!workSelectedUserId}
+                  disabled={!!workSelectedUserId || !!workSelectedPastKey}
                   className={`w-full p-2.5 border border-stone-200 rounded-lg outline-none focus:border-stone-900 ${
-                    workSelectedUserId ? 'bg-stone-100 text-stone-500 cursor-not-allowed' : 'bg-stone-50 text-stone-900'
+                    (workSelectedUserId || workSelectedPastKey) ? 'bg-stone-100 text-stone-500 cursor-not-allowed' : 'bg-stone-50 text-stone-900'
                   }`}
                 />
               </div>
