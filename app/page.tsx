@@ -30,17 +30,19 @@ export default function Home() {
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [isLoadingSlots, setIsLoadingSlots] = useState<boolean>(false);
 
-  // Auth & Consent states
+  // Auth & Onboarding states
   const [currentUser, setCurrentUser] = useState<any | null>(null);
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
-  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login'); // Separated Tabs
-  
-  // Sign Up form states
-  const [authName, setAuthName] = useState<string>('');
-  const [authPhone, setAuthPhone] = useState<string>('');
-  const [authConsent, setAuthConsent] = useState<boolean>(false);
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(false);
   const [isWithdrawing, setIsWithdrawing] = useState<boolean>(false);
+
+  // Onboarding modal states (For collecting Name & Phone on first login)
+  const [showOnboardingModal, setShowOnboardingModal] = useState<boolean>(false);
+  const [pendingAuthUser, setPendingAuthUser] = useState<any | null>(null);
+  const [onboardingName, setOnboardingName] = useState<string>('');
+  const [onboardingPhone, setOnboardingPhone] = useState<string>('');
+  const [onboardingConsent, setOnboardingConsent] = useState<boolean>(false);
+  const [isOnboardingLoading, setIsOnboardingLoading] = useState<boolean>(false);
 
   // Guards to prevent duplicate alerts and concurrent race conditions
   const alertShownRef = useRef<boolean>(false);
@@ -105,17 +107,14 @@ export default function Home() {
       if (profile) {
         // Check if user is fully registered (has phone and consent, or is admin)
         if (!profile.is_admin && (!profile.phone || !profile.consent_given)) {
-          if (!alertShownRef.current) {
-            alertShownRef.current = true;
-            alert(lang === 'ko' ? '등록된 회원 정보가 없습니다. 회원가입을 먼저 진행해 주세요.' : 'No registered member information found. Please sign up first.');
-            setTimeout(() => { alertShownRef.current = false; }, 2000);
-          }
-          await supabase.auth.signOut();
-          currentUserIdRef.current = null;
-          setCurrentUser(null);
-          setCustomerName('');
-          setCustomerPhone('');
+          // Incomplete profile: Open onboarding modal to complete registration instead of signing out
+          setPendingAuthUser(authUser);
+          setOnboardingName(profile.name || authUser.user_metadata?.full_name || '');
+          setOnboardingPhone(profile.phone || '');
+          setOnboardingConsent(profile.consent_given || false);
+          setShowOnboardingModal(true);
           setIsAuthLoading(false);
+          setShowAuthModal(false);
           return;
         }
         // Log in directly
@@ -124,54 +123,14 @@ export default function Home() {
         setCustomerName(profile.name || '');
         setCustomerPhone(profile.phone || '');
       } else {
-        // 2. Profile not found - Check for pending signup draft in localStorage
-        const signupDraftStr = localStorage.getItem('tg_signup_draft');
-        const consentTime = new Date().toISOString();
-
-        if (signupDraftStr) {
-          const draft = JSON.parse(signupDraftStr);
-          // Insert complete profile with name, phone, and consent
-          // Generate fallback email for providers like Kakao that might not supply it
-          const fallbackEmail = authUser.email || `${authUser.id}@user.oauth`;
-          const { data: newProfile, error: insertErr } = await supabase
-            .from('users')
-            .insert([
-              {
-                id: authUser.id,
-                email: fallbackEmail,
-                name: draft.name,
-                phone: draft.phone,
-                provider: authUser.app_metadata?.provider || 'google',
-                role: 'USER',
-                is_admin: false,
-                consent_given: true,
-                consent_timestamp: consentTime
-              }
-            ])
-            .select()
-            .single();
-
-          if (insertErr) throw insertErr;
-          
-          currentUserIdRef.current = newProfile.id;
-          setCurrentUser(newProfile);
-          setCustomerName(newProfile.name || '');
-          setCustomerPhone(newProfile.phone || '');
-          localStorage.removeItem('tg_signup_draft');
-        } else {
-          // 3. Login clicked directly without signup draft (Not registered)
-          if (!alertShownRef.current) {
-            alertShownRef.current = true;
-            alert(lang === 'ko' ? '등록된 회원 정보가 없습니다. 회원가입을 먼저 진행해 주세요.' : 'No registered member information found. Please sign up first.');
-            setTimeout(() => { alertShownRef.current = false; }, 2000);
-          }
-          await supabase.auth.signOut();
-          currentUserIdRef.current = null;
-          setCurrentUser(null);
-          setCustomerName('');
-          setCustomerPhone('');
-          setIsAuthLoading(false);
-        }
+        // 2. Profile not found - Open onboarding modal to collect details and complete sign up!
+        setPendingAuthUser(authUser);
+        setOnboardingName(authUser.user_metadata?.full_name || '');
+        setOnboardingPhone('');
+        setOnboardingConsent(false);
+        setShowOnboardingModal(true);
+        setIsAuthLoading(false);
+        setShowAuthModal(false);
       }
     } catch (err: any) {
       console.error('Failed to sync auth user profile:', err.message);
@@ -260,35 +219,8 @@ export default function Home() {
     checkAvailability();
   }, [selectedDate]);
 
-  // Unified OAuth Authentication Handler (Handles both Login & Sign Up)
+  // Unified OAuth Authentication Handler (Initiates Login)
   const handleAuthSubmit = async (provider: 'google' | 'kakao') => {
-    // If they typed name or phone or checked consent, they are registering
-    const isRegistering = authName.trim() !== '' || authPhone.trim() !== '' || authConsent;
-
-    if (isRegistering) {
-      if (!authConsent) {
-        alert(lang === 'ko' 
-          ? '처음 가입하시는 경우 개인정보 수집 및 이용 동의에 체크해 주세요.\n(이미 가입하신 회원은 정보 입력과 동의 체크 없이 바로 시작하시면 됩니다.)' 
-          : 'First-time users must consent to the privacy policy.\n(Existing members can log in directly without entering info or consenting.)');
-        return;
-      }
-      if (!authName || !authPhone) {
-        alert(lang === 'ko' 
-          ? '회원가입을 완료하려면 성함과 연락처 휴대폰 번호를 모두 입력해 주세요.' 
-          : 'Please provide both your name and contact phone number to complete sign up.');
-        return;
-      }
-
-      // Save details to draft store in localStorage to read after auth redirect callback
-      localStorage.setItem('tg_signup_draft', JSON.stringify({
-        name: authName,
-        phone: authPhone
-      }));
-    } else {
-      // Clear any leftover draft to ensure standard login path
-      localStorage.removeItem('tg_signup_draft');
-    }
-
     setIsAuthLoading(true);
     try {
       const { error } = await supabase.auth.signInWithOAuth({
@@ -302,6 +234,67 @@ export default function Home() {
       alert(err.message || `Failed to initialize ${provider === 'google' ? 'Google' : 'Kakao'} login.`);
       setIsAuthLoading(false);
     }
+  };
+
+  // Submit onboarding registration details
+  const handleOnboardingSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pendingAuthUser) return;
+
+    if (!onboardingConsent) {
+      alert(lang === 'ko' ? '개인정보 활용 동의에 체크해 주세요.' : 'Please consent to the privacy policy.');
+      return;
+    }
+    if (!onboardingName.trim() || !onboardingPhone.trim()) {
+      alert(lang === 'ko' ? '성함과 연락처 휴대폰 번호를 모두 입력해 주세요.' : 'Please provide both name and phone number.');
+      return;
+    }
+
+    setIsOnboardingLoading(true);
+    try {
+      const consentTime = new Date().toISOString();
+      const fallbackEmail = pendingAuthUser.email || `${pendingAuthUser.id}@user.oauth`;
+
+      // Upsert the profile (creates if not exists, updates if incomplete)
+      const { data: newProfile, error: upsertErr } = await supabase
+        .from('users')
+        .upsert({
+          id: pendingAuthUser.id,
+          email: fallbackEmail,
+          name: onboardingName.trim(),
+          phone: onboardingPhone.trim(),
+          provider: pendingAuthUser.app_metadata?.provider || 'google',
+          role: 'USER',
+          is_admin: false,
+          consent_given: true,
+          consent_timestamp: consentTime
+        }, { onConflict: 'id' })
+        .select()
+        .single();
+
+      if (upsertErr) throw upsertErr;
+
+      currentUserIdRef.current = newProfile.id;
+      setCurrentUser(newProfile);
+      setCustomerName(newProfile.name || '');
+      setCustomerPhone(newProfile.phone || '');
+
+      setShowOnboardingModal(false);
+      setPendingAuthUser(null);
+      alert(lang === 'ko' ? '회원 등록이 완료되었습니다!' : 'Registration completed successfully!');
+    } catch (err: any) {
+      alert(err.message || 'Failed to complete registration.');
+    } finally {
+      setIsOnboardingLoading(false);
+    }
+  };
+
+  const handleCancelOnboarding = async () => {
+    await supabase.auth.signOut();
+    currentUserIdRef.current = null;
+    setCurrentUser(null);
+    setPendingAuthUser(null);
+    setShowOnboardingModal(false);
   };
 
   const handleLogout = async () => {
@@ -453,7 +446,6 @@ export default function Home() {
               <div className="flex items-center gap-1.5">
                 <button 
                   onClick={() => {
-                    setAuthConsent(false);
                     setShowAuthModal(true);
                   }}
                   className="text-[10px] sm:text-xs font-mono font-bold tracking-wider text-stone-100 bg-stone-900 hover:bg-stone-850 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
@@ -833,74 +825,21 @@ export default function Home() {
             <div className="p-6 space-y-5">
               {/* Informational guide */}
               <div className="bg-stone-50 border border-stone-200/80 rounded-xl p-3.5 space-y-1.5 text-left">
-                <span className="text-[10px] font-bold text-stone-900 uppercase tracking-wider block">안내사항 (Notice)</span>
+                <span className="text-[10px] font-bold text-stone-900 uppercase tracking-wider block">로그인 안내 (Notice)</span>
                 <p className="text-[10px] text-stone-600 leading-relaxed font-sans font-light">
                   {lang === 'ko' 
-                    ? '• 이미 가입하신 회원은 정보 입력 없이 바로 시작할 수 있습니다.' 
-                    : '• Existing members can start directly without entering any info.'}
+                    ? '• SNS 계정을 이용하여 간편하게 로그인을 진행해 주세요.' 
+                    : '• Please sign in easily using your social account.'}
                 </p>
                 <p className="text-[10px] text-stone-600 leading-relaxed font-sans font-light">
                   {lang === 'ko' 
-                    ? '• 처음 방문하셨다면 성함과 연락처를 입력하고 동의 체크 후 시작해 주세요.' 
-                    : '• First-time users should enter name and phone, check consent, and start.'}
+                    ? '• 처음 방문하시는 신규 회원인 경우, 로그인 후 회원 등록(이름/연락처 입력) 창으로 자동 연결됩니다.' 
+                    : '• First-time users will be automatically redirected to complete registration (enter name/phone) after login.'}
                 </p>
-              </div>
-
-              {/* Registration Input Fields (Optional for existing users) */}
-              <div className="space-y-4 pt-1">
-                <div className="space-y-1.5 text-left">
-                  <label className="text-[10px] uppercase font-mono text-stone-400 block">
-                    {lang === 'ko' ? '고객 성함 (첫 가입 시 필수)' : 'Full Name (Required for first visit)'}
-                  </label>
-                  <input 
-                    type="text" 
-                    value={authName}
-                    onChange={e => setAuthName(e.target.value)}
-                    placeholder={lang === 'ko' ? '예: 홍길동' : 'e.g. John Doe'}
-                    className="w-full px-3 py-2.5 border border-stone-200 rounded-lg text-xs outline-none bg-stone-50 focus:border-stone-400 transition-colors"
-                  />
-                </div>
-
-                <div className="space-y-1.5 text-left">
-                  <label className="text-[10px] uppercase font-mono text-stone-400 block">
-                    {lang === 'ko' ? '연락처 휴대폰 번호 (첫 가입 시 필수)' : 'Contact Phone (Required for first visit)'}
-                  </label>
-                  <input 
-                    type="tel" 
-                    value={authPhone}
-                    onChange={e => setAuthPhone(formatPhoneNumber(e.target.value))}
-                    placeholder="010-1234-5678"
-                    className="w-full px-3 py-2.5 border border-stone-200 rounded-lg text-xs outline-none bg-stone-50 focus:border-stone-400 transition-colors"
-                  />
-                </div>
-
-                {/* Consent Checkbox */}
-                <div className="pt-2 space-y-3">
-                  <label className="flex items-center gap-2 cursor-pointer justify-start">
-                    <input 
-                      type="checkbox"
-                      checked={authConsent}
-                      onChange={e => setAuthConsent(e.target.checked)}
-                      className="h-4.5 w-4.5 rounded border-stone-300 text-stone-900 focus:ring-stone-900 cursor-pointer"
-                    />
-                    <span className="text-xs font-semibold text-stone-900 text-left">
-                      {t.privacyConsent}
-                    </span>
-                  </label>
-
-                  <details className="border border-stone-200 rounded-lg bg-stone-50 text-[10px] outline-none">
-                    <summary className="font-semibold text-stone-700 py-2.5 px-3 select-none cursor-pointer outline-none hover:bg-stone-100 rounded-t-lg transition-colors flex items-center justify-between text-left">
-                      <span>{t.privacyDetailsTitle}</span>
-                    </summary>
-                    <div className="p-3 border-t border-stone-200 text-stone-600 whitespace-pre-line leading-relaxed bg-white rounded-b-lg text-left">
-                      {t.privacyDetailsContent}
-                    </div>
-                  </details>
-                </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-col gap-2.5 pt-2">
+              <div className="flex flex-col gap-2.5 pt-1">
                 <button
                   type="button"
                   disabled={isAuthLoading}
@@ -922,6 +861,111 @@ export default function Home() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Onboarding Modal (Complete Profile for New/Incomplete users) */}
+      {showOnboardingModal && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-2xl border border-stone-200 shadow-2xl w-full max-w-md overflow-hidden">
+            {/* Header */}
+            <div className="bg-stone-950 p-6 text-white flex justify-between items-center">
+              <div>
+                <h3 className="font-serif text-lg font-semibold flex items-center gap-2">
+                  <User className="h-5 w-5 text-gold-500" />
+                  {lang === 'ko' ? '추가 정보 입력' : 'Complete Profile'}
+                </h3>
+                <p className="text-[10px] text-stone-400 font-mono mt-1">First-time Registration Onboarding</p>
+              </div>
+              <button 
+                onClick={handleCancelOnboarding}
+                className="text-stone-400 hover:text-white text-lg font-bold cursor-pointer outline-none"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleOnboardingSubmit} className="p-6 space-y-5">
+              <div className="bg-stone-50 border border-stone-200/80 rounded-xl p-3.5 space-y-1 text-left">
+                <span className="text-[10px] font-bold text-stone-900 uppercase tracking-wider block">회원 등록 안내 (Welcome)</span>
+                <p className="text-[10px] text-stone-600 leading-relaxed font-sans font-light">
+                  {lang === 'ko' 
+                    ? '반갑습니다! 예약을 진행하고 이용 내역을 확인하기 위해 이름과 연락처를 입력해 주세요.' 
+                    : 'Welcome! Please enter your name and phone number to complete your reservation profile.'}
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-1.5 text-left">
+                  <label className="text-[10px] uppercase font-mono text-stone-400 block">고객 성함 *</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={onboardingName}
+                    onChange={e => setOnboardingName(e.target.value)}
+                    placeholder={lang === 'ko' ? '예: 홍길동' : 'e.g. John Doe'}
+                    className="w-full px-3 py-2.5 border border-stone-200 rounded-lg text-xs outline-none bg-stone-50 focus:border-stone-400 transition-colors"
+                  />
+                </div>
+
+                <div className="space-y-1.5 text-left">
+                  <label className="text-[10px] uppercase font-mono text-stone-400 block">연락처 휴대폰 번호 *</label>
+                  <input 
+                    type="tel" 
+                    required
+                    value={onboardingPhone}
+                    onChange={e => setOnboardingPhone(formatPhoneNumber(e.target.value))}
+                    placeholder="010-1234-5678"
+                    className="w-full px-3 py-2.5 border border-stone-200 rounded-lg text-xs outline-none bg-stone-50 focus:border-stone-400 transition-colors"
+                  />
+                </div>
+
+                {/* Consent Checkbox */}
+                <div className="pt-2 space-y-3">
+                  <label className="flex items-center gap-2 cursor-pointer justify-start">
+                    <input 
+                      type="checkbox"
+                      required
+                      checked={onboardingConsent}
+                      onChange={e => setOnboardingConsent(e.target.checked)}
+                      className="h-4.5 w-4.5 rounded border-stone-300 text-stone-900 focus:ring-stone-900 cursor-pointer"
+                    />
+                    <span className="text-xs font-semibold text-stone-900 text-left">
+                      {t.privacyConsent}
+                    </span>
+                  </label>
+
+                  <details className="border border-stone-200 rounded-lg bg-stone-50 text-[10px] outline-none">
+                    <summary className="font-semibold text-stone-700 py-2.5 px-3 select-none cursor-pointer outline-none hover:bg-stone-100 rounded-t-lg transition-colors flex items-center justify-between text-left">
+                      <span>{t.privacyDetailsTitle}</span>
+                    </summary>
+                    <div className="p-3 border-t border-stone-200 text-stone-600 whitespace-pre-line leading-relaxed bg-white rounded-b-lg text-left">
+                      {t.privacyDetailsContent}
+                    </div>
+                  </details>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={handleCancelOnboarding}
+                  className="flex-1 py-3 border border-stone-300 hover:bg-stone-50 text-stone-700 text-xs font-semibold rounded-lg shadow-sm transition-all cursor-pointer text-center"
+                >
+                  {lang === 'ko' ? '취소' : 'Cancel'}
+                </button>
+                <button
+                  type="submit"
+                  disabled={isOnboardingLoading}
+                  className="flex-1 py-3 bg-stone-950 hover:bg-stone-850 text-stone-100 text-xs font-semibold rounded-lg shadow-md transition-all cursor-pointer active:scale-[0.99] disabled:opacity-50 text-center"
+                >
+                  {isOnboardingLoading ? (lang === 'ko' ? '등록 중...' : 'Submitting...') : (lang === 'ko' ? '등록 완료' : 'Complete')}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
