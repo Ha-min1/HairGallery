@@ -260,100 +260,46 @@ export default function Home() {
     checkAvailability();
   }, [selectedDate]);
 
-  // Google OAuth Login
-  const handleGoogleLogin = async () => {
-    setIsAuthLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin
-        }
-      });
-      if (error) throw error;
-    } catch (err: any) {
-      alert(err.message || 'Failed to initialize Google Login.');
-      setIsAuthLoading(false);
-    }
-  };
+  // Unified OAuth Authentication Handler (Handles both Login & Sign Up)
+  const handleAuthSubmit = async (provider: 'google' | 'kakao') => {
+    // If they typed name or phone or checked consent, they are registering
+    const isRegistering = authName.trim() !== '' || authPhone.trim() !== '' || authConsent;
 
-  // Kakao OAuth Login
-  const handleKakaoLogin = async () => {
-    setIsAuthLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'kakao',
-        options: {
-          redirectTo: window.location.origin
-        }
-      });
-      if (error) throw error;
-    } catch (err: any) {
-      alert(err.message || 'Failed to initialize Kakao Login.');
-      setIsAuthLoading(false);
-    }
-  };
+    if (isRegistering) {
+      if (!authConsent) {
+        alert(lang === 'ko' 
+          ? '처음 가입하시는 경우 개인정보 수집 및 이용 동의에 체크해 주세요.\n(이미 가입하신 회원은 정보 입력과 동의 체크 없이 바로 시작하시면 됩니다.)' 
+          : 'First-time users must consent to the privacy policy.\n(Existing members can log in directly without entering info or consenting.)');
+        return;
+      }
+      if (!authName || !authPhone) {
+        alert(lang === 'ko' 
+          ? '회원가입을 완료하려면 성함과 연락처 휴대폰 번호를 모두 입력해 주세요.' 
+          : 'Please provide both your name and contact phone number to complete sign up.');
+        return;
+      }
 
-  // Google OAuth Sign Up (with custom metadata pre-stored in local storage)
-  const handleGoogleSignUp = async () => {
-    if (!authConsent) {
-      alert(lang === 'ko' ? '개인정보 활용 동의에 체크해 주세요.' : 'Please consent to the privacy policy.');
-      return;
-    }
-    if (!authName || !authPhone) {
-      alert(lang === 'ko' ? '이름과 연락처를 입력해 주세요.' : 'Please provide your name and phone number.');
-      return;
-    }
-
-    setIsAuthLoading(true);
-    try {
       // Save details to draft store in localStorage to read after auth redirect callback
       localStorage.setItem('tg_signup_draft', JSON.stringify({
         name: authName,
         phone: authPhone
       }));
-
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin
-        }
-      });
-      if (error) throw error;
-    } catch (err: any) {
-      alert(err.message || 'Failed to initialize Google Sign Up.');
-      setIsAuthLoading(false);
-    }
-  };
-
-  // Kakao OAuth Sign Up
-  const handleKakaoSignUp = async () => {
-    if (!authConsent) {
-      alert(lang === 'ko' ? '개인정보 활용 동의에 체크해 주세요.' : 'Please consent to the privacy policy.');
-      return;
-    }
-    if (!authName || !authPhone) {
-      alert(lang === 'ko' ? '이름과 연락처를 입력해 주세요.' : 'Please provide your name and phone number.');
-      return;
+    } else {
+      // Clear any leftover draft to ensure standard login path
+      localStorage.removeItem('tg_signup_draft');
     }
 
     setIsAuthLoading(true);
     try {
-      // Save details to draft store in localStorage
-      localStorage.setItem('tg_signup_draft', JSON.stringify({
-        name: authName,
-        phone: authPhone
-      }));
-
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'kakao',
+        provider,
         options: {
           redirectTo: window.location.origin
         }
       });
       if (error) throw error;
     } catch (err: any) {
-      alert(err.message || 'Failed to initialize Kakao Sign Up.');
+      alert(err.message || `Failed to initialize ${provider === 'google' ? 'Google' : 'Kakao'} login.`);
       setIsAuthLoading(false);
     }
   };
@@ -507,22 +453,12 @@ export default function Home() {
               <div className="flex items-center gap-1.5">
                 <button 
                   onClick={() => {
-                    setAuthMode('login');
-                    setShowAuthModal(true);
-                  }}
-                  className="text-[10px] sm:text-xs font-mono font-bold tracking-wider text-stone-700 border border-stone-300 hover:bg-stone-50 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
-                >
-                  {lang === 'ko' ? '로그인' : 'Log In'}
-                </button>
-                <button 
-                  onClick={() => {
-                    setAuthMode('signup');
                     setAuthConsent(false);
                     setShowAuthModal(true);
                   }}
                   className="text-[10px] sm:text-xs font-mono font-bold tracking-wider text-stone-100 bg-stone-900 hover:bg-stone-850 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
                 >
-                  {lang === 'ko' ? '회원가입' : 'Sign Up'}
+                  {lang === 'ko' ? '로그인 / 회원가입' : 'Login / Sign Up'}
                 </button>
               </div>
             )}
@@ -872,7 +808,7 @@ export default function Home() {
         </div>
       </footer>
 
-      {/* Auth Modal (Google SignUp vs Login Tabs) */}
+      {/* Auth Modal (Unified Login & Sign Up) */}
       {showAuthModal && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 animate-fadeIn">
           <div className="bg-white rounded-2xl border border-stone-200 shadow-2xl w-full max-w-md overflow-hidden">
@@ -881,9 +817,9 @@ export default function Home() {
               <div>
                 <h3 className="font-serif text-lg font-semibold flex items-center gap-2">
                   <Key className="h-5 w-5 text-gold-500" />
-                  {lang === 'ko' ? '더 헤어 갤러리 인증' : 'The Hair Gallery Auth'}
+                  {lang === 'ko' ? '더 헤어 갤러리 시작하기' : 'Start with The Hair Gallery'}
                 </h3>
-                <p className="text-[10px] text-stone-400 font-mono mt-1">Google OAuth 2.0 Secure Gateway</p>
+                <p className="text-[10px] text-stone-400 font-mono mt-1">OAuth 2.0 Secure Gateway</p>
               </div>
               <button 
                 onClick={() => setShowAuthModal(false)}
@@ -893,139 +829,98 @@ export default function Home() {
               </button>
             </div>
 
-            {/* Tab Headers */}
-            <div className="flex border-b border-stone-200 text-xs font-mono font-bold uppercase">
-              <button 
-                onClick={() => setAuthMode('login')}
-                className={`flex-1 py-3 text-center border-b-2 transition-all cursor-pointer ${
-                  authMode === 'login' 
-                    ? 'border-stone-900 text-stone-900 bg-stone-50/50' 
-                    : 'border-transparent text-stone-400 hover:text-stone-700'
-                }`}
-              >
-                {lang === 'ko' ? '로그인' : 'Log In'}
-              </button>
-              <button 
-                onClick={() => setAuthMode('signup')}
-                className={`flex-1 py-3 text-center border-b-2 transition-all cursor-pointer ${
-                  authMode === 'signup' 
-                    ? 'border-stone-900 text-stone-900 bg-stone-50/50' 
-                    : 'border-transparent text-stone-400 hover:text-stone-700'
-                }`}
-              >
-                {lang === 'ko' ? '회원가입' : 'Sign Up'}
-              </button>
-            </div>
+            {/* Unified Modal Body */}
+            <div className="p-6 space-y-5">
+              {/* Informational guide */}
+              <div className="bg-stone-50 border border-stone-200/80 rounded-xl p-3.5 space-y-1.5 text-left">
+                <span className="text-[10px] font-bold text-stone-900 uppercase tracking-wider block">안내사항 (Notice)</span>
+                <p className="text-[10px] text-stone-600 leading-relaxed font-sans font-light">
+                  {lang === 'ko' 
+                    ? '• 이미 가입하신 회원은 정보 입력 없이 바로 시작할 수 있습니다.' 
+                    : '• Existing members can start directly without entering any info.'}
+                </p>
+                <p className="text-[10px] text-stone-600 leading-relaxed font-sans font-light">
+                  {lang === 'ko' 
+                    ? '• 처음 방문하셨다면 성함과 연락처를 입력하고 동의 체크 후 시작해 주세요.' 
+                    : '• First-time users should enter name and phone, check consent, and start.'}
+                </p>
+              </div>
 
-            {/* Tab Body */}
-            <div className="p-6">
-              {authMode === 'login' ? (
-                // Social Login tab
-                <div className="space-y-4 text-center">
-                  <p className="text-xs text-stone-500 leading-relaxed mb-2">
-                    {lang === 'ko' 
-                      ? '기존 연동 계정으로 바로 로그인하고 예약을 간편하게 관리하세요.' 
-                      : 'Log in with your existing social account to manage reservations.'}
-                  </p>
-                  <button
-                    onClick={handleGoogleLogin}
-                    disabled={isAuthLoading}
-                    className="w-full py-3.5 border border-stone-300 hover:bg-stone-50 text-stone-900 text-xs font-semibold rounded-lg shadow-sm transition-all flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99] disabled:opacity-50"
-                  >
-                    <GoogleLogo />
-                    <span>{lang === 'ko' ? '구글 계정으로 로그인' : 'Log in with Google'}</span>
-                  </button>
-                  <button
-                    onClick={handleKakaoLogin}
-                    disabled={isAuthLoading}
-                    className="w-full py-3.5 bg-[#FEE500] hover:bg-[#FEE500]/90 text-[#191919] text-xs font-semibold rounded-lg shadow-sm transition-all flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99] disabled:opacity-50"
-                  >
-                    <KakaoLogo />
-                    <span>{lang === 'ko' ? '카카오 계정으로 로그인' : 'Log in with Kakao'}</span>
-                  </button>
+              {/* Registration Input Fields (Optional for existing users) */}
+              <div className="space-y-4 pt-1">
+                <div className="space-y-1.5 text-left">
+                  <label className="text-[10px] uppercase font-mono text-stone-400 block">
+                    {lang === 'ko' ? '고객 성함 (첫 가입 시 필수)' : 'Full Name (Required for first visit)'}
+                  </label>
+                  <input 
+                    type="text" 
+                    value={authName}
+                    onChange={e => setAuthName(e.target.value)}
+                    placeholder={lang === 'ko' ? '예: 홍길동' : 'e.g. John Doe'}
+                    className="w-full px-3 py-2.5 border border-stone-200 rounded-lg text-xs outline-none bg-stone-50 focus:border-stone-400 transition-colors"
+                  />
                 </div>
-              ) : (
-                // Social Sign Up tab (Consent Checkbox required here ONLY)
-                <div className="space-y-4">
-                  <div className="space-y-1.5 text-left">
-                    <label className="text-[10px] uppercase font-mono text-stone-400 block">{lang === 'ko' ? '고객 성함 *' : 'Full Name *'}</label>
-                    <input 
-                      type="text" 
-                      required
-                      value={authName}
-                      onChange={e => setAuthName(e.target.value)}
-                      placeholder={lang === 'ko' ? '홍길동' : 'John Doe'}
-                      className="w-full px-3 py-2 border border-stone-200 rounded-lg text-xs outline-none bg-stone-50 focus:border-stone-400 transition-colors"
-                    />
-                  </div>
 
-                  <div className="space-y-1.5 text-left">
-                    <label className="text-[10px] uppercase font-mono text-stone-400 block">{lang === 'ko' ? '연락처 휴대폰 번호 *' : 'Contact Phone *'}</label>
-                    <input 
-                      type="tel" 
-                      required
-                      value={authPhone}
-                      onChange={e => setAuthPhone(formatPhoneNumber(e.target.value))}
-                      placeholder="010-1234-5678"
-                      className="w-full px-3 py-2 border border-stone-200 rounded-lg text-xs outline-none bg-stone-50 focus:border-stone-400 transition-colors"
-                    />
-                  </div>
-
-                  <div className="pt-2 space-y-3">
-                    <label className="flex items-center gap-2 cursor-pointer justify-start">
-                      <input 
-                        type="checkbox"
-                        required
-                        checked={authConsent}
-                        onChange={e => setAuthConsent(e.target.checked)}
-                        className="h-4.5 w-4.5 rounded border-stone-300 text-stone-900 focus:ring-stone-900 cursor-pointer"
-                      />
-                      <span className="text-xs font-semibold text-stone-900 text-left">
-                        {t.privacyConsent}
-                      </span>
-                    </label>
-
-                    <details className="border border-stone-200 rounded-lg bg-stone-50 text-[10px] outline-none">
-                      <summary className="font-semibold text-stone-700 py-2.5 px-3 select-none cursor-pointer outline-none hover:bg-stone-100 rounded-t-lg transition-colors flex items-center justify-between text-left">
-                        <span>{t.privacyDetailsTitle}</span>
-                      </summary>
-                      <div className="p-3 border-t border-stone-200 text-stone-600 whitespace-pre-line leading-relaxed bg-white rounded-b-lg text-left">
-                        {t.privacyDetailsContent}
-                      </div>
-                    </details>
-                  </div>
-
-                  <div className="flex flex-col gap-2 pt-2">
-                    <button
-                      type="button"
-                      disabled={!authConsent || isAuthLoading}
-                      onClick={handleGoogleSignUp}
-                      className={`w-full py-3.5 text-xs font-semibold rounded-lg shadow-md transition-all flex items-center justify-center gap-2.5 ${
-                        authConsent && !isAuthLoading
-                          ? 'bg-stone-950 text-stone-100 hover:bg-stone-850 cursor-pointer active:scale-[0.99]'
-                          : 'bg-stone-200 text-stone-400 cursor-not-allowed'
-                      }`}
-                    >
-                      <span className="bg-white p-0.5 rounded-sm shrink-0"><GoogleLogo /></span>
-                      <span>{isAuthLoading ? (lang === 'ko' ? '로딩중...' : 'Authenticating...') : (lang === 'ko' ? '구글 계정으로 회원가입 완료' : 'Complete Sign Up with Google')}</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      disabled={!authConsent || isAuthLoading}
-                      onClick={handleKakaoSignUp}
-                      className={`w-full py-3.5 text-xs font-semibold rounded-lg shadow-md transition-all flex items-center justify-center gap-2.5 ${
-                        authConsent && !isAuthLoading
-                          ? 'bg-[#FEE500] text-[#191919] hover:bg-[#FEE500]/90 cursor-pointer active:scale-[0.99]'
-                          : 'bg-stone-200 text-stone-400 cursor-not-allowed'
-                      }`}
-                    >
-                      <span className="shrink-0"><KakaoLogo /></span>
-                      <span>{isAuthLoading ? (lang === 'ko' ? '로딩중...' : 'Authenticating...') : (lang === 'ko' ? '카카오 계정으로 회원가입 완료' : 'Complete Sign Up with Kakao')}</span>
-                    </button>
-                  </div>
+                <div className="space-y-1.5 text-left">
+                  <label className="text-[10px] uppercase font-mono text-stone-400 block">
+                    {lang === 'ko' ? '연락처 휴대폰 번호 (첫 가입 시 필수)' : 'Contact Phone (Required for first visit)'}
+                  </label>
+                  <input 
+                    type="tel" 
+                    value={authPhone}
+                    onChange={e => setAuthPhone(formatPhoneNumber(e.target.value))}
+                    placeholder="010-1234-5678"
+                    className="w-full px-3 py-2.5 border border-stone-200 rounded-lg text-xs outline-none bg-stone-50 focus:border-stone-400 transition-colors"
+                  />
                 </div>
-              )}
+
+                {/* Consent Checkbox */}
+                <div className="pt-2 space-y-3">
+                  <label className="flex items-center gap-2 cursor-pointer justify-start">
+                    <input 
+                      type="checkbox"
+                      checked={authConsent}
+                      onChange={e => setAuthConsent(e.target.checked)}
+                      className="h-4.5 w-4.5 rounded border-stone-300 text-stone-900 focus:ring-stone-900 cursor-pointer"
+                    />
+                    <span className="text-xs font-semibold text-stone-900 text-left">
+                      {t.privacyConsent}
+                    </span>
+                  </label>
+
+                  <details className="border border-stone-200 rounded-lg bg-stone-50 text-[10px] outline-none">
+                    <summary className="font-semibold text-stone-700 py-2.5 px-3 select-none cursor-pointer outline-none hover:bg-stone-100 rounded-t-lg transition-colors flex items-center justify-between text-left">
+                      <span>{t.privacyDetailsTitle}</span>
+                    </summary>
+                    <div className="p-3 border-t border-stone-200 text-stone-600 whitespace-pre-line leading-relaxed bg-white rounded-b-lg text-left">
+                      {t.privacyDetailsContent}
+                    </div>
+                  </details>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col gap-2.5 pt-2">
+                <button
+                  type="button"
+                  disabled={isAuthLoading}
+                  onClick={() => handleAuthSubmit('google')}
+                  className="w-full py-3.5 border border-stone-300 hover:bg-stone-50 text-stone-900 text-xs font-semibold rounded-lg shadow-sm transition-all flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99] disabled:opacity-50"
+                >
+                  <span className="bg-white p-0.5 rounded-sm shrink-0 border border-stone-200"><GoogleLogo /></span>
+                  <span>{isAuthLoading ? (lang === 'ko' ? '인증 진행 중...' : 'Processing...') : (lang === 'ko' ? 'Google 계정으로 시작하기' : 'Start with Google')}</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isAuthLoading}
+                  onClick={() => handleAuthSubmit('kakao')}
+                  className="w-full py-3.5 bg-[#FEE500] hover:bg-[#FEE500]/90 text-[#191919] text-xs font-semibold rounded-lg shadow-sm transition-all flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99] disabled:opacity-50"
+                >
+                  <span className="shrink-0"><KakaoLogo /></span>
+                  <span>{isAuthLoading ? (lang === 'ko' ? '인증 진행 중...' : 'Processing...') : (lang === 'ko' ? '카카오 계정으로 시작하기' : 'Start with Kakao')}</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
