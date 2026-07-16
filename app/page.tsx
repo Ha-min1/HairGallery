@@ -35,6 +35,17 @@ export default function Home() {
   const [isLoadingSlots, setIsLoadingSlots] = useState<boolean>(false);
   const [bookingConsent, setBookingConsent] = useState<boolean>(false);
 
+  // Help widget states
+  const [showHelpWidget, setShowHelpWidget] = useState<boolean>(true);
+  const [helpActiveStep, setHelpActiveStep] = useState<number>(0);
+
+  // Toggle help widget and persist to localStorage
+  const handleToggleHelpWidget = () => {
+    const nextVal = !showHelpWidget;
+    setShowHelpWidget(nextVal);
+    localStorage.setItem('tg_show_help_widget', String(nextVal));
+  };
+
   // Auth & Onboarding states
   const [currentUser, setCurrentUser] = useState<any | null>(null);
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
@@ -75,6 +86,11 @@ export default function Home() {
     const savedLang = localStorage.getItem('tg_lang') as 'ko' | 'en';
     if (savedLang === 'ko' || savedLang === 'en') {
       setLangState(savedLang);
+    }
+
+    const savedHelp = localStorage.getItem('tg_show_help_widget');
+    if (savedHelp !== null) {
+      setShowHelpWidget(savedHelp === 'true');
     }
 
     // Listen to Auth State Changes (Google/Kakao OAuth Redirect callback catch)
@@ -763,6 +779,173 @@ export default function Home() {
         </section>
 
         <div className="max-w-5xl mx-auto py-12 px-4">
+          {/* 도움말 위젯 (Help & Booking Guide Widget) */}
+          <div className="mb-8 bg-white border border-stone-200 rounded-2xl shadow-sm overflow-hidden transition-all duration-300">
+            {/* Header */}
+            <div className="p-4 bg-stone-50 border-b border-stone-200 flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <Info className="h-4.5 w-4.5 text-gold-600" />
+                <span className="font-serif text-sm font-bold text-stone-900">
+                  {lang === 'ko' ? '초보자를 위한 1분 예약 가이드 💡' : '1-Minute Reservation Guide for Beginners 💡'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleToggleHelpWidget}
+                className="text-xs font-mono font-bold text-stone-600 hover:text-stone-950 flex items-center gap-1 cursor-pointer transition-colors border-none bg-transparent"
+              >
+                {showHelpWidget 
+                  ? (lang === 'ko' ? '[도움말 접기]' : '[Hide Guide]') 
+                  : (lang === 'ko' ? '[도움말 펼치기]' : '[Show Guide]')}
+              </button>
+            </div>
+
+            {/* Expandable Body */}
+            {showHelpWidget && (
+              <div className="p-6 space-y-6 animate-fadeIn">
+                {/* Stepper Tabs */}
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                  {[
+                    { title: lang === 'ko' ? '1. 연락처 & 동의' : '1. Contact & Consent', icon: User },
+                    { title: lang === 'ko' ? '2. 날짜 & 시간 선택' : '2. Date & Time', icon: CalendarIcon },
+                    { title: lang === 'ko' ? '3. 시술 서비스 선택' : '3. Service Selection', icon: Scissors },
+                    { title: lang === 'ko' ? '4. 예약 신청 완료' : '4. Complete Booking', icon: CheckCircle },
+                  ].map((step, idx) => {
+                    const StepIcon = step.icon;
+                    const isActive = helpActiveStep === idx;
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setHelpActiveStep(idx)}
+                        className={`flex items-center gap-2.5 p-3 rounded-xl border text-left text-xs font-semibold transition-all cursor-pointer ${
+                          isActive
+                            ? 'bg-stone-950 text-stone-100 border-stone-950 shadow-sm font-bold scale-[1.01]'
+                            : 'bg-stone-50 hover:bg-stone-100 border-stone-200 text-stone-700'
+                        }`}
+                      >
+                        <StepIcon className={`h-4.5 w-4.5 shrink-0 ${isActive ? 'text-gold-550' : 'text-stone-500'}`} />
+                        <span>{step.title}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Step Content Card */}
+                <div className="p-5 bg-stone-50 border border-stone-200/60 rounded-xl text-xs leading-relaxed text-stone-750 space-y-3 relative overflow-hidden transition-all duration-300">
+                  <div className="absolute top-0 right-0 p-3 text-[48px] font-serif font-black text-stone-200/40 select-none pointer-events-none leading-none">
+                    0{helpActiveStep + 1}
+                  </div>
+
+                  {helpActiveStep === 0 && (
+                    <div className="space-y-2 text-left">
+                      <h4 className="font-bold text-stone-900 text-sm flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-gold-600"></span>
+                        {lang === 'ko' ? '회원 로그인 또는 연락처 직접 기입 및 개인정보 활용 동의' : 'Sign In or Direct Contact Info & Privacy Consent'}
+                      </h4>
+                      <p className="text-stone-600 pl-3">
+                        {lang === 'ko' 
+                          ? '• 상단 우측의 "로그인 / 회원가입"을 누르고 Google/Kakao 소셜 계정으로 로그인하시면, 예약 신청 시 성함과 연락처가 자동으로 연동되어 매번 기입할 필요가 없어 편리합니다.' 
+                          : '• Click "Login / Sign Up" in the top header and sign in with your Google/Kakao social account. Your details will automatically sync, saving you time.'}
+                      </p>
+                      <p className="text-stone-600 pl-3">
+                        {lang === 'ko' 
+                          ? '• 로그인 없이 예약하시려면(비회원 예약), 아래의 "예약자 연락처 정보" 입력란에 직접 성함과 연락처 휴대폰 번호를 기입해 주세요.' 
+                          : '• If you prefer booking as a guest, please manually fill in your "Full Name" and "Phone Number" in the contact details form below.'}
+                      </p>
+                      <p className="text-amber-800 font-semibold pl-3">
+                        {lang === 'ko' 
+                          ? '※ 필수의무 사항인 "개인정보 수집 및 이용에 동의합니다" 체크박스를 반드시 선택해 주셔야 예약 신청 버튼이 활성화됩니다.' 
+                          : '※ Checking the mandatory "I agree to the collection and use of personal info" box is required to proceed.'}
+                      </p>
+                    </div>
+                  )}
+
+                  {helpActiveStep === 1 && (
+                    <div className="space-y-2 text-left">
+                      <h4 className="font-bold text-stone-900 text-sm flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-gold-600"></span>
+                        {lang === 'ko' ? '예약 날짜 및 시간 선택' : 'Appointment Date & Time Slot Selection'}
+                      </h4>
+                      <p className="text-stone-600 pl-3">
+                        {lang === 'ko' 
+                          ? '• 화면 우측(모바일에서는 아래)의 "예약 날짜 선택" 달력에서 방문을 원하시는 날짜를 클릭하여 선택하세요. (지나간 날짜는 선택할 수 없습니다.)' 
+                          : '• On the right side (or bottom on mobile), select your desired visit date from the calendar. Past dates cannot be booked.'}
+                      </p>
+                      <p className="text-stone-600 pl-3">
+                        {lang === 'ko' 
+                          ? '• 날짜를 고르고 나면 그 아래에 "선택 가능한 시간대" 목록이 활성화됩니다. 예약 가능한 시간 단추를 눌러 시간대를 선택하세요. (선이 그어진 시간은 예약 마감 혹은 마감된 시간대입니다.)' 
+                          : '• Once a date is selected, the "Available Time Slots" list will appear underneath. Select a time slot. (Strikethrough slots are already blocked or reserved.)'}
+                      </p>
+                    </div>
+                  )}
+
+                  {helpActiveStep === 2 && (
+                    <div className="space-y-2 text-left">
+                      <h4 className="font-bold text-stone-900 text-sm flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-gold-600"></span>
+                        {lang === 'ko' ? '헤어 시술 서비스 선택' : 'Hair Styling Service Selection'}
+                      </h4>
+                      <p className="text-stone-600 pl-3">
+                        {lang === 'ko' 
+                          ? '• 화면 좌측 상단의 "원하는 헤어 시술을 선택해 주세요" 상자에서 원하시는 시술(예: 시그니처 컷, 발레아쥬 입체 컬러 등)을 선택해 주세요.' 
+                          : '• Select your desired hair service option (e.g. Signature Cut & Blowout, Balayage Color) from the list in the top-left card.'}
+                      </p>
+                      <p className="text-stone-600 pl-3">
+                        {lang === 'ko' 
+                          ? '• 각 시술별 대략적인 소요 시간과 스타일 상세 설명이 나와 있으니 참고하여 하나만 체크해 주시면 됩니다.' 
+                          : '• Expected duration and a detailed description are provided under each service option to help you make your choice.'}
+                      </p>
+                    </div>
+                  )}
+
+                  {helpActiveStep === 3 && (
+                    <div className="space-y-2 text-left">
+                      <h4 className="font-bold text-stone-900 text-sm flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-gold-600"></span>
+                        {lang === 'ko' ? '예약 신청 및 완료 상태 확인' : 'Submitting Booking Request & Confirmation'}
+                      </h4>
+                      <p className="text-stone-600 pl-3">
+                        {lang === 'ko' 
+                          ? '• 1) 연락처/로그인, 2) 날짜/시간, 3) 시술 메뉴를 모두 채우고 개인정보 동의까지 체크하셨다면 하단의 "예약 신청하기" 단추가 활성화(노란색)됩니다.' 
+                          : '• Once you complete: 1) Contact Info/Login, 2) Date/Time, 3) Styling Service, and check the privacy agreement, the "Request Reservation" button turns gold.'}
+                      </p>
+                      <p className="text-stone-600 pl-3">
+                        {lang === 'ko' 
+                          ? '• 버튼을 클릭하면 예약 신청이 접수되며, 매장에서 확인 후 승인하면 이메일로 "예약 확정" 상태가 전송됩니다. 마이페이지에서도 실시간 예약 현황을 조회하실 수 있습니다!' 
+                          : '• Click the button to request your booking. Once confirmed, you will receive a notification email. You can also view your live reservation status under My Account.'}
+                      </p>
+                      <div className="flex gap-2 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => setHelpActiveStep(0)}
+                          className="px-3 py-1 bg-stone-950 text-white rounded hover:bg-stone-850 transition duration-200 cursor-pointer border-none font-bold"
+                        >
+                          {lang === 'ko' ? '가이드 처음으로' : 'Back to Step 1'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Navigation indicator dots */}
+                  <div className="flex gap-1.5 justify-end pt-2 border-t border-stone-200/40">
+                    {[0, 1, 2, 3].map((stepIdx) => (
+                      <button
+                        key={stepIdx}
+                        type="button"
+                        onClick={() => setHelpActiveStep(stepIdx)}
+                        className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                          stepIdx === helpActiveStep ? 'w-4 bg-gold-500' : 'w-1.5 bg-stone-300 hover:bg-stone-400'
+                        }`}
+                      />
+                    ))}
+                  </div>
+
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             
             {/* Left Column: Booking Form and Services */}

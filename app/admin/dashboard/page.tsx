@@ -21,7 +21,12 @@ import {
   FileSpreadsheet,
   Settings,
   Bell,
-  ShieldAlert
+  ShieldAlert,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  User,
+  Info
 } from 'lucide-react';
 import { TRANSLATIONS, getLocalizedServices } from '@/lib/i18n';
 import { getSupabaseClient } from '@/lib/supabase';
@@ -55,6 +60,11 @@ export default function AdminDashboard() {
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [sendClientNotify, setSendClientNotify] = useState<boolean>(true);
+
+  // Admin Calendar & Timeline states
+  const [adminSelectedDate, setAdminSelectedDate] = useState<string>('');
+  const [adminYear, setAdminYear] = useState<number>(new Date().getFullYear());
+  const [adminMonth, setAdminMonth] = useState<number>(new Date().getMonth());
 
   // Manual Reservation Modal states
   const [showResModal, setShowResModal] = useState<boolean>(false);
@@ -122,6 +132,7 @@ export default function AdminDashboard() {
     setWorkDate(today);
     setResDate(today);
     setSelectedDailyDate(today);
+    setAdminSelectedDate(today);
   }, []);
 
   const setLang = (newLang: 'ko' | 'en') => {
@@ -724,6 +735,59 @@ export default function AdminDashboard() {
     return matchesSearch && matchesStatus;
   });
 
+  // Admin Calendar Helper calculations
+  const getDaysInMonth = (year: number, month: number) => {
+    return new Date(year, month + 1, 0).getDate();
+  };
+
+  const getFirstDayOfMonth = (year: number, month: number) => {
+    return new Date(year, month, 1).getDay();
+  };
+
+  const handleAdminPrevMonth = () => {
+    if (adminMonth === 0) {
+      setAdminMonth(11);
+      setAdminYear(prev => prev - 1);
+    } else {
+      setAdminMonth(prev => prev - 1);
+    }
+  };
+
+  const handleAdminNextMonth = () => {
+    if (adminMonth === 11) {
+      setAdminMonth(0);
+      setAdminYear(prev => prev + 1);
+    } else {
+      setAdminMonth(prev => prev + 1);
+    }
+  };
+
+  const handleAdminDaySelect = (day: number) => {
+    const dateStr = `${adminYear}-${String(adminMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    setAdminSelectedDate(dateStr);
+  };
+
+  const adminDaysInMonth = getDaysInMonth(adminYear, adminMonth);
+  const adminFirstDayIndex = getFirstDayOfMonth(adminYear, adminMonth);
+  const adminDayNames = lang === 'ko' ? ['일', '월', '화', '수', '목', '금', '토'] : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const adminMonthLabel = lang === 'ko' 
+    ? `${adminYear}년 ${adminMonth + 1}월` 
+    : `${new Date(adminYear, adminMonth).toLocaleString('default', { month: 'long' })} ${adminYear}`;
+
+  const adminCalendarGrid = [];
+  for (let i = 0; i < adminFirstDayIndex; i++) {
+    adminCalendarGrid.push(null);
+  }
+  for (let i = 1; i <= adminDaysInMonth; i++) {
+    adminCalendarGrid.push(i);
+  }
+
+  // Check if a specific date has any reservations (for showing dot indicator)
+  const hasReservationsOnDate = (day: number) => {
+    const dateStr = `${adminYear}-${String(adminMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return reservations.some(res => res.date === dateStr && res.status !== 'Cancelled');
+  };
+
   // Filter work records (Search by phone or name)
   const filteredWorkRecords = workRecords.filter(rec => {
     const nameMatch = rec.customer_name?.toLowerCase().includes(searchWorkQuery.toLowerCase()) || false;
@@ -1024,6 +1088,226 @@ WITH CHECK (
           {/* TAB CONTENT: 1. Reservations */}
           {activeTab === 'reservations' && (
             <div className="space-y-6 animate-fadeIn">
+              
+              {/* 예약 타임라인 현황판 (Daily Reservation Calendar & Timeline) */}
+              <div className="bg-stone-900/30 border border-white/5 rounded-2xl p-6 shadow-xl backdrop-blur-md">
+                <div className="flex items-center gap-2 mb-6 pb-3 border-b border-white/5">
+                  <Calendar className="h-5 w-5 text-gold-500" />
+                  <div>
+                    <h2 className="font-serif text-lg font-bold text-white">
+                      {lang === 'ko' ? '일별 예약 스케줄 현황' : 'Daily Reservation Schedule'}
+                    </h2>
+                    <p className="text-[10px] text-stone-400 font-mono mt-0.5">
+                      {lang === 'ko' ? '달력을 클릭하여 각 날짜의 타임라인별 예약을 한눈에 관리하세요.' : 'Navigate calendar to inspect and manage reservations on a visual timeline.'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                  {/* Left Column: Calendar (col-span-5) */}
+                  <div className="lg:col-span-5 space-y-4">
+                    <div className="bg-stone-950/60 p-4 rounded-xl border border-white/5">
+                      {/* Calendar Header */}
+                      <div className="flex items-center justify-between pb-3 border-b border-white/5 mb-3">
+                        <span className="font-serif text-sm font-bold text-white">{adminMonthLabel}</span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={handleAdminPrevMonth}
+                            className="p-1 border border-white/10 rounded hover:bg-white/5 transition-colors cursor-pointer text-stone-300"
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleAdminNextMonth}
+                            className="p-1 border border-white/10 rounded hover:bg-white/5 transition-colors cursor-pointer text-stone-300"
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Day Names Grid */}
+                      <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-mono font-bold text-stone-500 uppercase mb-2">
+                        {adminDayNames.map(dName => (
+                          <div key={dName} className="py-1">{dName}</div>
+                        ))}
+                      </div>
+
+                      {/* Days Grid */}
+                      <div className="grid grid-cols-7 gap-1">
+                        {adminCalendarGrid.map((day, idx) => {
+                          if (day === null) {
+                            return <div key={`admin-empty-${idx}`} className="py-2"></div>;
+                          }
+
+                          const dateStr = `${adminYear}-${String(adminMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                          const isSelected = adminSelectedDate === dateStr;
+                          const hasBookings = hasReservationsOnDate(day);
+
+                          return (
+                            <button
+                              key={`admin-day-${day}`}
+                              type="button"
+                              onClick={() => handleAdminDaySelect(day)}
+                              className={`py-2 text-xs font-mono font-semibold rounded-lg transition-all flex flex-col items-center justify-center relative cursor-pointer ${
+                                isSelected
+                                  ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold scale-[1.05] shadow-md border border-indigo-500/20'
+                                  : 'bg-stone-900/40 hover:bg-stone-900 text-stone-300 border border-transparent'
+                              }`}
+                            >
+                              <span>{day}</span>
+                              {hasBookings && (
+                                <span className={`h-1.5 w-1.5 rounded-full absolute bottom-1.5 ${isSelected ? 'bg-white' : 'bg-indigo-400'}`}></span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Date Summary Card */}
+                    <div className="bg-stone-950/40 p-4 rounded-xl border border-white/5 flex flex-col gap-1 text-xs">
+                      <div className="flex justify-between items-center text-stone-300">
+                        <span className="font-bold text-white">
+                          📅 {formatDisplayDate(adminSelectedDate)}
+                        </span>
+                        <span className="text-[10px] font-mono text-stone-400">
+                          {
+                            (() => {
+                              const count = reservations.filter(res => res.date === adminSelectedDate && res.status !== 'Cancelled').length;
+                              return lang === 'ko' ? `총 ${count}건의 예약` : `${count} booking(s)`;
+                            })()
+                          }
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Timeline List (col-span-7) */}
+                  <div className="lg:col-span-7 space-y-3">
+                    <div className="bg-stone-950/60 p-4 rounded-xl border border-white/5 max-h-[460px] overflow-y-auto scrollbar-thin">
+                      <div className="space-y-2">
+                        {[
+                          '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00',
+                          '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'
+                        ].map((hour) => {
+                          // Find reservations for this day that fall into this hour slot
+                          const hourStr = hour.split(':')[0];
+                          const slotReservations = reservations.filter(res => {
+                            if (res.date !== adminSelectedDate) return false;
+                            const resHour = res.time.split(':')[0];
+                            return resHour === hourStr;
+                          });
+
+                          // Sort slot reservations ascending (just in case there are multiple)
+                          slotReservations.sort((a, b) => a.time.localeCompare(b.time));
+
+                          return (
+                            <div key={hour} className="flex gap-4 items-stretch border-b border-white/[0.03] pb-2.5 last:border-b-0 last:pb-0 pt-2.5 first:pt-0">
+                              {/* Hour label */}
+                              <div className="w-12 text-stone-400 font-mono font-bold text-xs flex items-center shrink-0">
+                                {hour}
+                              </div>
+
+                              {/* Bookings timeline box */}
+                              <div className="flex-1 space-y-2">
+                                {slotReservations.length > 0 ? (
+                                  slotReservations.map((res) => (
+                                    <div key={res.id} className="flex items-center justify-between gap-3 p-3 rounded-lg bg-stone-900 border border-white/5 hover:border-white/10 transition-colors">
+                                      <div className="text-left space-y-0.5">
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-mono text-[10px] font-bold text-indigo-300">
+                                            {res.time}
+                                          </span>
+                                          <span className="font-serif font-bold text-xs text-white">
+                                            {res.customerName}
+                                          </span>
+                                          <span className="text-[10px] text-stone-400 font-mono">
+                                            ({res.customerPhone})
+                                          </span>
+                                        </div>
+                                        <p className="text-[10px] text-stone-300 font-light">
+                                          {res.serviceName} • ₩{res.price.toLocaleString()}
+                                        </p>
+                                      </div>
+
+                                      {/* Right side: status and quick action controls */}
+                                      <div className="flex items-center gap-2 shrink-0">
+                                        {/* Quick status change buttons */}
+                                        <div className="flex items-center gap-1.5">
+                                          {res.status === 'Pending' && (
+                                            <button
+                                              onClick={() => handleUpdateStatus(res.id, 'Confirmed')}
+                                              className="p-1 bg-sky-500/10 hover:bg-sky-600 text-sky-400 hover:text-white rounded border border-sky-500/20 transition-all cursor-pointer animate-pulse"
+                                              title={t.confirmReservation}
+                                            >
+                                              <Check className="h-3.5 w-3.5" />
+                                            </button>
+                                          )}
+                                          {res.status === 'Confirmed' && (
+                                            <button
+                                              onClick={() => handleUpdateStatus(res.id, 'Completed')}
+                                              className="p-1 bg-emerald-500/10 hover:bg-emerald-600 text-emerald-400 hover:text-white rounded border border-emerald-500/20 transition-all cursor-pointer"
+                                              title={t.completeAppointment}
+                                            >
+                                              <Check className="h-3.5 w-3.5" />
+                                            </button>
+                                          )}
+                                          {res.status !== 'Cancelled' && res.status !== 'Completed' && (
+                                            <button
+                                              onClick={() => handleUpdateStatus(res.id, 'Cancelled')}
+                                              className="p-1 bg-stone-850 hover:bg-rose-600 text-stone-400 hover:text-white rounded border border-white/5 hover:border-rose-500 transition-all cursor-pointer"
+                                              title={t.cancelAppointment}
+                                            >
+                                              <X className="h-3.5 w-3.5" />
+                                            </button>
+                                          )}
+                                        </div>
+                                        
+                                        {/* Status badge */}
+                                        <span className={`text-[9px] font-mono font-bold tracking-wide uppercase px-2 py-0.5 rounded border shrink-0 ${
+                                          res.status === 'Pending' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                                          res.status === 'Confirmed' ? 'bg-sky-500/10 text-sky-400 border-sky-500/20' :
+                                          res.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                                          'bg-stone-800/80 text-stone-400 border-white/5'
+                                        }`}>
+                                          {getStatusText(res.status)}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className="flex items-center justify-between p-2 rounded-lg bg-stone-900/20 border border-dashed border-white/[0.04] text-[10px] text-stone-500 font-mono">
+                                    <span>{lang === 'ko' ? '예약 없음 (Available)' : 'Empty Time Slot'}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setResSelectedUserId('');
+                                        setResCustomerName('');
+                                        setResCustomerPhone('');
+                                        setResDate(adminSelectedDate);
+                                        setResTime(hour);
+                                        setResStatus('Confirmed');
+                                        setShowResModal(true);
+                                      }}
+                                      className="py-1 px-2 border border-white/10 hover:border-indigo-500/60 rounded bg-stone-900/80 hover:bg-indigo-600 hover:text-white transition duration-200 text-[9px] font-bold cursor-pointer"
+                                    >
+                                      + {lang === 'ko' ? '예약 추가' : 'Book'}
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Controls & Add Button */}
               <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center bg-stone-900/30 p-4 rounded-xl border border-white/5 backdrop-blur-md shadow-lg">
                 <div className="relative flex-1">
