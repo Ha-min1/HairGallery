@@ -820,7 +820,7 @@ WITH CHECK (
           )}
 
           {/* Navigation Tabs */}
-          <div className="bg-stone-900/50 p-1.5 rounded-xl border border-white/5 flex gap-2 overflow-x-auto scrollbar-none shadow-xl max-w-lg backdrop-blur-md">
+          <div className="bg-stone-900/50 p-1.5 rounded-xl border border-white/5 flex flex-wrap gap-2 shadow-xl w-full backdrop-blur-md">
             <button
               onClick={() => setActiveTab('reservations')}
               className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-xs font-mono font-bold tracking-wide transition-all cursor-pointer shrink-0 ${
