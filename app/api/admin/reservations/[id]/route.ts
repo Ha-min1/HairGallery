@@ -26,7 +26,7 @@ export async function PATCH(
     }
 
     const body = await req.json();
-    const { status } = body;
+    const { status, sendNotification = true } = body;
 
     if (!status) {
       return NextResponse.json({ error: 'Status field is required' }, { status: 400 });
@@ -70,8 +70,8 @@ export async function PATCH(
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Trigger booking confirmation notification via Resend Email (and placeholder for KakaoTalk)
-    if (status === 'Confirmed' && data) {
+    // Trigger booking confirmation notification via EmailJS (and KakaoTalk via Solapi) only if sendNotification is true
+    if (status === 'Confirmed' && data && sendNotification) {
       try {
         // 1. Fetch user's email if they are a registered user
         let userEmail = '';

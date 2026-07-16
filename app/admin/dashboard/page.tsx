@@ -18,7 +18,9 @@ import {
   TrendingUp,
   Database,
   AlertTriangle,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Settings,
+  Bell
 } from 'lucide-react';
 import { TRANSLATIONS, getLocalizedServices } from '@/lib/i18n';
 import { getSupabaseClient } from '@/lib/supabase';
@@ -31,13 +33,19 @@ const TIME_SLOTS = [
 
 export default function AdminDashboard() {
   const [lang, setLangState] = useState<'ko' | 'en'>('ko');
-  const [activeTab, setActiveTab] = useState<'reservations' | 'work-records' | 'sales'>('reservations');
+  const [activeTab, setActiveTab] = useState<'reservations' | 'work-records' | 'sales' | 'admin-settings'>('reservations');
+  
+  // Admin user notification setting states
+  const [adminUsers, setAdminUsers] = useState<any[]>([]);
+  const [isLoadingAdmins, setIsLoadingAdmins] = useState<boolean>(false);
+  const [isTogglingAdmin, setIsTogglingAdmin] = useState<string | null>(null);
   
   // Reservations states
   const [reservations, setReservations] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [sendClientNotify, setSendClientNotify] = useState<boolean>(true);
 
   // Manual Reservation Modal states
   const [showResModal, setShowResModal] = useState<boolean>(false);
@@ -164,6 +172,70 @@ export default function AdminDashboard() {
     if (isAdminAuthorized !== true) return;
     loadReservations();
   }, [isAdminAuthorized]);
+
+  // Load and manage administrators receive_notifications configuration
+  const loadAdminUsers = async () => {
+    setIsLoadingAdmins(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) return;
+
+      const res = await fetch('/api/admin/users', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAdminUsers(data.adminUsers || []);
+      }
+    } catch (err) {
+      console.error('Failed to load admin users:', err);
+    } finally {
+      setIsLoadingAdmins(false);
+    }
+  };
+
+  const handleToggleAdminNotification = async (userId: string, currentStatus: boolean) => {
+    setIsTogglingAdmin(userId);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) return;
+
+      const res = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          userId,
+          receiveNotifications: !currentStatus
+        })
+      });
+
+      if (res.ok) {
+        setAdminUsers(prev =>
+          prev.map(u => u.id === userId ? { ...u, receive_notifications: !currentStatus } : u)
+        );
+      } else {
+        const errData = await res.json();
+        alert(errData.error || 'Failed to update alert settings.');
+      }
+    } catch (err) {
+      console.error('Failed to toggle admin notification flag:', err);
+    } finally {
+      setIsTogglingAdmin(null);
+    }
+  };
+
+  useEffect(() => {
+    if (isAdminAuthorized && activeTab === 'admin-settings') {
+      loadAdminUsers();
+    }
+  }, [isAdminAuthorized, activeTab]);
 
   // Load registered users and services for manual reservation creation
   useEffect(() => {
@@ -344,7 +416,10 @@ export default function AdminDashboard() {
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({ 
+          status: newStatus,
+          sendNotification: sendClientNotify
+        }),
       });
 
       if (response.ok) {
@@ -779,6 +854,17 @@ WITH CHECK (
               <TrendingUp className="h-4 w-4" />
               <span>{t.salesDashboardTab}</span>
             </button>
+            <button
+              onClick={() => setActiveTab('admin-settings')}
+              className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-xs font-mono font-bold tracking-wide transition-all cursor-pointer shrink-0 ${
+                activeTab === 'admin-settings'
+                  ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-[0_0_15px_rgba(109,40,217,0.25)]'
+                  : 'text-stone-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Bell className="h-4 w-4" />
+              <span>{lang === 'ko' ? '알림 수신 설정' : 'Alert Settings'}</span>
+            </button>
           </div>
 
           {/* TAB CONTENT: 1. Reservations */}
@@ -831,6 +917,18 @@ WITH CHECK (
               <div className="bg-stone-900/20 rounded-2xl border border-white/5 overflow-hidden shadow-xl backdrop-blur-md">
                 <div className="px-6 py-4.5 bg-[#121214] border-b border-white/5 flex justify-between items-center flex-wrap gap-2">
                   <h2 className="font-serif text-base font-semibold text-gold-400 tracking-wide">{t.reservationsRoster}</h2>
+                  
+                  {/* Notification Toggle Checkbox */}
+                  <label className="flex items-center gap-2 cursor-pointer text-[10px] font-mono uppercase tracking-wider text-stone-300 select-none bg-stone-950 border border-white/5 px-3 py-1.5 rounded-lg hover:bg-stone-900 transition duration-200">
+                    <input
+                      type="checkbox"
+                      checked={sendClientNotify}
+                      onChange={e => setSendClientNotify(e.target.checked)}
+                      className="h-3.5 w-3.5 rounded border-white/10 text-gold-500 focus:ring-gold-500 bg-stone-900 cursor-pointer"
+                    />
+                    <span>{lang === 'ko' ? '확정/취소 시 고객 알림 전송' : 'Send Notify on Update'}</span>
+                  </label>
+
                   <span className="text-[10px] font-mono tracking-widest uppercase text-stone-400">
                     {t.sortedBy}
                   </span>
@@ -1178,6 +1276,64 @@ WITH CHECK (
 
               </div>
 
+            </div>
+          )}
+
+          {/* TAB CONTENT: 4. Admin Settings */}
+          {activeTab === 'admin-settings' && (
+            <div className="space-y-6 animate-fadeIn">
+              <div className="bg-stone-900/30 p-6 rounded-2xl border border-white/5 backdrop-blur-md shadow-xl space-y-4 text-left">
+                <div>
+                  <h2 className="font-serif text-base font-semibold text-gold-400 tracking-wide flex items-center gap-2">
+                    <Bell className="h-5 w-5 text-gold-500" />
+                    {lang === 'ko' ? '신규 예약 알림 수신 설정' : 'New Booking Alert Settings'}
+                  </h2>
+                  <p className="text-xs text-stone-400 mt-1 leading-relaxed">
+                    {lang === 'ko' 
+                      ? '고객이 새로운 예약을 신청했을 때 이메일 알림을 수신할 관리자 계정을 지정할 수 있습니다.' 
+                      : 'Select which administrator accounts will receive email alerts when a new client booking is requested.'}
+                  </p>
+                </div>
+
+                {isLoadingAdmins ? (
+                  <div className="text-center py-12 text-stone-550 text-xs font-mono tracking-wider">
+                    {lang === 'ko' ? '관리자 목록을 불러오는 중...' : 'Loading administrator records...'}
+                  </div>
+                ) : adminUsers.length === 0 ? (
+                  <div className="text-center py-12 text-stone-500 text-xs font-light">
+                    {lang === 'ko' ? '등록된 관리자가 없습니다.' : 'No administrators registered.'}
+                  </div>
+                ) : (
+                  <div className="bg-stone-950/40 rounded-xl border border-white/5 divide-y divide-white/5 overflow-hidden">
+                    {adminUsers.map(admin => (
+                      <div 
+                        key={admin.id} 
+                        className="p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-white/[0.01] transition-all"
+                      >
+                        <div>
+                          <h3 className="font-serif text-sm font-semibold text-white">{admin.name}</h3>
+                          <p className="text-[11px] text-stone-500 font-mono mt-0.5">{admin.email}</p>
+                        </div>
+                        
+                        <button
+                          type="button"
+                          disabled={isTogglingAdmin === admin.id}
+                          onClick={() => handleToggleAdminNotification(admin.id, admin.receive_notifications)}
+                          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-250 outline-none ${
+                            admin.receive_notifications ? 'bg-indigo-600' : 'bg-stone-700'
+                          } disabled:opacity-50`}
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-250 ease-in-out ${
+                              admin.receive_notifications ? 'translate-x-5' : 'translate-x-0'
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

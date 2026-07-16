@@ -1,5 +1,3 @@
-import crypto from 'crypto';
-
 // Solapi API credentials and configuration should be stored in your .env.local file.
 // If any parameter is missing, we will mock the SMS/KakaoTalk send to avoid server runtime crashes.
 const getSolapiConfig = () => {
@@ -18,13 +16,37 @@ const getSolapiConfig = () => {
 };
 
 /**
- * Generates HMAC-SHA256 Authorization Header required by Solapi v4 API.
+ * Generates HMAC-SHA256 Authorization Header using Edge-compatible Web Crypto API.
+ * This replaces Node.js 'crypto' module to allow deployment on Cloudflare Pages (Edge runtime).
  */
-function getSolapiAuthHeader(apiKey: string, apiSecret: string) {
+async function getSolapiAuthHeader(apiKey: string, apiSecret: string) {
   const date = new Date().toISOString();
-  const salt = crypto.randomBytes(16).toString('hex');
-  const hmac = crypto.createHmac('sha256', apiSecret);
-  const signature = hmac.update(date + salt).digest('hex');
+  // Generate random salt
+  const salt = Math.random().toString(36).substring(2, 18);
+  
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(apiSecret);
+  const messageData = encoder.encode(date + salt);
+  
+  // Import secret key for HMAC SHA-256
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    keyData,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  
+  // Sign the message
+  const signatureBuffer = await crypto.subtle.sign(
+    'HMAC',
+    cryptoKey,
+    messageData
+  );
+  
+  // Convert signature buffer to hex string
+  const signatureArray = Array.from(new Uint8Array(signatureBuffer));
+  const signature = signatureArray.map(b => b.toString(16).padStart(2, '0')).join('');
   
   return {
     'Authorization': `HMAC-SHA256 apiKey=${apiKey}, date=${date}, salt=${salt}, signature=${signature}`,
@@ -69,7 +91,7 @@ export async function sendKakaoBookingNotification({
   const { apiKey, apiSecret, fromPhone, pfId, templateId } = config;
 
   try {
-    const headers = getSolapiAuthHeader(apiKey, apiSecret);
+    const headers = await getSolapiAuthHeader(apiKey, apiSecret);
     const body = {
       message: {
         to: cleanedPhone,

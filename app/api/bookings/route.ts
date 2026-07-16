@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { sendAdminBookingAlertEmail } from '@/lib/email';
 
 export const runtime = 'edge';
 
@@ -106,6 +107,64 @@ export async function POST(req: NextRequest) {
         );
       }
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // Trigger admin alert notifications for new booking
+    if (data) {
+      // Run as non-blocking execution so it won't delay user's reservation response
+      (async () => {
+        try {
+          // A. Fetch service details to get display name and price
+          let serviceName = 'Custom Styling';
+          let servicePrice = 0;
+          if (data.service_id) {
+            const { data: serviceData } = await adminClient
+              .from('services')
+              .select('name, price')
+              .eq('id', data.service_id)
+              .maybeSingle();
+            if (serviceData) {
+              serviceName = serviceData.name;
+              servicePrice = serviceData.price || 0;
+            }
+          }
+
+          // B. Query administrators who enabled receive_notifications
+          // Select email, receive_notifications. To support cases where the SQL migration
+          // has not run yet, we default to sending to all ADMINs if querying receive_notifications fails.
+          let queryResult;
+          try {
+            queryResult = await adminClient
+              .from('users')
+              .select('email, receive_notifications')
+              .eq('role', 'ADMIN')
+              .eq('receive_notifications', true);
+          } catch (dbErr) {
+            // Fallback: If receive_notifications column is missing, select all administrators
+            queryResult = await adminClient
+              .from('users')
+              .select('email')
+              .eq('role', 'ADMIN');
+          }
+
+          const adminEmails = (queryResult?.data || []).map((admin: any) => admin.email).filter(Boolean);
+
+          // C. Send alert email to each configured administrator
+          for (const email of adminEmails) {
+            await sendAdminBookingAlertEmail({
+              toEmail: email,
+              customerName: data.customer_name,
+              customerPhone: data.customer_phone,
+              date: data.date,
+              time: data.time,
+              serviceName,
+              price: servicePrice
+            });
+          }
+        } catch (alertErr) {
+          console.error('Failed to send admin booking alert:', alertErr);
+        }
+      })();
     }
 
     return NextResponse.json({ success: true, reservation: data }, { status: 201 });
