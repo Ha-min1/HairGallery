@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { sendBookingConfirmationEmail } from '@/lib/email';
+import { sendKakaoBookingNotification } from '@/lib/kakao';
 
 export const runtime = 'edge';
 
@@ -66,6 +68,73 @@ export async function PATCH(
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // Trigger booking confirmation notification via Resend Email (and placeholder for KakaoTalk)
+    if (status === 'Confirmed' && data) {
+      try {
+        // 1. Fetch user's email if they are a registered user
+        let userEmail = '';
+        if (data.user_id) {
+          const { data: userData } = await adminClient
+            .from('users')
+            .select('email')
+            .eq('id', data.user_id)
+            .maybeSingle();
+          if (userData) {
+            userEmail = userData.email;
+          }
+        }
+
+        // 2. Fetch service details for styling description and fallback price
+        let serviceName = 'Custom Styling';
+        let servicePrice = data.price || 0;
+        
+        if (data.service_id) {
+          const { data: serviceData } = await adminClient
+            .from('services')
+            .select('name, price')
+            .eq('id', data.service_id)
+            .maybeSingle();
+          if (serviceData) {
+            serviceName = serviceData.name;
+            if (!data.price) {
+              servicePrice = serviceData.price || 0;
+            }
+          }
+        }
+
+        // 3. Dispatch the confirmation email
+        if (userEmail) {
+          await sendBookingConfirmationEmail({
+            toEmail: userEmail,
+            customerName: data.customer_name,
+            date: data.date,
+            time: data.time,
+            serviceName,
+            price: servicePrice
+          });
+        } else {
+          console.log(`[Notification Skip] No email found for user_id: ${data.user_id || 'guest'}`);
+        }
+
+        // 4. Dispatch KakaoTalk Notification via Solapi
+        if (data.customer_phone) {
+          await sendKakaoBookingNotification({
+            toPhone: data.customer_phone,
+            customerName: data.customer_name,
+            date: data.date,
+            time: data.time,
+            serviceName,
+            price: servicePrice
+          });
+        } else {
+          console.log('[Notification Skip] No phone number found on reservation record.');
+        }
+
+      } catch (triggerErr) {
+        console.error('Failed to dispatch booking confirmation notification:', triggerErr);
+      }
     }
 
     return NextResponse.json({ success: true, reservation: data });

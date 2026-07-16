@@ -26,6 +26,10 @@ export default function Home() {
   const [selectedDate, setSelectedDate] = useState<string>('');
   
   const [bookedTimes, setBookedTimes] = useState<string[]>([]);
+  const [closedTimes, setClosedTimes] = useState<string[]>([]);
+  const [isBulkEditMode, setIsBulkEditMode] = useState<boolean>(false);
+  const [bulkSelectedTimes, setBulkSelectedTimes] = useState<string[]>([]);
+  const [isSavingBulk, setIsSavingBulk] = useState<boolean>(false);
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [isLoadingSlots, setIsLoadingSlots] = useState<boolean>(false);
@@ -296,6 +300,7 @@ export default function Home() {
         if (res.ok) {
           const data = await res.json();
           setBookedTimes(data.bookedSlots || []);
+          setClosedTimes(data.closedSlots || []);
         }
       } catch (err) {
         console.error('Failed to retrieve slot lists:', err);
@@ -436,6 +441,80 @@ export default function Home() {
     } finally {
       setIsWithdrawing(false);
     }
+  };
+
+  // Start Bulk Edit Mode for Administrator
+  const handleStartBulkEdit = () => {
+    setIsBulkEditMode(true);
+    // Initialize bulk selected times with the currently closed slots
+    setBulkSelectedTimes(closedTimes);
+  };
+
+  // Cancel Bulk Edit Mode
+  const handleCancelBulkEdit = () => {
+    setIsBulkEditMode(false);
+    setBulkSelectedTimes([]);
+  };
+
+  // Save Bulk Closed Slots to Database
+  const handleSaveBulkEdit = async () => {
+    setIsSavingBulk(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) {
+        alert(lang === 'ko' ? '로그인 세션이 만료되었습니다. 다시 로그인 해주세요.' : 'Session expired. Please log in again.');
+        setIsSavingBulk(false);
+        return;
+      }
+
+      const res = await fetch('/api/admin/reservations/bulk-close', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          date: selectedDate,
+          times: bulkSelectedTimes
+        })
+      });
+
+      if (res.ok) {
+        alert(lang === 'ko' ? '예약 마감 설정이 성공적으로 반영되었습니다.' : 'Reservation block settings have been applied successfully.');
+        setIsBulkEditMode(false);
+        // Refresh slot lists
+        const checkRes = await fetch(`/api/bookings?date=${selectedDate}`);
+        if (checkRes.ok) {
+          const data = await checkRes.json();
+          setBookedTimes(data.bookedSlots || []);
+          setClosedTimes(data.closedSlots || []);
+        }
+      } else {
+        const errData = await res.json();
+        alert(errData.error || (lang === 'ko' ? '예약 마감 설정 저장에 실패했습니다.' : 'Failed to save reservation blocks.'));
+      }
+    } catch (err) {
+      console.error('Error saving bulk blocks:', err);
+      alert(lang === 'ko' ? '오류가 발생했습니다.' : 'An error occurred.');
+    } finally {
+      setIsSavingBulk(false);
+    }
+  };
+
+  // Toggle selection of a time slot in bulk edit mode
+  const handleToggleBulkSlot = (slot: string) => {
+    // If the slot is already reserved by a customer (meaning booked but NOT closed by admin),
+    // prevent toggling it, as customer reservations should not be cleared this way.
+    const isCustomerReserved = bookedTimes.includes(slot) && !closedTimes.includes(slot);
+    if (isCustomerReserved) {
+      alert(lang === 'ko' ? '고객 예약이 완료된 시간대는 마감 모드에서 변경할 수 없습니다.' : 'Slots with customer reservations cannot be modified in close-out mode.');
+      return;
+    }
+
+    setBulkSelectedTimes(prev =>
+      prev.includes(slot) ? prev.filter(t => t !== slot) : [...prev, slot]
+    );
   };
 
   const handleBookingSubmit = async (e: React.FormEvent) => {
@@ -882,18 +961,88 @@ export default function Home() {
               {/* Time Slots (Conditionally rendered strictly after Date selection) */}
               {selectedDate && (
                 <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm space-y-4 animate-fadeIn">
-                  <h3 className="font-serif text-sm font-semibold text-stone-900 flex items-center gap-1.5">
-                    <ClockIcon />
-                    <span>{t.availableSlots}</span>
-                  </h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-serif text-sm font-semibold text-stone-900 flex items-center gap-1.5">
+                      <ClockIcon />
+                      <span>{t.availableSlots}</span>
+                    </h3>
+                    {currentUser && currentUser.role === 'ADMIN' && !isBulkEditMode && (
+                      <button
+                        type="button"
+                        onClick={handleStartBulkEdit}
+                        className="px-2.5 py-1 text-[10px] font-semibold text-gold-600 border border-gold-300 hover:border-gold-500 rounded bg-white hover:bg-gold-50 transition duration-200 cursor-pointer"
+                      >
+                        {lang === 'ko' ? '예약 마감 수정' : 'Manage Blocks'}
+                      </button>
+                    )}
+                  </div>
+
+                  {isBulkEditMode && (
+                    <div className="bg-stone-50 border border-stone-200 rounded-xl p-3.5 space-y-2.5 text-xs text-left">
+                      <div className="flex justify-between items-center text-[10px] font-mono font-bold text-stone-500 uppercase tracking-wider">
+                        <span>🛠️ {lang === 'ko' ? '예약 마감 수정 모드' : 'Bulk Block Mode'}</span>
+                        <span className="text-gold-600">
+                          {bulkSelectedTimes.length} {lang === 'ko' ? '개 선택됨' : 'selected'}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-stone-500 leading-relaxed">
+                        {lang === 'ko' 
+                          ? '• 마감하려는 시간대를 클릭하여 선택하세요. 일반 고객 예약은 수정할 수 없습니다.' 
+                          : '• Click time slots to toggle blocks. Existing client reservations cannot be modified.'}
+                      </p>
+                      <div className="flex gap-2 pt-1">
+                        <button
+                          type="button"
+                          disabled={isSavingBulk}
+                          onClick={handleCancelBulkEdit}
+                          className="flex-1 py-2 text-[11px] font-semibold text-stone-700 border border-stone-300 rounded-lg hover:bg-stone-100 transition duration-200 cursor-pointer bg-white"
+                        >
+                          {lang === 'ko' ? '취소' : 'Cancel'}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isSavingBulk}
+                          onClick={handleSaveBulkEdit}
+                          className="flex-1 py-2 text-[11px] font-semibold text-white bg-stone-950 hover:bg-stone-850 rounded-lg transition duration-200 cursor-pointer disabled:opacity-50"
+                        >
+                          {isSavingBulk 
+                            ? (lang === 'ko' ? '저장 중...' : 'Saving...') 
+                            : (lang === 'ko' ? '수정 완료' : 'Save')}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   
                   {isLoadingSlots ? (
                     <div className="text-center py-6 text-xs text-stone-400 font-mono">{t.checkingSchedules}</div>
                   ) : (
                     <div className="grid grid-cols-3 gap-2">
                       {TIME_SLOTS_24H.map(slot => {
+                        const isCustomerReserved = bookedTimes.includes(slot) && !closedTimes.includes(slot);
                         const isBooked = bookedTimes.includes(slot);
                         const isSelected = selectedTime === slot;
+                        const isAdminClosedInMode = bulkSelectedTimes.includes(slot);
+
+                        if (isBulkEditMode) {
+                          return (
+                            <button
+                              key={slot}
+                              type="button"
+                              disabled={isCustomerReserved}
+                              onClick={() => handleToggleBulkSlot(slot)}
+                              className={`py-2.5 text-xs font-mono font-semibold rounded border transition-colors cursor-pointer ${
+                                isCustomerReserved
+                                  ? 'bg-stone-100 text-stone-300 border-stone-100 line-through cursor-not-allowed'
+                                  : isAdminClosedInMode
+                                  ? 'bg-red-50 text-red-700 border-red-200 font-bold'
+                                  : 'bg-white hover:bg-stone-50 border-stone-200 text-stone-700'
+                              }`}
+                            >
+                              {slot} {isAdminClosedInMode && (lang === 'ko' ? '(마감)' : '(Closed)')}
+                            </button>
+                          );
+                        }
+
                         return (
                           <button
                             key={slot}

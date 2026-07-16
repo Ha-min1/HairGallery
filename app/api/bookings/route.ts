@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
     // Query active (non-cancelled) reservations for the selected date
     const { data, error } = await adminClient
       .from('reservations')
-      .select('time, status')
+      .select('time, status, customer_name')
       .eq('date', date)
       .neq('status', 'Cancelled');
 
@@ -40,7 +40,8 @@ export async function GET(req: NextRequest) {
 
     // Return the list of booked slots (times) to disable them on client
     const bookedSlots = data.map((item: any) => item.time);
-    return NextResponse.json({ date, bookedSlots });
+    const closedSlots = data.filter((item: any) => item.customer_name === '예약 마감').map((item: any) => item.time);
+    return NextResponse.json({ date, bookedSlots, closedSlots });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
