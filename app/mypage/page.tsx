@@ -762,7 +762,7 @@ export default function MyPage() {
                                   : (lang === 'ko' ? '가격 문의' : 'Inquiry')}
                               </span>
                               <span className="text-[9px] text-stone-400 font-mono">
-                                {service?.duration_minutes || 60}m
+                                {(service?.duration_minutes || 60) + (lang === 'ko' ? '분' : 'm')}
                               </span>
                             </div>
                           </div>

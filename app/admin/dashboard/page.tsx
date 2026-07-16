@@ -2164,7 +2164,7 @@ WITH CHECK (
                               ID: {svc.id}
                             </span>
                             <h3 className="font-serif text-sm font-semibold text-white">{svc.name}</h3>
-                            <span className="text-[10px] text-stone-450 font-mono">({(svc.duration_minutes || svc.durationMinutes || 30) + 'm'})</span>
+                            <span className="text-[10px] text-stone-455 font-mono">({(svc.duration_minutes || svc.durationMinutes || 30) + (lang === 'ko' ? '분' : 'm')})</span>
                           </div>
                           <p className="text-xs text-stone-300 leading-normal">
                             {svc.description}

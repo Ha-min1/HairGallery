@@ -1568,13 +1568,17 @@ export default function Home() {
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 animate-fadeIn">
           <div className="bg-white rounded-2xl border border-stone-200 shadow-2xl w-full max-w-md overflow-hidden">
             {/* Header */}
-            <div className="bg-stone-950 p-6 text-white flex justify-between items-center">
+            <div className="bg-stone-955 p-6 text-white flex justify-between items-center">
               <div>
                 <h3 className="font-serif text-base font-semibold flex items-center gap-2">
                   <Scissors className="h-5 w-5 text-gold-500" />
-                  {lang === 'ko' ? '시술 선택지 수정' : 'Edit Service Option'}
+                  {editingService.isNew 
+                    ? (lang === 'ko' ? '시술 선택지 추가' : 'Add Service Option') 
+                    : (lang === 'ko' ? '시술 선택지 수정' : 'Edit Service Option')}
                 </h3>
-                <p className="text-[10px] text-stone-400 font-mono mt-1">ID: {editingService.id}</p>
+                {!editingService.isNew && (
+                  <p className="text-[10px] text-stone-400 font-mono mt-1">ID: {editingService.id}</p>
+                )}
               </div>
               <button 
                 onClick={() => setEditingService(null)}
@@ -1590,6 +1594,23 @@ export default function Home() {
               await handleUpdateService(editingService);
               setEditingService(null);
             }} className="p-6 space-y-4">
+
+              {/* Service ID (Only shown if isNew) */}
+              {editingService.isNew && (
+                <div className="space-y-1 text-left">
+                  <label className="text-[10px] font-mono text-stone-400 uppercase tracking-widest font-semibold block">
+                    {lang === 'ko' ? '서비스 ID (기본키)' : 'Service ID'} *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editingService.id}
+                    onChange={(e) => setEditingService({ ...editingService, id: e.target.value })}
+                    placeholder="예: s8"
+                    className="w-full px-3 py-2 border border-stone-200 rounded-lg text-xs font-bold focus:ring-1 focus:ring-gold-500 focus:border-gold-500 outline-none bg-stone-50"
+                  />
+                </div>
+              )}
 
               {/* Name */}
               <div className="space-y-1 text-left">
