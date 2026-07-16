@@ -117,6 +117,7 @@ export default function AdminDashboard() {
   const [svcPrice, setSvcPrice] = useState<number | ''>('');
   const [svcDuration, setSvcDuration] = useState<number>(30);
   const [svcDescription, setSvcDescription] = useState<string>('');
+  const [svcCategory, setSvcCategory] = useState<string>('Cut');
 
   // Sales statistics states
   const [selectedDailyDate, setSelectedDailyDate] = useState<string>('');
@@ -543,7 +544,6 @@ export default function AdminDashboard() {
 
     const custData = {
       name: custName,
-      price: null,
       work_menu: custWorkMenu,
       email: editingCustomer?.email || ('a_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5) + '@ex.com'),
       phone: custPhone || null,
@@ -620,7 +620,8 @@ export default function AdminDashboard() {
       price: svcPrice === '' || svcPrice === null ? null : Number(svcPrice),
       duration_minutes: Number(svcDuration),
       durationMinutes: Number(svcDuration),
-      description: svcDescription
+      description: svcDescription,
+      category: svcCategory
     };
 
     try {
@@ -655,7 +656,8 @@ export default function AdminDashboard() {
               name: svcName,
               price: svcPrice === '' || svcPrice === null ? null : Number(svcPrice),
               durationMinutes: Number(svcDuration),
-              description: svcDescription
+              description: svcDescription,
+              category: svcCategory
             })
           });
 
@@ -675,7 +677,8 @@ export default function AdminDashboard() {
               name: svcName,
               price: svcPrice === '' || svcPrice === null ? null : Number(svcPrice),
               durationMinutes: Number(svcDuration),
-              description: svcDescription
+              description: svcDescription,
+              category: svcCategory
             })
           });
 
@@ -2225,6 +2228,7 @@ WITH CHECK (
                     setSvcPrice('');
                     setSvcDuration(30);
                     setSvcDescription('');
+                    setSvcCategory('Cut');
                     setShowServiceModal(true);
                   }}
                   className="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-mono font-bold py-2.5 px-4 rounded-lg flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(109,40,217,0.3)] active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap"
@@ -2273,6 +2277,7 @@ WITH CHECK (
                                 setSvcPrice(svc.price !== null && svc.price !== undefined ? svc.price : '');
                                 setSvcDuration(svc.duration_minutes || svc.durationMinutes || 30);
                                 setSvcDescription(svc.description || '');
+                                setSvcCategory(svc.category || 'Cut');
                                 setShowServiceModal(true);
                               }}
                               className="p-2 text-stone-300 hover:text-white hover:bg-white/5 rounded-lg border border-white/5 transition-all cursor-pointer"
@@ -2766,6 +2771,22 @@ WITH CHECK (
                   placeholder="예: 시그니처 컷"
                   className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white text-left"
                 />
+              </div>
+
+              {/* Service Category */}
+              <div className="space-y-1.5 text-left">
+                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{lang === 'ko' ? '카테고리' : 'Category'} *</label>
+                <select
+                  value={svcCategory}
+                  onChange={e => setSvcCategory(e.target.value)}
+                  className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white text-left"
+                >
+                  <option value="Cut" className="bg-stone-900 text-white">{lang === 'ko' ? '커트 (Cut)' : 'Cut'}</option>
+                  <option value="Color" className="bg-stone-900 text-white">{lang === 'ko' ? '염색 (Color)' : 'Color'}</option>
+                  <option value="Perm" className="bg-stone-900 text-white">{lang === 'ko' ? '펌 (Perm)' : 'Perm'}</option>
+                  <option value="Treatment" className="bg-stone-900 text-white">{lang === 'ko' ? '클리닉 (Treatment)' : 'Treatment'}</option>
+                  <option value="Styling" className="bg-stone-900 text-white">{lang === 'ko' ? '스타일링 (Styling)' : 'Styling'}</option>
+                </select>
               </div>
 
               {/* Service Price */}
