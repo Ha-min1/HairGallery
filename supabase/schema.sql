@@ -75,45 +75,37 @@ ALTER TABLE services ENABLE ROW LEVEL SECURITY;
 
 -- 10. Row Level Security Policies
 
+-- 1. Create is_admin() security definer function to avoid infinite recursion
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.users
+    WHERE id = auth.uid() AND role = 'ADMIN'
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- Users can read their own row, admins can read any row
 CREATE POLICY "Select users policy" ON users FOR SELECT USING (
-    auth.uid() = id OR
-    EXISTS (
-        SELECT 1 FROM users
-        WHERE users.id = auth.uid() AND users.role = 'ADMIN'
-    )
+    auth.uid() = id OR public.is_admin()
 );
 
 -- Users can insert their own row, admins can insert any row
 CREATE POLICY "Insert users policy" ON users FOR INSERT WITH CHECK (
-    auth.uid() = id OR
-    EXISTS (
-        SELECT 1 FROM users
-        WHERE users.id = auth.uid() AND users.role = 'ADMIN'
-    )
+    auth.uid() = id OR public.is_admin()
 );
 
 -- Users can update their own row, admins can update any row
 CREATE POLICY "Update users policy" ON users FOR UPDATE USING (
-    auth.uid() = id OR
-    EXISTS (
-        SELECT 1 FROM users
-        WHERE users.id = auth.uid() AND users.role = 'ADMIN'
-    )
+    auth.uid() = id OR public.is_admin()
 ) WITH CHECK (
-    auth.uid() = id OR
-    EXISTS (
-        SELECT 1 FROM users
-        WHERE users.id = auth.uid() AND users.role = 'ADMIN'
-    )
+    auth.uid() = id OR public.is_admin()
 );
 
 -- Only admins can delete user rows
 CREATE POLICY "Delete users policy" ON users FOR DELETE USING (
-    EXISTS (
-        SELECT 1 FROM users
-        WHERE users.id = auth.uid() AND users.role = 'ADMIN'
-    )
+    public.is_admin()
 );
 
 -- Services policies:
@@ -124,37 +116,17 @@ CREATE POLICY "Services read public" ON services FOR SELECT TO public USING (tru
 -- Authenticated admins can insert new services
 DROP POLICY IF EXISTS "Admins can insert services" ON services;
 CREATE POLICY "Admins can insert services" ON services FOR INSERT TO authenticated
-WITH CHECK (
-    EXISTS (
-        SELECT 1 FROM users
-        WHERE users.id = auth.uid() AND users.role = 'ADMIN'
-    )
-);
+WITH CHECK (public.is_admin());
 
 -- Authenticated admins can update services
 DROP POLICY IF EXISTS "Admins can update services" ON services;
 CREATE POLICY "Admins can update services" ON services FOR UPDATE TO authenticated
-USING (
-    EXISTS (
-        SELECT 1 FROM users
-        WHERE users.id = auth.uid() AND users.role = 'ADMIN'
-    )
-) WITH CHECK (
-    EXISTS (
-        SELECT 1 FROM users
-        WHERE users.id = auth.uid() AND users.role = 'ADMIN'
-    )
-);
+USING (public.is_admin()) WITH CHECK (public.is_admin());
 
 -- Authenticated admins can delete services
 DROP POLICY IF EXISTS "Admins can delete services" ON services;
 CREATE POLICY "Admins can delete services" ON services FOR DELETE TO authenticated
-USING (
-    EXISTS (
-        SELECT 1 FROM users
-        WHERE users.id = auth.uid() AND users.role = 'ADMIN'
-    )
-);
+USING (public.is_admin());
 
 -- Reservations policies:
 -- Anyone can view reservations to check slot availability (necessary for the calendar to display disabled/booked slots)
