@@ -18,6 +18,8 @@ CREATE TABLE users (
     phone VARCHAR(50),
     provider VARCHAR(50) NOT NULL DEFAULT 'credentials', -- "credentials" or "google"
     mobile_optimized BOOLEAN DEFAULT TRUE,
+    price INTEGER,
+    work_menu VARCHAR(255),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -27,7 +29,6 @@ CREATE TABLE services (
     name VARCHAR(255) NOT NULL,
     price INTEGER, -- Stored in KRW (e.g. 10000, can be NULL for custom mockup)
     duration_minutes INTEGER NOT NULL,
-    category VARCHAR(100) NOT NULL, -- "Cut", "Color", "Treatment", "Styling"
     description TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -58,14 +59,14 @@ ON reservations (date, time)
 WHERE (status <> 'Cancelled');
 
 -- 8. Seed Initial Service Registry (KRW Price List: 8,000 to 15,000 KRW)
-INSERT INTO services (id, name, price, duration_minutes, category, description) VALUES
-('s1', 'Signature Cut & Blowout', 15000, 60, 'Cut', 'A bespoke cutting experience tailored to your facial structure, complete with a luxury wash and bouncy signature blowout.'),
-('s2', 'Gents Precision Cut', 10000, 45, 'Cut', 'Clean scissor-and-clipper work, detailed texturizing, hot towel neck shave, and premium styling.'),
-('s3', 'Quick Trim & Clean-up', 8000, 30, 'Cut', 'A fast touch-up for split ends or bangs to keep your current cut looking fresh.'),
-('s4', 'Balayage Color Touch', 13000, 120, 'Color', 'Hand-painted highlights creating seamless, low-maintenance dimensional transitions.'),
-('s5', 'Root Touch-up Gloss', 11000, 75, 'Color', 'Precise coverage of root growth or gray hair, complete with a restorative protein glaze.'),
-('s6', 'Scalp Therapy & Treatment', 12000, 60, 'Treatment', 'Intense micro-emulsion moisture therapy to restore lipid protection and high shine.'),
-('s7', 'Red Carpet Blowout & Style', 9000, 45, 'Styling', 'Premium styling with thermal round-brush sculpting, high-gloss finish, and pin-set volume.');
+INSERT INTO services (id, name, price, duration_minutes, description) VALUES
+('s1', 'Signature Cut & Blowout', 15000, 60, 'A bespoke cutting experience tailored to your facial structure, complete with a luxury wash and bouncy signature blowout.'),
+('s2', 'Gents Precision Cut', 10000, 45, 'Clean scissor-and-clipper work, detailed texturizing, hot towel neck shave, and premium styling.'),
+('s3', 'Quick Trim & Clean-up', 8000, 30, 'A fast touch-up for split ends or bangs to keep your current cut looking fresh.'),
+('s4', 'Balayage Color Touch', 13000, 120, 'Hand-painted highlights creating seamless, low-maintenance dimensional transitions.'),
+('s5', 'Root Touch-up Gloss', 11000, 75, 'Precise coverage of root growth or gray hair, complete with a restorative protein glaze.'),
+('s6', 'Scalp Therapy & Treatment', 12000, 60, 'Intense micro-emulsion moisture therapy to restore lipid protection and high shine.'),
+('s7', 'Red Carpet Blowout & Style', 9000, 45, 'Premium styling with thermal round-brush sculpting, high-gloss finish, and pin-set volume.');
 
 -- 9. Enable Row Level Security (RLS) on Supabase
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;

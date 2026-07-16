@@ -47,8 +47,7 @@ export async function GET(req: NextRequest) {
           services (
             name,
             price,
-            duration_minutes,
-            category
+            duration_minutes
           )
         `)
         .eq('user_id', user.id)
@@ -71,8 +70,7 @@ export async function GET(req: NextRequest) {
           services (
             name,
             price,
-            duration_minutes,
-            category
+            duration_minutes
           )
         `)
         .eq('customer_name', name.trim())

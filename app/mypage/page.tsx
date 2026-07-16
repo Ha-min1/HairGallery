@@ -364,14 +364,14 @@ export default function MyPage() {
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900 antialiased flex flex-col font-sans">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white border-b border-stone-200 shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 group shrink-0">
-            <div className="w-8 h-8 bg-stone-950 flex items-center justify-center rounded-sm shrink-0">
-              <span className="text-gold-500 font-serif text-lg font-bold italic">G</span>
+      <header className="sticky top-0 z-50 bg-white border-b border-stone-200 shadow-md">
+        <div className="max-w-5xl mx-auto px-4 h-20 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-3 sm:gap-4 group shrink-0">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-lg transition-transform group-hover:scale-105 overflow-hidden shrink-0 shadow-sm">
+              <img src="/hair_gallery_logo.png" alt="Logo" className="w-full h-full object-cover" />
             </div>
-            <span className={`font-serif font-bold tracking-tight text-stone-900 ${
-              mobileOptimized ? 'text-[11px] sm:text-base whitespace-nowrap shrink-0' : 'text-sm sm:text-base'
+            <span className={`font-serif font-bold tracking-tight text-stone-900 shrink-0 ${
+              mobileOptimized ? 'text-[11px] sm:text-lg whitespace-nowrap' : 'text-sm sm:text-lg'
             }`}>THE HAIR GALLERY</span>
           </Link>
 
@@ -747,7 +747,7 @@ export default function MyPage() {
                             <div>
                               <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                                 <span className="text-[9px] font-mono bg-stone-900 text-gold-500 font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-wider">
-                                  {service?.category || 'HAIR'}
+                                  {lang === 'ko' ? '시술' : 'HAIR'}
                                 </span>
                                 {getStatusBadge(resv.status)}
                               </div>

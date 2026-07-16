@@ -26,7 +26,9 @@ import {
   ChevronRight,
   Clock,
   User,
-  Info
+  Info,
+  Users,
+  Scissors
 } from 'lucide-react';
 import { TRANSLATIONS, getLocalizedServices } from '@/lib/i18n';
 import { getSupabaseClient } from '@/lib/supabase';
@@ -39,7 +41,7 @@ const TIME_SLOTS = [
 
 export default function AdminDashboard() {
   const [lang, setLangState] = useState<'ko' | 'en'>('ko');
-  const [activeTab, setActiveTab] = useState<'reservations' | 'work-records' | 'sales' | 'admin-settings'>('reservations');
+  const [activeTab, setActiveTab] = useState<'reservations' | 'work-records' | 'sales' | 'customers' | 'services' | 'admin-settings'>('reservations');
   
   // Admin user notification setting states
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
@@ -93,8 +95,26 @@ export default function AdminDashboard() {
   const [workCustomerName, setWorkCustomerName] = useState<string>('');
   const [workCustomerPhone, setWorkCustomerPhone] = useState<string>('');
   const [workContent, setWorkContent] = useState<string>('');
-  const [workAmount, setWorkAmount] = useState<number>(0);
+  const [workAmount, setWorkAmount] = useState<number | ''>('');
   const [workDate, setWorkDate] = useState<string>('');
+
+  // Customer Management states
+  const [customersList, setCustomersList] = useState<any[]>([]);
+  const [isCustomersLoading, setIsCustomersLoading] = useState<boolean>(false);
+  const [showCustomerModal, setShowCustomerModal] = useState<boolean>(false);
+  const [editingCustomer, setEditingCustomer] = useState<any | null>(null);
+  const [custName, setCustName] = useState<string>('');
+  const [custPrice, setCustPrice] = useState<number | ''>('');
+  const [custWorkMenu, setCustWorkMenu] = useState<string>('');
+
+  // Service Management states
+  const [showServiceModal, setShowServiceModal] = useState<boolean>(false);
+  const [editingService, setEditingService] = useState<any | null>(null);
+  const [svcId, setSvcId] = useState<string>('');
+  const [svcName, setSvcName] = useState<string>('');
+  const [svcPrice, setSvcPrice] = useState<number | ''>('');
+  const [svcDuration, setSvcDuration] = useState<number>(30);
+  const [svcDescription, setSvcDescription] = useState<string>('');
 
   // Sales statistics states
   const [selectedDailyDate, setSelectedDailyDate] = useState<string>('');
@@ -415,6 +435,8 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (isAdminAuthorized !== true) return;
     loadWorkRecords();
+    loadCustomersList();
+    loadServicesList();
   }, [isAdminAuthorized]);
 
   const loadWorkRecords = async () => {
@@ -452,6 +474,217 @@ export default function AdminDashboard() {
       setWorkRecords(records);
     } finally {
       setIsWorkLoading(false);
+    }
+  };
+
+  const loadCustomersList = async () => {
+    setIsCustomersLoading(true);
+    try {
+      if (isUsingLocalStorage) {
+        const localData = localStorage.getItem('tg_customers');
+        setCustomersList(localData ? JSON.parse(localData) : []);
+      } else {
+        const { data, error } = await supabase
+          .from('users')
+          .select('id, name, email, phone, price, work_menu')
+          .eq('role', 'USER')
+          .order('name', { ascending: true });
+        
+        if (error) {
+          if (error.message.includes('column "price" does not exist') || error.message.includes('column "work_menu" does not exist') || error.code === '42703') {
+            const fallback = await supabase
+              .from('users')
+              .select('id, name, email, phone')
+              .eq('role', 'USER')
+              .order('name', { ascending: true });
+            setCustomersList((fallback.data || []).map((u) => Object.assign({}, u, { price: 0, work_menu: '' })));
+          } else {
+            throw error;
+          }
+        } else {
+          setCustomersList(data || []);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load customers:', err);
+    } finally {
+      setIsCustomersLoading(false);
+    }
+  };
+
+  const loadServicesList = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('services')
+        .select('*')
+        .order('name', { ascending: true });
+      if (!error && data) {
+        setServicesList(data);
+      }
+    } catch (err) {
+      console.error('Failed to load services:', err);
+    }
+  };
+
+  const handleSaveCustomer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!custName) return;
+
+    const custData = {
+      name: custName,
+      price: custPrice === '' || custPrice === null ? null : Number(custPrice),
+      work_menu: custWorkMenu,
+      email: editingCustomer?.email || ('a_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5) + '@ex.com'),
+      phone: null,
+      role: 'USER' as const
+    };
+
+    try {
+      if (isUsingLocalStorage) {
+        const localData = localStorage.getItem('tg_customers');
+        let list = localData ? JSON.parse(localData) : [];
+        if (editingCustomer) {
+          list = list.map((c: any) => c.id === editingCustomer.id ? Object.assign({}, c, custData) : c);
+        } else {
+          list.push(Object.assign({}, custData, { id: crypto.randomUUID() }));
+        }
+        localStorage.setItem('tg_customers', JSON.stringify(list));
+        setCustomersList(list);
+      } else {
+        if (editingCustomer) {
+          const { error } = await supabase
+            .from('users')
+            .update({
+              name: custName,
+              price: custPrice === '' || custPrice === null ? null : Number(custPrice),
+              work_menu: custWorkMenu
+            })
+            .eq('id', editingCustomer.id);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase
+            .from('users')
+            .insert([custData]);
+          if (error) throw error;
+        }
+        await loadCustomersList();
+      }
+      setShowCustomerModal(false);
+    } catch (err: any) {
+      console.error('Failed to save customer:', err);
+      alert('고객 저장 실패: ' + err.message);
+    }
+  };
+
+  const handleDeleteCustomer = async (id: string) => {
+    if (!confirm('정말로 이 고객을 명단에서 삭제하시겠습니까?')) return;
+    try {
+      if (isUsingLocalStorage) {
+        const localData = localStorage.getItem('tg_customers');
+        let list = localData ? JSON.parse(localData) : [];
+        list = list.filter((c: any) => c.id !== id);
+        localStorage.setItem('tg_customers', JSON.stringify(list));
+        setCustomersList(list);
+      } else {
+        const { error } = await supabase
+          .from('users')
+          .delete()
+          .eq('id', id);
+        if (error) throw error;
+        await loadCustomersList();
+      }
+    } catch (err: any) {
+      console.error('Failed to delete customer:', err);
+      alert('고객 삭제 실패: ' + err.message);
+    }
+  };
+
+  const handleSaveService = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!svcId || !svcName || svcDuration === undefined) return;
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) {
+        alert('로그인 세션이 만료되었습니다. 다시 로그인 해주세요.');
+        return;
+      }
+
+      if (editingService) {
+        const res = await fetch('/api/admin/services', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({
+            originalId: editingService.id,
+            newId: svcId,
+            name: svcName,
+            price: svcPrice === '' || svcPrice === null ? null : Number(svcPrice),
+            durationMinutes: Number(svcDuration),
+            description: svcDescription
+          })
+        });
+
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.error || 'Failed to update service');
+        }
+      } else {
+        const res = await fetch('/api/admin/services', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({
+            id: svcId,
+            name: svcName,
+            price: svcPrice === '' || svcPrice === null ? null : Number(svcPrice),
+            durationMinutes: Number(svcDuration),
+            description: svcDescription
+          })
+        });
+
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.error || 'Failed to create service');
+        }
+      }
+
+      await loadServicesList();
+      setShowServiceModal(false);
+    } catch (err: any) {
+      console.error('Failed to save service:', err);
+      alert('서비스 저장 실패: ' + err.message);
+    }
+  };
+
+  const handleDeleteService = async (id: string) => {
+    if (!confirm('정말로 이 서비스를 삭제하시겠습니까?')) return;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) return;
+
+      const res = await fetch('/api/admin/services?id=' + id, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': 'Bearer ' + token
+        }
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Failed to delete service');
+      }
+
+      await loadServicesList();
+    } catch (err: any) {
+      console.error('Failed to delete service:', err);
+      alert('서비스 삭제 실패: ' + err.message);
     }
   };
 
@@ -580,7 +813,7 @@ export default function AdminDashboard() {
     setWorkCustomerName('');
     setWorkCustomerPhone('');
     setWorkContent('');
-    setWorkAmount(0);
+    setWorkAmount('');
     setWorkDate(new Date().toISOString().split('T')[0]);
     setShowWorkModal(true);
   };
@@ -594,7 +827,7 @@ export default function AdminDashboard() {
     setWorkCustomerName(record.customer_name);
     setWorkCustomerPhone(record.customer_phone);
     setWorkContent(record.work_content);
-    setWorkAmount(record.amount);
+    setWorkAmount(record.amount || '');
     setWorkDate(record.date);
     setShowWorkModal(true);
   };
@@ -650,7 +883,7 @@ export default function AdminDashboard() {
       customer_name: workCustomerName,
       customer_phone: workCustomerPhone,
       work_content: workContent,
-      amount: Number(workAmount),
+      amount: Number(workAmount) || 0,
       date: workDate || new Date().toISOString().split('T')[0] // automatic fallback to today
     };
 
@@ -659,14 +892,33 @@ export default function AdminDashboard() {
         const localData = localStorage.getItem('tg_work_records');
         let records = localData ? JSON.parse(localData) : [];
         if (editingRecord) {
-          records = records.map((r: any) => r.id === editingRecord.id ? { ...r, ...recordData } : r);
+          records = records.map((r: any) => r.id === editingRecord.id ? Object.assign({}, r, recordData) : r);
         } else {
-          records.push({ ...recordData, id: crypto.randomUUID() });
+          records.push(Object.assign({}, recordData, { id: crypto.randomUUID() }));
         }
         // sort ascending
         records.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
         localStorage.setItem('tg_work_records', JSON.stringify(records));
         setWorkRecords(records);
+
+        // LocalStorage customer sync
+        const localCustData = localStorage.getItem('tg_customers');
+        let customers = localCustData ? JSON.parse(localCustData) : [];
+        const existingIdx = customers.findIndex((c: any) => c.name === workCustomerName);
+        const custData = {
+          name: workCustomerName,
+          price: Number(workAmount) || 0,
+          work_menu: workContent,
+          email: 'a@ex.com',
+          phone: null
+        };
+        if (existingIdx >= 0) {
+          customers[existingIdx] = Object.assign({}, customers[existingIdx], custData);
+        } else {
+          customers.push(Object.assign({}, custData, { id: crypto.randomUUID() }));
+        }
+        localStorage.setItem('tg_customers', JSON.stringify(customers));
+        setCustomersList(customers);
       } else {
         if (editingRecord) {
           const { error } = await supabase
@@ -681,6 +933,39 @@ export default function AdminDashboard() {
           if (error) throw error;
         }
         await loadWorkRecords();
+
+        // Supabase customer sync
+        const { data: existingUser, error: checkError } = await supabase
+          .from('users')
+          .select('id, name')
+          .eq('name', workCustomerName)
+          .eq('role', 'USER')
+          .maybeSingle();
+
+        if (!checkError) {
+          if (existingUser) {
+            await supabase
+              .from('users')
+              .update({
+                price: Number(workAmount) || 0,
+                work_menu: workContent
+              })
+              .eq('id', existingUser.id);
+          } else {
+            const tempEmail = 'a_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6) + '@ex.com';
+            await supabase
+              .from('users')
+              .insert([{
+                name: workCustomerName,
+                role: 'USER',
+                email: tempEmail,
+                phone: null,
+                price: Number(workAmount) || 0,
+                work_menu: workContent
+              }]);
+          }
+        }
+        await loadCustomersList();
       }
       setShowWorkModal(false);
     } catch (err) {
@@ -914,12 +1199,12 @@ WITH CHECK (
 
       {/* Sticky Header */}
       <header className="sticky top-0 z-50 bg-[#09090b]/85 backdrop-blur-md border-b border-white/5 shadow-lg">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between z-10 relative">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 bg-white flex items-center justify-center rounded-sm transition-transform group-hover:scale-105">
-              <span className="text-stone-955 font-serif text-lg font-bold italic">G</span>
+        <div className="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between z-10 relative">
+          <Link href="/" className="flex items-center gap-3 sm:gap-4 group">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-lg transition-transform group-hover:scale-105 overflow-hidden shadow-md">
+              <img src="/hair_gallery_logo.png" alt="Logo" className="w-full h-full object-cover" />
             </div>
-            <span className="font-serif text-sm sm:text-base font-bold tracking-tight text-white group-hover:text-gold-400 transition-colors">THE HAIR GALLERY</span>
+            <span className="font-serif text-sm sm:text-lg font-bold tracking-tight text-white group-hover:text-gold-400 transition-colors">THE HAIR GALLERY</span>
           </Link>
 
           <div className="flex items-center gap-4">
@@ -1756,7 +2041,180 @@ WITH CHECK (
             </div>
           )}
 
-          {/* TAB CONTENT: 4. Admin Settings */}
+          {/* TAB CONTENT: 4. Customers */}
+          {activeTab === 'customers' && (
+            <div className="space-y-6 animate-fadeIn text-left">
+              <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
+                <div className="text-left">
+                  <h2 className="font-serif text-lg font-semibold text-gold-400 tracking-wide">{t.customersTab}</h2>
+                  <p className="text-xs text-stone-400">{lang === 'ko' ? '고객별 작업 이력 및 가격 정보 관리' : 'Manage customer work history & prices'}</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setEditingCustomer(null);
+                    setCustName('');
+                    setCustPrice('');
+                    setCustWorkMenu('');
+                    setShowCustomerModal(true);
+                  }}
+                  className="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-mono font-bold py-2.5 px-4 rounded-lg flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(109,40,217,0.3)] active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>{t.addCustomer}</span>
+                </button>
+              </div>
+
+              <div className="bg-stone-900/20 rounded-2xl border border-white/5 overflow-hidden shadow-xl backdrop-blur-md">
+                {isCustomersLoading ? (
+                  <div className="text-center py-16 text-stone-550 text-xs font-mono tracking-wider">{t.loadingRecords}</div>
+                ) : customersList.length === 0 ? (
+                  <div className="text-center py-16 text-stone-550 text-xs font-light">{t.noCustomers}</div>
+                ) : (
+                  <div className="divide-y divide-white/5 text-xs">
+                    {customersList.map(cust => (
+                      <div key={cust.id} className="p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:bg-white/[0.02] transition-all duration-300">
+                        <div className="space-y-1.5 flex-1 w-full text-left">
+                          <div className="flex items-center gap-2.5">
+                            <h3 className="font-serif text-sm font-semibold text-white">{cust.name}</h3>
+                          </div>
+                          {cust.work_menu && (
+                            <p className="text-xs text-stone-300 leading-relaxed bg-stone-950/60 p-3 rounded-lg border border-white/5">
+                              <span className="font-mono text-[10px] text-stone-400 block mb-1 uppercase tracking-wider">{t.workContent}</span>
+                              {cust.work_menu}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="flex items-center justify-between md:justify-end gap-6 w-full md:w-auto shrink-0 border-t md:border-t-0 border-white/5 pt-3.5 md:pt-0">
+                          <div className="text-left md:text-right">
+                            <span className="text-[10px] font-mono text-stone-400 uppercase block tracking-widest">
+                              {lang === 'ko' ? '가격' : 'Price'}
+                            </span>
+                            <span className="font-serif font-bold text-white text-base">
+                              {cust.price !== null && cust.price !== undefined ? ('₩' + cust.price.toLocaleString()) : '—'}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 pl-4.5 border-l border-white/5">
+                            <button
+                              onClick={() => {
+                                setEditingCustomer(cust);
+                                setCustName(cust.name || '');
+                                setCustPrice(cust.price !== null && cust.price !== undefined ? cust.price : '');
+                                setCustWorkMenu(cust.work_menu || '');
+                                setShowCustomerModal(true);
+                              }}
+                              className="p-2 text-stone-300 hover:text-white hover:bg-white/5 rounded-lg border border-white/5 transition-all cursor-pointer"
+                              title={t.editCustomer}
+                            >
+                              <Edit className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteCustomer(cust.id)}
+                              className="p-2 text-rose-450 hover:text-white hover:bg-rose-600 rounded-lg border border-rose-500/20 hover:border-rose-500 transition-all cursor-pointer"
+                              title={t.deleteCustomer}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* TAB CONTENT: 5. Services */}
+          {activeTab === 'services' && (
+            <div className="space-y-6 animate-fadeIn text-left">
+              <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
+                <div className="text-left">
+                  <h2 className="font-serif text-lg font-semibold text-gold-400 tracking-wide">{t.servicesTab}</h2>
+                  <p className="text-xs text-stone-400">{lang === 'ko' ? '시술 가격표 및 서비스 목록 수정 (전체 컬럼 수정 가능)' : 'Modify services registry and prices (All columns editable)'}</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setEditingService(null);
+                    setSvcId('');
+                    setSvcName('');
+                    setSvcPrice('');
+                    setSvcDuration(30);
+                    setSvcDescription('');
+                    setShowServiceModal(true);
+                  }}
+                  className="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-mono font-bold py-2.5 px-4 rounded-lg flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(109,40,217,0.3)] active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>{t.addService}</span>
+                </button>
+              </div>
+
+              <div className="bg-stone-900/20 rounded-2xl border border-white/5 overflow-hidden shadow-xl backdrop-blur-md">
+                {servicesList.length === 0 ? (
+                  <div className="text-center py-16 text-stone-550 text-xs font-light">{t.noServices}</div>
+                ) : (
+                  <div className="divide-y divide-white/5 text-xs">
+                    {servicesList.map(svc => (
+                      <div key={svc.id} className="p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:bg-white/[0.02] transition-all duration-300">
+                        <div className="space-y-1.5 flex-1 w-full text-left">
+                          <div className="flex items-center gap-2.5 flex-wrap">
+                            <span className="font-mono text-[9px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded">
+                              ID: {svc.id}
+                            </span>
+                            <h3 className="font-serif text-sm font-semibold text-white">{svc.name}</h3>
+                            <span className="text-[10px] text-stone-450 font-mono">({(svc.duration_minutes || svc.durationMinutes || 30) + 'm'})</span>
+                          </div>
+                          <p className="text-xs text-stone-300 leading-normal">
+                            {svc.description}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center justify-between md:justify-end gap-6 w-full md:w-auto shrink-0 border-t md:border-t-0 border-white/5 pt-3.5 md:pt-0">
+                          <div className="text-left md:text-right">
+                            <span className="text-[10px] font-mono text-stone-400 uppercase block tracking-widest">
+                              {lang === 'ko' ? '단가' : 'Price'}
+                            </span>
+                            <span className="font-serif font-bold text-white text-base">
+                              {svc.price !== null && svc.price !== undefined ? ('₩' + svc.price.toLocaleString()) : '가격 문의'}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 pl-4.5 border-l border-white/5">
+                            <button
+                              onClick={() => {
+                                setEditingService(svc);
+                                setSvcId(svc.id || '');
+                                setSvcName(svc.name || '');
+                                setSvcPrice(svc.price !== null && svc.price !== undefined ? svc.price : '');
+                                setSvcDuration(svc.duration_minutes || svc.durationMinutes || 30);
+                                setSvcDescription(svc.description || '');
+                                setShowServiceModal(true);
+                              }}
+                              className="p-2 text-stone-300 hover:text-white hover:bg-white/5 rounded-lg border border-white/5 transition-all cursor-pointer"
+                              title={t.editService}
+                            >
+                              <Edit className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteService(svc.id)}
+                              className="p-2 text-rose-455 hover:text-white hover:bg-rose-600 rounded-lg border border-rose-500/20 hover:border-rose-500 transition-all cursor-pointer"
+                              title={t.deleteService}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* TAB CONTENT: 6. Admin Settings */}
           {activeTab === 'admin-settings' && (
             <div className="space-y-6 animate-fadeIn">
               <div className="bg-stone-900/30 p-6 rounded-2xl border border-white/5 backdrop-blur-md shadow-xl space-y-4 text-left">
@@ -2061,42 +2519,6 @@ WITH CHECK (
 
             <form onSubmit={handleSaveWorkRecord} className="space-y-4 text-xs">
               
-              {/* Select Registered Customer */}
-              <div className="space-y-1.5">
-                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{t.selectUser}</label>
-                <select
-                  value={workSelectedUserId}
-                  onChange={e => handleWorkUserSelectChange(e.target.value)}
-                  className="w-full p-2.5 bg-stone-955/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-stone-200 cursor-pointer"
-                  style={{ colorScheme: 'dark' }}
-                >
-                  <option value="" className="bg-stone-900 text-white">{t.manualInput}</option>
-                  {registeredUsers.map(user => (
-                    <option key={user.id} value={user.id} className="bg-stone-900 text-white">
-                      {user.name} ({user.email || user.phone})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Load from Past Records */}
-              <div className="space-y-1.5">
-                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">
-                  {lang === 'ko' ? '지난 기록으로부터 불러오기' : 'Load from Past Records'}
-                </label>
-                <select
-                  value={workSelectedPastKey}
-                  onChange={e => handleWorkPastUserSelectChange(e.target.value)}
-                  className="w-full p-2.5 bg-stone-955/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-stone-200 cursor-pointer"
-                  style={{ colorScheme: 'dark' }}
-                >
-                  <option value="" className="bg-stone-900 text-white">{t.manualInput}</option>
-                  {pastCustomersList.map(cust => (
-                    <option key={cust.key} value={cust.key} className="bg-[#09090b] text-white">{cust.name} ({cust.phone})</option>
-                  ))}
-                </select>
-              </div>
-
               {/* Customer Name */}
               <div className="space-y-1.5">
                 <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{t.customerName} *</label>
@@ -2106,12 +2528,7 @@ WITH CHECK (
                   value={workCustomerName}
                   onChange={e => setWorkCustomerName(e.target.value)}
                   placeholder="예: 홍길동"
-                  disabled={!!workSelectedUserId || !!workSelectedPastKey}
-                  className={`w-full p-2.5 border rounded-lg outline-none focus:border-indigo-500 ${
-                    (workSelectedUserId || workSelectedPastKey) 
-                      ? 'bg-stone-955/40 border-white/5 text-stone-550 cursor-not-allowed' 
-                      : 'bg-stone-950/80 border-white/5 text-white'
-                  }`}
+                  className="w-full p-2.5 border rounded-lg outline-none focus:border-indigo-500 bg-stone-950/80 border-white/5 text-white"
                 />
               </div>
 
@@ -2124,12 +2541,7 @@ WITH CHECK (
                   value={workCustomerPhone}
                   onChange={e => setWorkCustomerPhone(e.target.value)}
                   placeholder="예: 010-1234-5678"
-                  disabled={!!workSelectedUserId || !!workSelectedPastKey}
-                  className={`w-full p-2.5 border rounded-lg outline-none focus:border-indigo-500 ${
-                    (workSelectedUserId || workSelectedPastKey) 
-                      ? 'bg-stone-955/40 border-white/5 text-stone-550 cursor-not-allowed' 
-                      : 'bg-stone-950/80 border-white/5 text-white'
-                  }`}
+                  className="w-full p-2.5 border rounded-lg outline-none focus:border-indigo-500 bg-stone-955/80 border-white/5 text-white"
                 />
               </div>
 

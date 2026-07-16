@@ -3,30 +3,29 @@ export interface Service {
   name: string;
   price: number | null;
   durationMinutes: number;
-  category: string;
   description: string;
 }
 
 export const getLocalizedServices = (lang: 'ko' | 'en'): Service[] => {
   if (lang === 'ko') {
     return [
-      { id: 's1', name: '시그니처 컷 & 블로우아웃', price: null, durationMinutes: 60, category: '컷', description: '원장 엘레나가 설계하는 맞춤형 커트와 샴푸, 볼륨 있는 드라이 스타일링이 포함됩니다.' },
-      { id: 's2', name: '남성 정밀 컷', price: null, durationMinutes: 45, category: '컷', description: '깔끔하고 정교한 가위 및 클리퍼 컷, 스팀 타월 마무리와 프리미엄 왁스 스타일링.' },
-      { id: 's3', name: '앞머리 & 라인 정리', price: null, durationMinutes: 30, category: '컷', description: '앞머리나 구둣발 라인 등 삐져나온 부위를 가볍게 다음어 스타일을 유지시켜 줍니다.' },
-      { id: 's4', name: '발레아쥬 입체 컬러', price: null, durationMinutes: 120, category: '컬러', description: '손으로 그라데이션을 그리는 고급 염색 기법으로 자연스럽고 깊이감 있는 입체 하이라이트를 연출합니다.' },
-      { id: 's5', name: '뿌리 염색 & 토너 케어', price: null, durationMinutes: 75, category: '컬러', description: '새로 자라난 헤어 라인의 깔끔한 톤 일치와 윤기를 제공하는 단백질 보호막 코팅.' },
-      { id: 's6', name: '두피 진정 & 헤어 테라피', price: null, durationMinutes: 60, category: '트리트먼트', description: '두피를 진정시키고 영양을 집중 공급하여 모발 본연의 광택과 건강함을 되찾아주는 케어.' },
-      { id: 's7', name: '레드카펫 스타일링', price: null, durationMinutes: 45, category: '스타일링', description: '특별한 약속이나 이벤트를 위한 고급스러운 볼륨 드라이와 디테일 세팅.' }
+      { id: 's1', name: '시그니처 컷 & 블로우아웃', price: null, durationMinutes: 60, description: '원장 엘레나가 설계하는 맞춤형 커트와 샴푸, 볼륨 있는 드라이 스타일링이 포함됩니다.' },
+      { id: 's2', name: '남성 정밀 컷', price: null, durationMinutes: 45, description: '깔끔하고 정교한 가위 및 클리퍼 컷, 스팀 타월 마무리와 프리미엄 왁스 스타일링.' },
+      { id: 's3', name: '앞머리 & 라인 정리', price: null, durationMinutes: 30, description: '앞머리나 구둣발 라인 등 삐져나온 부위를 가볍게 다음어 스타일을 유지시켜 줍니다.' },
+      { id: 's4', name: '발레아쥬 입체 컬러', price: null, durationMinutes: 120, description: '손으로 그라데이션을 그리는 고급 염색 기법으로 자연스럽고 깊이감 있는 입체 하이라이트를 연출합니다.' },
+      { id: 's5', name: '뿌리 염색 & 토너 케어', price: null, durationMinutes: 75, description: '새로 자라난 헤어 라인의 깔끔한 톤 일치와 윤기를 제공하는 단백질 보호막 코팅.' },
+      { id: 's6', name: '두피 진정 & 헤어 테라피', price: null, durationMinutes: 60, description: '두피를 진정시키고 영양을 집중 공급하여 모발 본연의 광택과 건강함을 되찾아주는 케어.' },
+      { id: 's7', name: '레드카펫 스타일링', price: null, durationMinutes: 45, description: '특별한 약속이나 이벤트를 위한 고급스러운 볼륨 드라이와 디테일 세팅.' }
     ];
   } else {
     return [
-      { id: 's1', name: 'Signature Cut & Blowout', price: null, durationMinutes: 60, category: 'Cut', description: 'Bespoke cutting designed by Director Elena, complete with a wash and signature blowout.' },
-      { id: 's2', name: 'Gents Precision Cut', price: null, durationMinutes: 45, category: 'Cut', description: 'Detailed scissor and clipper work, hot towel finish, and premium matte styling.' },
-      { id: 's3', name: 'Quick Trim & Clean-up', price: null, durationMinutes: 30, category: 'Cut', description: 'A fast touch-up for split ends or bangs to keep your style fresh.' },
-      { id: 's4', name: 'Balayage Dimensional Color', price: null, durationMinutes: 120, category: 'Color', description: 'Hand-painted gradients creating low-maintenance dimensional transitions.' },
-      { id: 's5', name: 'Root Touch-up & Gloss', price: null, durationMinutes: 75, category: 'Color', description: 'Precise coverage of root growth or gray hair, complete with a protein glaze.' },
-      { id: 's6', name: 'Scalp & Hair Therapy', price: null, durationMinutes: 60, category: 'Treatment', description: 'Intense moisture therapy to soothe the scalp and restore high hair shine.' },
-      { id: 's7', name: 'Red Carpet Styling', price: null, durationMinutes: 45, category: 'Styling', description: 'Premium round-brush sculpting and thermal styling for your special events.' }
+      { id: 's1', name: 'Signature Cut & Blowout', price: null, durationMinutes: 60, description: 'Bespoke cutting designed by Director Elena, complete with a wash and signature blowout.' },
+      { id: 's2', name: 'Gents Precision Cut', price: null, durationMinutes: 45, description: 'Detailed scissor and clipper work, hot towel finish, and premium matte styling.' },
+      { id: 's3', name: 'Quick Trim & Clean-up', price: null, durationMinutes: 30, description: 'A fast touch-up for split ends or bangs to keep your style fresh.' },
+      { id: 's4', name: 'Balayage Dimensional Color', price: null, durationMinutes: 120, description: 'Hand-painted gradients creating low-maintenance dimensional transitions.' },
+      { id: 's5', name: 'Root Touch-up & Gloss', price: null, durationMinutes: 75, description: 'Precise coverage of root growth or gray hair, complete with a protein glaze.' },
+      { id: 's6', name: 'Scalp & Hair Therapy', price: null, durationMinutes: 60, description: 'Intense moisture therapy to soothe the scalp and restore high hair shine.' },
+      { id: 's7', name: 'Red Carpet Styling', price: null, durationMinutes: 45, description: 'Premium round-brush sculpting and thermal styling for your special events.' }
     ];
   }
 };
@@ -82,12 +81,12 @@ export const TRANSLATIONS = {
     notLoggedIn: "로그인 시 동의 이력 타임라인을 확인하실 수 있습니다.",
     
     // New translations for admin work records and sales
-    workRecordsTab: "작업 기록 관리",
-    salesDashboardTab: "매출 결산 통계",
+    workRecordsTab: "매출 관리",
+    salesDashboardTab: "결산",
     reservationsTab: "예약 현황 관리",
-    addRecord: "작업 기록 등록",
-    editRecord: "작업 기록 수정",
-    deleteRecord: "작업 기록 삭제",
+    addRecord: "매출 등록",
+    editRecord: "매출 내역 수정",
+    deleteRecord: "매출 내역 삭제",
     customerName: "고객 이름",
     customerPhone: "전화번호",
     workContent: "작업 내용 (시술 상세)",
@@ -95,16 +94,16 @@ export const TRANSLATIONS = {
     date: "날짜",
     save: "저장",
     cancel: "취소",
-    searchWorkPlaceholder: "고객 이름 또는 전화번호로 작업 기록 검색...",
-    dailySales: "일별 매출",
-    monthlySales: "월별 매출",
-    yearlySales: "연별 매출",
-    totalSales: "총 매출 합계",
+    searchWorkPlaceholder: "고객 이름 또는 전화번호로 매출 내역 검색...",
+    dailySales: "일별 결산",
+    monthlySales: "월별 결산",
+    yearlySales: "연별 결산",
+    totalSales: "총 결산 합계",
     selectDate: "날짜 선택",
     selectMonth: "월 선택",
     selectYear: "연도 선택",
-    salesSummary: "매출 결산 요약",
-    noWorkRecords: "등록된 작업 기록이 없습니다.",
+    salesSummary: "결산 요약",
+    noWorkRecords: "등록된 매출 기록이 없습니다.",
     dbErrorWarning: "주의: Supabase에 work_records 테이블이 존재하지 않아 임시 로컬 저장소 모드로 작동 중입니다. 데이터베이스 SQL 스크립트를 실행해 주세요.",
     dbConnectedSuccess: "Supabase 데이터베이스와 성공적으로 연동되었습니다.",
     
@@ -139,7 +138,19 @@ export const TRANSLATIONS = {
     cancelReservationBtn: "예약 취소 요청",
     cancelConfirmMsg: "정말로 이 예약을 취소하시겠습니까?",
     cancelSuccessMsg: "예약이 정상적으로 취소되었습니다.",
-    backToHome: "메인 페이지로"
+    backToHome: "메인 페이지로",
+
+    // Customers and Services management translations
+    customersTab: "고객 명단 관리",
+    servicesTab: "서비스 관리",
+    addCustomer: "고객 등록",
+    editCustomer: "고객 정보 수정",
+    deleteCustomer: "고객 삭제",
+    noCustomers: "등록된 고객이 없습니다.",
+    addService: "서비스 등록",
+    editService: "서비스 수정",
+    deleteService: "서비스 삭제",
+    noServices: "등록된 서비스가 없습니다."
   },
   en: {
     heroSub: "THE HAIR GALLERY",
@@ -191,12 +202,12 @@ export const TRANSLATIONS = {
     notLoggedIn: "Log in to see your consent audit log timeline.",
     
     // New translations for admin work records and sales
-    workRecordsTab: "Work Records",
-    salesDashboardTab: "Sales Dashboard",
+    workRecordsTab: "Sales Management",
+    salesDashboardTab: "Settlement",
     reservationsTab: "Reservations",
-    addRecord: "Add Work Record",
-    editRecord: "Edit Work Record",
-    deleteRecord: "Delete Work Record",
+    addRecord: "Record Sales",
+    editRecord: "Edit Sales Record",
+    deleteRecord: "Delete Sales Record",
     customerName: "Customer Name",
     customerPhone: "Phone Number",
     workContent: "Work Details",
@@ -204,16 +215,16 @@ export const TRANSLATIONS = {
     date: "Date",
     save: "Save",
     cancel: "Cancel",
-    searchWorkPlaceholder: "Search work records by name or phone...",
-    dailySales: "Daily Sales",
-    monthlySales: "Monthly Sales",
-    yearlySales: "Yearly Sales",
-    totalSales: "Total Revenue",
+    searchWorkPlaceholder: "Search sales records by name or phone...",
+    dailySales: "Daily Settlement",
+    monthlySales: "Monthly Settlement",
+    yearlySales: "Yearly Settlement",
+    totalSales: "Total Settlement",
     selectDate: "Select Date",
     selectMonth: "Select Month",
     selectYear: "Select Year",
-    salesSummary: "Sales Summary",
-    noWorkRecords: "No work records registered.",
+    salesSummary: "Settlement Summary",
+    noWorkRecords: "No sales records registered.",
     dbErrorWarning: "Notice: Table 'work_records' not found in Supabase. Operating in Local Storage fallback mode. Please run the SQL script in your Supabase SQL editor.",
     dbConnectedSuccess: "Successfully synchronized with Supabase database.",
     
@@ -248,6 +259,18 @@ export const TRANSLATIONS = {
     cancelReservationBtn: "Request Cancellation",
     cancelConfirmMsg: "Are you sure you want to cancel this booking?",
     cancelSuccessMsg: "The reservation has been cancelled successfully.",
-    backToHome: "Back to Booking Page"
+    backToHome: "Back to Home",
+
+    // Customers and Services management translations
+    customersTab: "Customers",
+    servicesTab: "Services",
+    addCustomer: "Add Customer",
+    editCustomer: "Edit Customer Info",
+    deleteCustomer: "Delete Customer",
+    noCustomers: "No customers registered.",
+    addService: "Add Service",
+    editService: "Edit Service",
+    deleteService: "Delete Service",
+    noServices: "No services registered."
   }
 };

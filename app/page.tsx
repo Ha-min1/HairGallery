@@ -187,7 +187,6 @@ export default function Home() {
           name: s.name,
           price: s.price,
           durationMinutes: s.duration_minutes,
-          category: s.category,
           description: s.description
         }));
         setServices(mapped);
@@ -597,13 +596,13 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900 antialiased flex flex-col">
       {/* Sticky Header */}
-      <header className="sticky top-0 z-50 bg-white border-b border-stone-200 shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 bg-stone-950 flex items-center justify-center rounded-sm">
-              <span className="text-gold-500 font-serif text-lg font-bold italic">G</span>
+      <header className="sticky top-0 z-50 bg-white border-b border-stone-200 shadow-md">
+        <div className="max-w-5xl mx-auto px-4 h-20 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-3 sm:gap-4 group">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-lg transition-transform group-hover:scale-105 overflow-hidden shadow-sm">
+              <img src="/hair_gallery_logo.png" alt="Logo" className="w-full h-full object-cover" />
             </div>
-            <span className="font-serif text-sm sm:text-base font-bold tracking-tight text-stone-900">THE HAIR GALLERY</span>
+            <span className="font-serif text-sm sm:text-lg font-bold tracking-tight text-stone-900">THE HAIR GALLERY</span>
           </Link>
 
           <div className="flex items-center gap-2 sm:gap-3">
@@ -680,24 +679,22 @@ export default function Home() {
       {/* Main Content */}
       <main className="flex-1">
         {/* Editorial Hero Block */}
-        <section 
-          className="relative bg-stone-950 text-stone-100 py-24 sm:py-32 px-4 text-center border-b border-stone-800 animate-fadeIn bg-cover bg-center bg-no-repeat overflow-hidden"
-          style={{ backgroundImage: "url('/banner_02.png')" }}
-        >
-          {/* Dark overlay to enhance text readability */}
-          <div className="absolute inset-0 bg-black/60 z-0" />
+        <section className="relative bg-stone-955 text-stone-100 py-24 sm:py-36 px-4 border-b border-stone-800 animate-fadeIn overflow-hidden flex items-center justify-center min-h-[450px]">
+          {/* Background image with brightness filter */}
+          <div 
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat filter brightness-110 sm:brightness-125 z-0"
+            style={{ backgroundImage: "url('/banner_02.png')" }}
+          />
+          {/* Dark overlay to enhance text readability (reduced opacity for brightness) */}
+          <div className="absolute inset-0 bg-black/25 z-0" />
           
-          <div className="relative z-10 max-w-4xl mx-auto space-y-5">
-            <span className="text-2xl sm:text-5xl font-mono tracking-[0.25em] text-gold-500 uppercase font-extrabold block drop-shadow-md">
-              {t.heroSub}
-            </span>
-            <div className="h-[1px] w-16 bg-gold-500/50 mx-auto" />
-            <h1 className="font-serif text-lg sm:text-3xl font-normal tracking-tight text-white leading-tight drop-shadow-lg">
-              {t.heroTitle}
-            </h1>
-            <p className="max-w-xl mx-auto text-xs sm:text-sm text-stone-300 font-light leading-relaxed drop-shadow-md pt-1">
-              {t.heroDesc}
-            </p>
+          <div className="relative z-10 max-w-5xl mx-auto w-full flex flex-col items-center justify-center min-h-[300px] py-8 sm:py-0 px-4">
+            {/* Main Title Box (fits the text size exactly) */}
+            <div className="bg-stone-950/65 backdrop-blur-[3px] py-4.5 px-8 sm:px-10 rounded-xl border border-white/15 shadow-2xl text-center max-w-max">
+              <span className="text-xl sm:text-3xl font-mono tracking-[0.25em] text-gold-500 uppercase font-black block drop-shadow-md">
+                {t.heroSub}
+              </span>
+            </div>
           </div>
         </section>
 
@@ -723,15 +720,19 @@ export default function Home() {
                   className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
                     idx === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'
                   }`}
-                  style={{
-                    backgroundImage: `url('${slide.url}')`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    backgroundRepeat: 'no-repeat'
-                  }}
                 >
-                  {/* Dark overlay for readability */}
-                  <div className="absolute inset-0 bg-black/35 z-10" />
+                  {/* Background image with brightness filter */}
+                  <div 
+                    className="absolute inset-0 filter brightness-135 sm:brightness-145"
+                    style={{
+                      backgroundImage: `url('${slide.url}')`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      backgroundRepeat: 'no-repeat'
+                    }}
+                  />
+                  {/* Dark overlay for readability (reduced opacity for maximum brightness) */}
+                  <div className="absolute inset-0 bg-black/5 z-10" />
 
                   {/* Caption */}
                   <div className="absolute bottom-6 left-6 right-6 z-20 text-left">
@@ -1021,7 +1022,7 @@ export default function Home() {
                               />
                               <div>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-[9px] font-mono text-stone-400 uppercase tracking-widest font-semibold block">{s.category}</span>
+                                  <span className="text-[9px] font-mono text-stone-400 uppercase tracking-widest font-semibold block">{lang === 'ko' ? '시술' : 'HAIR'}</span>
                                   {currentUser && currentUser.role === 'ADMIN' && (
                                     <button
                                       type="button"
@@ -1589,19 +1590,6 @@ export default function Home() {
               await handleUpdateService(editingService);
               setEditingService(null);
             }} className="p-6 space-y-4">
-              {/* Category */}
-              <div className="space-y-1 text-left">
-                <label className="text-[10px] font-mono text-stone-400 uppercase tracking-widest font-semibold block">
-                  {lang === 'ko' ? '분류 (Category)' : 'Category'}
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={editingService.category}
-                  onChange={(e) => setEditingService({ ...editingService, category: e.target.value })}
-                  className="w-full px-3 py-2 border border-stone-200 rounded-lg text-xs focus:ring-1 focus:ring-gold-500 focus:border-gold-500 outline-none bg-stone-50"
-                />
-              </div>
 
               {/* Name */}
               <div className="space-y-1 text-left">

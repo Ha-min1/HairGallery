@@ -17,8 +17,8 @@ export async function sendTelegramAdminAlert({
   serviceName: string;
   price: number;
 }) {
-  const token = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_CHAT_ID;
+  const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
+  const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
 
   // If environment variables are not configured or are placeholder strings, bypass silently
   if (!token || !chatId || token === 'your_telegram_bot_token_here' || chatId === 'your_telegram_chat_id_here') {
