@@ -218,7 +218,9 @@ export default function Home() {
     const cached = localStorage.getItem(`custom_services_${currentLang}`);
     if (cached) {
       try {
-        setServices(JSON.parse(cached));
+        const parsed = JSON.parse(cached);
+        parsed.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0) || a.id.localeCompare(b.id));
+        setServices(parsed);
         return;
       } catch (e) {
         console.error('Failed to parse cached services:', e);
@@ -230,6 +232,7 @@ export default function Home() {
       const { data, error } = await supabase
         .from('services')
         .select('*')
+        .order('display_order', { ascending: true })
         .order('id', { ascending: true });
       if (!error && data && data.length > 0) {
         const mapped = data.map((s: any) => ({
@@ -237,7 +240,8 @@ export default function Home() {
           name: s.name,
           price: s.price,
           durationMinutes: s.duration_minutes,
-          description: s.description
+          description: s.description,
+          display_order: s.display_order || 0
         }));
         setServices(mapped);
         // Cache it in localStorage
@@ -249,7 +253,8 @@ export default function Home() {
     }
 
     // 3. Static fallback
-    setServices(getLocalizedServices(currentLang));
+    const staticSvc = getLocalizedServices(currentLang).map((s: any, idx: number) => Object.assign({}, s, { display_order: idx }));
+    setServices(staticSvc);
   };
 
   useEffect(() => {

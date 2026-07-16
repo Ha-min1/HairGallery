@@ -28,7 +28,9 @@ import {
   User,
   Info,
   Users,
-  Scissors
+  Scissors,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import { TRANSLATIONS, getLocalizedServices } from '@/lib/i18n';
 import { getSupabaseClient } from '@/lib/supabase';
@@ -520,7 +522,9 @@ export default function AdminDashboard() {
       if (isUsingLocalStorage) {
         const saved = localStorage.getItem(`custom_services_${lang}`);
         if (saved) {
-          setServicesList(JSON.parse(saved));
+          const parsed = JSON.parse(saved);
+          parsed.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0) || a.id.localeCompare(b.id));
+          setServicesList(parsed);
         } else {
           setServicesList([]);
         }
@@ -528,7 +532,8 @@ export default function AdminDashboard() {
         const { data, error } = await supabase
           .from('services')
           .select('*')
-          .order('name', { ascending: true });
+          .order('display_order', { ascending: true })
+          .order('id', { ascending: true });
         if (!error && data) {
           setServicesList(data);
         }
@@ -727,6 +732,82 @@ export default function AdminDashboard() {
     } catch (err: any) {
       console.error('Failed to delete service:', err);
       alert('서비스 삭제 실패: ' + err.message);
+    }
+  };
+
+  const handleMoveService = async (svc: any, direction: 'up' | 'down') => {
+    const currentIndex = servicesList.findIndex(s => s.id === svc.id);
+    if (currentIndex === -1) return;
+    
+    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (targetIndex < 0 || targetIndex >= servicesList.length) return; // boundary check
+
+    const swapTarget = servicesList[targetIndex];
+
+    try {
+      if (isUsingLocalStorage) {
+        const listCopy = [...servicesList];
+        const currentOrder = svc.display_order || currentIndex;
+        const targetOrder = swapTarget.display_order || targetIndex;
+
+        listCopy[currentIndex] = { ...swapTarget, display_order: currentOrder };
+        listCopy[targetIndex] = { ...svc, display_order: targetOrder };
+        
+        listCopy.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0) || a.id.localeCompare(b.id));
+        const finalized = listCopy.map((s, idx) => Object.assign({}, s, { display_order: idx }));
+
+        localStorage.setItem(`custom_services_${lang}`, JSON.stringify(finalized));
+        setServicesList(finalized);
+      } else {
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        if (!token) return;
+
+        const res1 = await fetch('/api/admin/services', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({
+            originalId: swapTarget.id,
+            newId: swapTarget.id,
+            name: swapTarget.name,
+            price: swapTarget.price,
+            durationMinutes: swapTarget.duration_minutes || swapTarget.durationMinutes || 30,
+            description: swapTarget.description,
+            category: swapTarget.category,
+            displayOrder: currentIndex
+          })
+        });
+
+        if (!res1.ok) throw new Error('Failed to update display order of adjacent service');
+
+        const res2 = await fetch('/api/admin/services', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({
+            originalId: svc.id,
+            newId: svc.id,
+            name: svc.name,
+            price: svc.price,
+            durationMinutes: svc.duration_minutes || svc.durationMinutes || 30,
+            description: svc.description,
+            category: svc.category,
+            displayOrder: targetIndex
+          })
+        });
+
+        if (!res2.ok) throw new Error('Failed to update display order of current service');
+
+        await loadServicesList();
+      }
+    } catch (err: any) {
+      console.error('Failed to move service:', err);
+      alert('순서 변경 실패: ' + err.message);
     }
   };
 
@@ -2268,7 +2349,27 @@ WITH CHECK (
                             </span>
                           </div>
 
-                          <div className="flex items-center gap-1.5 pl-4.5 border-l border-white/5">
+                           <div className="flex items-center gap-1.5 pl-4.5 border-l border-white/5">
+                            {/* Reordering Buttons */}
+                            <div className="flex flex-col gap-0.5 mr-1.5">
+                              <button
+                                onClick={() => handleMoveService(svc, 'up')}
+                                className="p-1 text-stone-400 hover:text-white hover:bg-white/5 rounded transition-all cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
+                                disabled={servicesList.indexOf(svc) === 0}
+                                title={lang === 'ko' ? '위로 이동' : 'Move Up'}
+                              >
+                                <ArrowUp className="h-3 w-3" />
+                              </button>
+                              <button
+                                onClick={() => handleMoveService(svc, 'down')}
+                                className="p-1 text-stone-400 hover:text-white hover:bg-white/5 rounded transition-all cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
+                                disabled={servicesList.indexOf(svc) === servicesList.length - 1}
+                                title={lang === 'ko' ? '아래로 이동' : 'Move Down'}
+                              >
+                                <ArrowDown className="h-3 w-3" />
+                              </button>
+                            </div>
+
                             <button
                               onClick={() => {
                                 setEditingService(svc);
