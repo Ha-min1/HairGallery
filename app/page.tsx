@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
-import { Calendar as CalendarIcon, Scissors, CheckCircle, Info, LayoutDashboard, ChevronLeft, ChevronRight, User, Key, ShieldCheck, History, Clock } from 'lucide-react';
+import { Calendar as CalendarIcon, Scissors, CheckCircle, Info, LayoutDashboard, ChevronLeft, ChevronRight, User, Key, ShieldCheck, History, Clock, Bell } from 'lucide-react';
 import { TRANSLATIONS, getLocalizedServices } from '@/lib/i18n';
 import { getSupabaseClient } from '@/lib/supabase';
 
@@ -53,6 +53,56 @@ export default function Home() {
   const [currentSlide, setCurrentSlide] = useState<number>(0);
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(false);
   const [isWithdrawing, setIsWithdrawing] = useState<boolean>(false);
+
+  // Notification States
+  const [reservations, setReservations] = useState<any[]>([]);
+  const [isNotiOpen, setIsNotiOpen] = useState<boolean>(false);
+  const notiRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notiRef.current && !notiRef.current.contains(event.target as Node)) {
+        setIsNotiOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const loadReservationsForNotifications = async () => {
+    if (!currentUser) return;
+    try {
+      let query = supabase
+        .from('reservations')
+        .select(`
+          id, date, time, status, customer_name, customer_phone, price, service_id,
+          services ( name, duration_minutes )
+        `);
+      
+      const isAdmin = currentUser.role === 'ADMIN';
+      if (!isAdmin) {
+        query = query.eq('user_id', currentUser.id);
+      }
+      
+      const { data, error } = await query.order('date', { ascending: false });
+      if (!error && data) {
+        setReservations(data);
+      }
+    } catch (e) {
+      console.error('Failed to load reservations for notifications:', e);
+    }
+  };
+
+  useEffect(() => {
+    loadReservationsForNotifications();
+  }, [currentUser]);
+
+  const isAdmin = currentUser?.role === 'ADMIN';
+  const targetAlertStatus = isAdmin ? 'Pending' : 'Confirmed';
+  const notificationReservations = useMemo(() => {
+    return reservations.filter(resv => resv.status === targetAlertStatus);
+  }, [reservations, targetAlertStatus]);
+  const notificationCount = notificationReservations.length;
 
   // Onboarding modal states (For collecting Name & Phone on first login)
   const [showOnboardingModal, setShowOnboardingModal] = useState<boolean>(false);
@@ -615,6 +665,88 @@ export default function Home() {
                 <LayoutDashboard className="h-3.5 w-3.5" />
                 <span>{t.goToAdmin}</span>
               </Link>
+            )}
+
+            {/* Notification Bell for Logged-in Users */}
+            {currentUser && (
+              <div className="relative" ref={notiRef}>
+                <button
+                  onClick={() => setIsNotiOpen(!isNotiOpen)}
+                  className="relative p-2 text-stone-700 hover:text-stone-950 hover:bg-stone-100 rounded-full transition-colors cursor-pointer focus:outline-none flex items-center justify-center"
+                  aria-label="Notifications"
+                >
+                  <Bell className="h-5 w-5" />
+                  {notificationCount > 0 && (
+                    <>
+                      <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
+                      </span>
+                      <span className="absolute -top-1 -right-1 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-red-600 text-[9px] font-bold text-white border border-white">
+                        {notificationCount}
+                      </span>
+                    </>
+                  )}
+                </button>
+
+                {/* Dropdown Menu */}
+                {isNotiOpen && (
+                  <div className="absolute right-0 mt-2 w-80 bg-white border border-stone-200 rounded-xl shadow-xl z-50 overflow-hidden animate-fadeIn text-stone-900">
+                    <div className="px-4 py-3 bg-stone-50 border-b border-stone-100 flex justify-between items-center">
+                      <span className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
+                        <Bell className="h-4 w-4 text-gold-600" />
+                        {lang === 'ko' ? '알림' : 'Notifications'}
+                      </span>
+                      {notificationCount > 0 && (
+                        <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-bold">
+                          {notificationCount}
+                        </span>
+                      )}
+                    </div>
+                    <div className="max-h-64 overflow-y-auto divide-y divide-stone-100">
+                      {notificationCount === 0 ? (
+                        <div className="p-6 text-center text-xs text-stone-400 font-light">
+                          {isAdmin 
+                            ? (lang === 'ko' ? '새로 들어온 예약 신청이 없습니다.' : 'No new booking requests.')
+                            : (lang === 'ko' ? '확정된 예약 알림이 없습니다.' : 'No confirmed reservation alerts.')}
+                        </div>
+                      ) : (
+                        notificationReservations.map((resv) => {
+                          const dateObj = new Date(resv.date);
+                          const formattedDate = dateObj.toLocaleDateString(
+                            lang === 'ko' ? 'ko-KR' : 'en-US',
+                            { month: 'short', day: 'numeric', weekday: 'short' }
+                          );
+                          const customerName = resv.customer_name || resv.customerName || '';
+                          const serviceName = resv.services?.name || resv.serviceName || 'Custom Styling';
+                          
+                          return (
+                            <div key={resv.id} className="p-4 hover:bg-stone-50 transition-colors text-xs space-y-1 text-left">
+                              <div className="flex justify-between items-center">
+                                <span className={`font-bold font-mono text-[10px] px-2 py-0.5 rounded border ${
+                                  isAdmin 
+                                    ? 'text-amber-700 bg-amber-50 border-amber-200' 
+                                    : 'text-emerald-600 bg-emerald-50 border-emerald-100'
+                                }`}>
+                                  {isAdmin 
+                                    ? (lang === 'ko' ? '신규 예약' : 'New Request')
+                                    : (lang === 'ko' ? '예약 확정' : 'Confirmed')}
+                                </span>
+                                <span className="text-[10px] text-stone-450 font-mono">
+                                  {formattedDate} {resv.time}
+                                </span>
+                              </div>
+                              <p className="text-stone-700 font-medium mt-1">
+                                {serviceName} ({customerName})
+                              </p>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
 
             {/* Show MyPage/Client Dashboard Link */}

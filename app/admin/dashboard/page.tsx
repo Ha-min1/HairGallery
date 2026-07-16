@@ -2652,6 +2652,183 @@ WITH CHECK (
         </div>
       )}
 
+      {/* Add / Edit Customer Modal */}
+      {showCustomerModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-stone-900 border border-white/10 rounded-2xl w-full max-w-md shadow-2xl p-6 relative overflow-hidden animate-slideUp text-left">
+            <button 
+              onClick={() => setShowCustomerModal(false)}
+              className="absolute top-4 right-4 text-stone-400 hover:text-white cursor-pointer transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <h3 className="font-serif text-lg font-bold text-white border-b border-white/5 pb-3 mb-5">
+              {editingCustomer ? t.editCustomer : t.addCustomer}
+            </h3>
+
+            <form onSubmit={handleSaveCustomer} className="space-y-4 text-xs">
+              {/* Customer Name */}
+              <div className="space-y-1.5 text-left">
+                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{t.customerName} *</label>
+                <input 
+                  type="text"
+                  required
+                  value={custName}
+                  onChange={e => setCustName(e.target.value)}
+                  placeholder="예: 홍길동"
+                  className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white text-left"
+                />
+              </div>
+
+              {/* Customer Phone */}
+              <div className="space-y-1.5 text-left">
+                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{lang === 'ko' ? '전화번호' : 'Phone'} *</label>
+                <input 
+                  type="text"
+                  required
+                  value={custPhone}
+                  onChange={e => setCustPhone(e.target.value)}
+                  placeholder="예: 010-1234-5678"
+                  className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white text-left"
+                />
+              </div>
+
+              {/* Work Details */}
+              <div className="space-y-1.5 text-left">
+                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{lang === 'ko' ? '작업 내용' : 'Work Content'}</label>
+                <textarea 
+                  rows={3}
+                  value={custWorkMenu}
+                  onChange={e => setCustWorkMenu(e.target.value)}
+                  placeholder="예: 커트, 샴푸 등"
+                  className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white resize-none text-left"
+                />
+              </div>
+
+              <div className="flex gap-2.5 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowCustomerModal(false)}
+                  className="flex-1 py-2.5 bg-stone-850 hover:bg-stone-800 border border-white/5 rounded-lg text-stone-300 font-semibold transition-all cursor-pointer text-center active:scale-[0.98]"
+                >
+                  {t.cancel}
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-lg font-semibold transition-all cursor-pointer text-center active:scale-[0.98] shadow-[0_0_10px_rgba(109,40,217,0.2)]"
+                >
+                  {t.save}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add / Edit Service Modal */}
+      {showServiceModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-stone-900 border border-white/10 rounded-2xl w-full max-w-md shadow-2xl p-6 relative overflow-hidden animate-slideUp text-left">
+            <button 
+              onClick={() => setShowServiceModal(false)}
+              className="absolute top-4 right-4 text-stone-400 hover:text-white cursor-pointer transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <h3 className="font-serif text-lg font-bold text-white border-b border-white/5 pb-3 mb-5">
+              {editingService ? t.editService : t.addService}
+            </h3>
+
+            <form onSubmit={handleSaveService} className="space-y-4 text-xs">
+              {/* Service ID (Primary Key) */}
+              <div className="space-y-1.5 text-left">
+                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{lang === 'ko' ? '서비스 ID (기본키)' : 'Service ID'} *</label>
+                <input 
+                  type="text"
+                  required
+                  value={svcId}
+                  onChange={e => setSvcId(e.target.value)}
+                  placeholder="예: s1"
+                  className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white text-left"
+                />
+              </div>
+
+              {/* Service Name */}
+              <div className="space-y-1.5 text-left">
+                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{lang === 'ko' ? '시술명' : 'Service Name'} *</label>
+                <input 
+                  type="text"
+                  required
+                  value={svcName}
+                  onChange={e => setSvcName(e.target.value)}
+                  placeholder="예: 시그니처 컷"
+                  className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white text-left"
+                />
+              </div>
+
+              {/* Service Price */}
+              <div className="space-y-1.5 text-left">
+                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{lang === 'ko' ? '단가 / 금액' : 'Price'}</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-550 font-mono">₩</span>
+                  <input 
+                    type="number"
+                    value={svcPrice}
+                    onChange={e => setSvcPrice(e.target.value === '' ? '' : Number(e.target.value))}
+                    placeholder="예: 15000 (빈 칸 설정 시 가격 문의)"
+                    className="w-full pl-7 pr-3 py-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white font-mono font-bold text-left"
+                  />
+                </div>
+              </div>
+
+              {/* Duration Minutes */}
+              <div className="space-y-1.5 text-left">
+                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{lang === 'ko' ? '소요 시간 (분)' : 'Duration (minutes)'} *</label>
+                <input 
+                  type="number"
+                  required
+                  min={1}
+                  value={svcDuration}
+                  onChange={e => setSvcDuration(Number(e.target.value))}
+                  placeholder="예: 60"
+                  className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white font-mono text-left"
+                />
+              </div>
+
+              {/* Description */}
+              <div className="space-y-1.5 text-left">
+                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{lang === 'ko' ? '상세 설명' : 'Description'}</label>
+                <textarea 
+                  rows={3}
+                  value={svcDescription}
+                  onChange={e => setSvcDescription(e.target.value)}
+                  placeholder="예: 고급 샴푸와 두피 마사지가 포함된 시술입니다."
+                  className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white resize-none text-left"
+                />
+              </div>
+
+              <div className="flex gap-2.5 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowServiceModal(false)}
+                  className="flex-1 py-2.5 bg-stone-850 hover:bg-stone-800 border border-white/5 rounded-lg text-stone-300 font-semibold transition-all cursor-pointer text-center active:scale-[0.98]"
+                >
+                  {t.cancel}
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-lg font-semibold transition-all cursor-pointer text-center active:scale-[0.98] shadow-[0_0_10px_rgba(109,40,217,0.2)]"
+                >
+                  {t.save}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
