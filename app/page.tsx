@@ -768,6 +768,33 @@ export default function Home() {
                     <p className="text-xs text-stone-500 mt-2 leading-relaxed">
                       {t.successDesc}
                     </p>
+
+                    {/* Email Spam Filter Alert Warning Box */}
+                    <div className="mt-5 p-4.5 bg-stone-50 border border-stone-200 rounded-xl text-left text-[11px] leading-relaxed text-stone-650 space-y-1 font-sans">
+                      <span className="font-bold text-stone-900 block text-xs mb-1.5">
+                        📧 {lang === 'ko' ? '예약 확정 이메일 수신 안내' : 'Booking Confirmation Email Notice'}
+                      </span>
+                      <p>
+                        {lang === 'ko' 
+                          ? '• 가입 시 사용하신 이메일 주소로 예약 확정 시 안내 메일이 발송됩니다.' 
+                          : '• A confirmation email will be sent to your registered address once the booking is confirmed.'}
+                      </p>
+                      <p>
+                        {lang === 'ko' 
+                          ? '• 메일 서버 보안상 스팸메일함에 전달될 수 있으니 스팸함을 꼭 확인 부탁드립니다.' 
+                          : '• The email may land in your Spam/Junk folder depending on server policies. Please check it.'}
+                      </p>
+                      <p className="font-semibold text-amber-700 bg-amber-500/5 px-2 py-0.5 rounded border border-amber-500/10 inline-block mt-0.5">
+                        {lang === 'ko' 
+                          ? '• 예약 발송 이메일: thehairgalleryreservation@gmail.com' 
+                          : '• Sender Address: thehairgalleryreservation@gmail.com'}
+                      </p>
+                      <p className="text-[10px] text-stone-400 pt-1 border-t border-stone-200/60 mt-1.5">
+                        {lang === 'ko' 
+                          ? '※ 원활한 예약을 위해 필요한 경우 매장에서 별도의 개별 연락을 드릴 수 있습니다.' 
+                          : '※ The salon administration may also contact you individually if needed.'}
+                      </p>
+                    </div>
                   </div>
                   <button
                     onClick={() => setIsSuccess(false)}
