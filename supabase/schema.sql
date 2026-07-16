@@ -75,10 +75,46 @@ ALTER TABLE services ENABLE ROW LEVEL SECURITY;
 
 -- 10. Row Level Security Policies
 
--- Users: Let authenticated guests view and update their own record, let admins see everything
-CREATE POLICY "Users can read own row" ON users FOR SELECT USING (auth.uid() = id OR role = 'ADMIN');
-CREATE POLICY "Users can update own row" ON users FOR UPDATE USING (auth.uid() = id);
-CREATE POLICY "Users can insert own row" ON users FOR INSERT WITH CHECK (auth.uid() = id);
+-- Users can read their own row, admins can read any row
+CREATE POLICY "Select users policy" ON users FOR SELECT USING (
+    auth.uid() = id OR
+    EXISTS (
+        SELECT 1 FROM users
+        WHERE users.id = auth.uid() AND users.role = 'ADMIN'
+    )
+);
+
+-- Users can insert their own row, admins can insert any row
+CREATE POLICY "Insert users policy" ON users FOR INSERT WITH CHECK (
+    auth.uid() = id OR
+    EXISTS (
+        SELECT 1 FROM users
+        WHERE users.id = auth.uid() AND users.role = 'ADMIN'
+    )
+);
+
+-- Users can update their own row, admins can update any row
+CREATE POLICY "Update users policy" ON users FOR UPDATE USING (
+    auth.uid() = id OR
+    EXISTS (
+        SELECT 1 FROM users
+        WHERE users.id = auth.uid() AND users.role = 'ADMIN'
+    )
+) WITH CHECK (
+    auth.uid() = id OR
+    EXISTS (
+        SELECT 1 FROM users
+        WHERE users.id = auth.uid() AND users.role = 'ADMIN'
+    )
+);
+
+-- Only admins can delete user rows
+CREATE POLICY "Delete users policy" ON users FOR DELETE USING (
+    EXISTS (
+        SELECT 1 FROM users
+        WHERE users.id = auth.uid() AND users.role = 'ADMIN'
+    )
+);
 
 -- Services: Public read-only access
 CREATE POLICY "Services read public" ON services FOR SELECT TO public USING (true);

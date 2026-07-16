@@ -106,6 +106,8 @@ export default function AdminDashboard() {
   const [custName, setCustName] = useState<string>('');
   const [custPrice, setCustPrice] = useState<number | ''>('');
   const [custWorkMenu, setCustWorkMenu] = useState<string>('');
+  const [custPhone, setCustPhone] = useState<string>('');
+  const [customerSearchQuery, setCustomerSearchQuery] = useState<string>('');
 
   // Service Management states
   const [showServiceModal, setShowServiceModal] = useState<boolean>(false);
@@ -532,10 +534,10 @@ export default function AdminDashboard() {
 
     const custData = {
       name: custName,
-      price: custPrice === '' || custPrice === null ? null : Number(custPrice),
+      price: null,
       work_menu: custWorkMenu,
       email: editingCustomer?.email || ('a_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5) + '@ex.com'),
-      phone: null,
+      phone: custPhone || null,
       role: 'USER' as const
     };
 
@@ -556,7 +558,7 @@ export default function AdminDashboard() {
             .from('users')
             .update({
               name: custName,
-              price: custPrice === '' || custPrice === null ? null : Number(custPrice),
+              phone: custPhone || null,
               work_menu: custWorkMenu
             })
             .eq('id', editingCustomer.id);
@@ -874,6 +876,19 @@ export default function AdminDashboard() {
     });
     return list.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
   }, [workRecords]);
+
+  const filteredCustomers = useMemo(() => {
+    let list = [...customersList];
+    if (customerSearchQuery.trim()) {
+      const query = customerSearchQuery.toLowerCase().trim();
+      list = list.filter(cust => {
+        const nameMatch = (cust.name || '').toLowerCase().includes(query);
+        const phoneMatch = (cust.phone || '').toLowerCase().includes(query);
+        return nameMatch || phoneMatch;
+      });
+    }
+    return list.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko'));
+  }, [customersList, customerSearchQuery]);
 
   const handleSaveWorkRecord = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -2047,60 +2062,65 @@ WITH CHECK (
               <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
                 <div className="text-left">
                   <h2 className="font-serif text-lg font-semibold text-gold-400 tracking-wide">{t.customersTab}</h2>
-                  <p className="text-xs text-stone-400">{lang === 'ko' ? '고객별 작업 이력 및 가격 정보 관리' : 'Manage customer work history & prices'}</p>
+                  <p className="text-xs text-stone-400">{lang === 'ko' ? '고객 정보 및 작업 내용 관리' : 'Manage customer contacts and work content'}</p>
                 </div>
-                <button
-                  onClick={() => {
-                    setEditingCustomer(null);
-                    setCustName('');
-                    setCustPrice('');
-                    setCustWorkMenu('');
-                    setShowCustomerModal(true);
-                  }}
-                  className="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-mono font-bold py-2.5 px-4 rounded-lg flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(109,40,217,0.3)] active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>{t.addCustomer}</span>
-                </button>
+                <div className="flex gap-2.5 items-center">
+                  <input
+                    type="text"
+                    value={customerSearchQuery}
+                    onChange={(e) => setCustomerSearchQuery(e.target.value)}
+                    placeholder={lang === 'ko' ? '이름 또는 전화번호로 검색' : 'Search by name or phone'}
+                    className="p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white text-xs w-48 sm:w-64"
+                  />
+                  <button
+                    onClick={() => {
+                      setEditingCustomer(null);
+                      setCustName('');
+                      setCustPhone('');
+                      setCustWorkMenu('');
+                      setShowCustomerModal(true);
+                    }}
+                    className="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-mono font-bold py-2.5 px-4 rounded-lg flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(109,40,217,0.3)] active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>{t.addCustomer}</span>
+                  </button>
+                </div>
               </div>
 
               <div className="bg-stone-900/20 rounded-2xl border border-white/5 overflow-hidden shadow-xl backdrop-blur-md">
                 {isCustomersLoading ? (
                   <div className="text-center py-16 text-stone-550 text-xs font-mono tracking-wider">{t.loadingRecords}</div>
-                ) : customersList.length === 0 ? (
+                ) : filteredCustomers.length === 0 ? (
                   <div className="text-center py-16 text-stone-550 text-xs font-light">{t.noCustomers}</div>
                 ) : (
                   <div className="divide-y divide-white/5 text-xs">
-                    {customersList.map(cust => (
+                    {filteredCustomers.map(cust => (
                       <div key={cust.id} className="p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:bg-white/[0.02] transition-all duration-300">
                         <div className="space-y-1.5 flex-1 w-full text-left">
                           <div className="flex items-center gap-2.5">
                             <h3 className="font-serif text-sm font-semibold text-white">{cust.name}</h3>
+                            {cust.phone && (
+                              <span className="font-mono text-[10px] text-stone-400 bg-stone-950/60 px-2 py-0.5 rounded border border-white/5">
+                                {cust.phone}
+                              </span>
+                            )}
                           </div>
                           {cust.work_menu && (
                             <p className="text-xs text-stone-300 leading-relaxed bg-stone-950/60 p-3 rounded-lg border border-white/5">
-                              <span className="font-mono text-[10px] text-stone-400 block mb-1 uppercase tracking-wider">{t.workContent}</span>
+                              <span className="font-mono text-[10px] text-stone-400 block mb-1 uppercase tracking-wider">{lang === 'ko' ? '작업 내용' : 'Work Content'}</span>
                               {cust.work_menu}
                             </p>
                           )}
                         </div>
 
                         <div className="flex items-center justify-between md:justify-end gap-6 w-full md:w-auto shrink-0 border-t md:border-t-0 border-white/5 pt-3.5 md:pt-0">
-                          <div className="text-left md:text-right">
-                            <span className="text-[10px] font-mono text-stone-400 uppercase block tracking-widest">
-                              {lang === 'ko' ? '가격' : 'Price'}
-                            </span>
-                            <span className="font-serif font-bold text-white text-base">
-                              {cust.price !== null && cust.price !== undefined ? ('₩' + cust.price.toLocaleString()) : '—'}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-1.5 pl-4.5 border-l border-white/5">
+                          <div className="flex items-center gap-1.5 pl-4.5">
                             <button
                               onClick={() => {
                                 setEditingCustomer(cust);
                                 setCustName(cust.name || '');
-                                setCustPrice(cust.price !== null && cust.price !== undefined ? cust.price : '');
+                                setCustPhone(cust.phone || '');
                                 setCustWorkMenu(cust.work_menu || '');
                                 setShowCustomerModal(true);
                               }}
@@ -2519,47 +2539,8 @@ WITH CHECK (
 
             <form onSubmit={handleSaveWorkRecord} className="space-y-4 text-xs">
               
-              {/* Customer Name */}
-              <div className="space-y-1.5">
-                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{t.customerName} *</label>
-                <input 
-                  type="text"
-                  required
-                  value={workCustomerName}
-                  onChange={e => setWorkCustomerName(e.target.value)}
-                  placeholder="예: 홍길동"
-                  className="w-full p-2.5 border rounded-lg outline-none focus:border-indigo-500 bg-stone-950/80 border-white/5 text-white"
-                />
-              </div>
-
-              {/* Customer Phone */}
-              <div className="space-y-1.5">
-                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{t.customerPhone} *</label>
-                <input 
-                  type="text"
-                  required
-                  value={workCustomerPhone}
-                  onChange={e => setWorkCustomerPhone(e.target.value)}
-                  placeholder="예: 010-1234-5678"
-                  className="w-full p-2.5 border rounded-lg outline-none focus:border-indigo-500 bg-stone-955/80 border-white/5 text-white"
-                />
-              </div>
-
-              {/* Date */}
-              <div className="space-y-1.5">
-                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{t.date} *</label>
-                <input 
-                  type="date"
-                  required
-                  value={workDate}
-                  onChange={e => setWorkDate(e.target.value)}
-                  className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white"
-                  style={{ colorScheme: 'dark' }}
-                />
-              </div>
-
               {/* Work Details */}
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 text-left">
                 <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{t.workContent} *</label>
                 <textarea 
                   required
@@ -2567,12 +2548,12 @@ WITH CHECK (
                   value={workContent}
                   onChange={e => setWorkContent(e.target.value)}
                   placeholder="예: 시그니처 컷 + 볼륨 매직 시술 완료"
-                  className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white resize-none"
+                  className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white resize-none text-left"
                 />
               </div>
 
               {/* Sales Amount */}
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 text-left">
                 <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{t.salesAmount} *</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-550 font-mono">₩</span>
@@ -2581,8 +2562,8 @@ WITH CHECK (
                     required
                     min={0}
                     value={workAmount}
-                    onChange={e => setWorkAmount(Number(e.target.value))}
-                    className="w-full pl-7 pr-3 py-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white font-mono font-bold"
+                    onChange={e => setWorkAmount(e.target.value === '' ? '' : Number(e.target.value))}
+                    className="w-full pl-7 pr-3 py-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white font-mono font-bold text-left"
                   />
                 </div>
               </div>
