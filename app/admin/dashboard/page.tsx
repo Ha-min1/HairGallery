@@ -39,6 +39,14 @@ export default function AdminDashboard() {
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
   const [isLoadingAdmins, setIsLoadingAdmins] = useState<boolean>(false);
   const [isTogglingAdmin, setIsTogglingAdmin] = useState<string | null>(null);
+
+  // Bulk reservation delete states
+  const [selectedResIds, setSelectedResIds] = useState<string[]>([]);
+  const [isDeletingRes, setIsDeletingRes] = useState<boolean>(false);
+
+  // Email usage states
+  const [emailUsage, setEmailUsage] = useState<any | null>(null);
+  const [isLoadingEmailUsage, setIsLoadingEmailUsage] = useState<boolean>(false);
   
   // Reservations states
   const [reservations, setReservations] = useState<any[]>([]);
@@ -231,11 +239,90 @@ export default function AdminDashboard() {
     }
   };
 
+  const loadEmailUsage = async () => {
+    setIsLoadingEmailUsage(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) return;
+
+      const res = await fetch('/api/admin/email-usage', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setEmailUsage(data);
+      }
+    } catch (err) {
+      console.error('Failed to load email usage statistics:', err);
+    } finally {
+      setIsLoadingEmailUsage(false);
+    }
+  };
+
   useEffect(() => {
     if (isAdminAuthorized && activeTab === 'admin-settings') {
       loadAdminUsers();
+      loadEmailUsage();
     }
   }, [isAdminAuthorized, activeTab]);
+
+  // Bulk reservation delete handlers
+  const handleToggleAllReservations = () => {
+    if (selectedResIds.length === filteredReservations.length && filteredReservations.length > 0) {
+      setSelectedResIds([]);
+    } else {
+      setSelectedResIds(filteredReservations.map(r => r.id));
+    }
+  };
+
+  const handleToggleReservation = (id: string) => {
+    setSelectedResIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDeleteReservations = async () => {
+    if (selectedResIds.length === 0) return;
+    const confirmMsg = lang === 'ko'
+      ? `정말로 선택한 ${selectedResIds.length}개의 예약을 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.`
+      : `Are you sure you want to delete ${selectedResIds.length} selected reservation(s)?\nThis action cannot be undone.`;
+    
+    if (!confirm(confirmMsg)) return;
+
+    setIsDeletingRes(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) return;
+
+      const res = await fetch('/api/admin/reservations/bulk-delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ reservationIds: selectedResIds })
+      });
+
+      if (res.ok) {
+        // Local state update
+        setReservations(prev => prev.filter(r => !selectedResIds.includes(r.id)));
+        setSelectedResIds([]);
+        alert(lang === 'ko' ? '선택한 예약이 성공적으로 삭제되었습니다.' : 'Selected reservations deleted successfully.');
+      } else {
+        const errData = await res.json();
+        alert(errData.error || 'Failed to delete reservations.');
+      }
+    } catch (err) {
+      console.error('Bulk delete reservations error:', err);
+      alert(lang === 'ko' ? '삭제 처리 중 오류가 발생했습니다.' : 'An error occurred during deletion.');
+    } finally {
+      setIsDeletingRes(false);
+    }
+  };
 
   // Load registered users and services for manual reservation creation
   useEffect(() => {
@@ -916,18 +1003,45 @@ WITH CHECK (
               {/* Reservations List */}
               <div className="bg-stone-900/20 rounded-2xl border border-white/5 overflow-hidden shadow-xl backdrop-blur-md">
                 <div className="px-6 py-4.5 bg-[#121214] border-b border-white/5 flex justify-between items-center flex-wrap gap-2">
-                  <h2 className="font-serif text-base font-semibold text-gold-400 tracking-wide">{t.reservationsRoster}</h2>
+                  <div className="flex items-center gap-3">
+                    {filteredReservations.length > 0 && (
+                      <input
+                        type="checkbox"
+                        checked={selectedResIds.length === filteredReservations.length && filteredReservations.length > 0}
+                        onChange={handleToggleAllReservations}
+                        className="h-4 w-4 rounded border-white/10 text-gold-500 focus:ring-gold-500 bg-stone-900 cursor-pointer"
+                        title={lang === 'ko' ? '전체 선택/해제' : 'Select/Deselect All'}
+                      />
+                    )}
+                    <h2 className="font-serif text-base font-semibold text-gold-400 tracking-wide">{t.reservationsRoster}</h2>
+                  </div>
                   
-                  {/* Notification Toggle Checkbox */}
-                  <label className="flex items-center gap-2 cursor-pointer text-[10px] font-mono uppercase tracking-wider text-stone-300 select-none bg-stone-950 border border-white/5 px-3 py-1.5 rounded-lg hover:bg-stone-900 transition duration-200">
-                    <input
-                      type="checkbox"
-                      checked={sendClientNotify}
-                      onChange={e => setSendClientNotify(e.target.checked)}
-                      className="h-3.5 w-3.5 rounded border-white/10 text-gold-500 focus:ring-gold-500 bg-stone-900 cursor-pointer"
-                    />
-                    <span>{lang === 'ko' ? '확정/취소 시 고객 알림 전송' : 'Send Notify on Update'}</span>
-                  </label>
+                  {selectedResIds.length > 0 ? (
+                    <button
+                      type="button"
+                      disabled={isDeletingRes}
+                      onClick={handleBulkDeleteReservations}
+                      className="bg-red-750 hover:bg-red-650 disabled:bg-stone-850 text-white text-[10px] font-mono font-bold py-1.5 px-3.5 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-[0_0_10px_rgba(220,38,38,0.25)] border border-red-500/20"
+                    >
+                      <Trash2 className="h-3.5 w-3.5 text-white" />
+                      <span>
+                        {lang === 'ko' 
+                          ? `${selectedResIds.length}개 선택 삭제` 
+                          : `Delete Selected (${selectedResIds.length})`}
+                      </span>
+                    </button>
+                  ) : (
+                    /* Notification Toggle Checkbox */
+                    <label className="flex items-center gap-2 cursor-pointer text-[10px] font-mono uppercase tracking-wider text-stone-300 select-none bg-stone-950 border border-white/5 px-3 py-1.5 rounded-lg hover:bg-stone-900 transition duration-200">
+                      <input
+                        type="checkbox"
+                        checked={sendClientNotify}
+                        onChange={e => setSendClientNotify(e.target.checked)}
+                        className="h-3.5 w-3.5 rounded border-white/10 text-gold-500 focus:ring-gold-500 bg-stone-900 cursor-pointer"
+                      />
+                      <span>{lang === 'ko' ? '확정/취소 시 고객 알림 전송' : 'Send Notify on Update'}</span>
+                    </label>
+                  )}
 
                   <span className="text-[10px] font-mono tracking-widest uppercase text-stone-400">
                     {t.sortedBy}
@@ -942,16 +1056,25 @@ WITH CHECK (
                   <div className="divide-y divide-white/5 text-xs">
                     {filteredReservations.map(res => (
                       <div key={res.id} className="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-white/[0.02] transition-all duration-300">
-                        <div className="space-y-1.5">
-                          <div className="flex items-center gap-2.5 flex-wrap">
-                            <span className="font-mono text-[10px] font-bold text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-0.5 rounded">
-                              {res.date} @ {res.time}
-                            </span>
-                            <h3 className="font-serif text-sm font-semibold text-white">{res.customerName}</h3>
+                        
+                        <div className="flex items-start gap-4 flex-1">
+                          <input
+                            type="checkbox"
+                            checked={selectedResIds.includes(res.id)}
+                            onChange={() => handleToggleReservation(res.id)}
+                            className="mt-1 h-4 w-4 rounded border-white/10 text-gold-500 focus:ring-gold-500 bg-stone-900 cursor-pointer shrink-0"
+                          />
+                          <div className="space-y-1.5 flex-1">
+                            <div className="flex items-center gap-2.5 flex-wrap">
+                              <span className="font-mono text-[10px] font-bold text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-0.5 rounded">
+                                {res.date} @ {res.time}
+                              </span>
+                              <h3 className="font-serif text-sm font-semibold text-white">{res.customerName}</h3>
+                            </div>
+                            <p className="text-[10px] text-stone-400 font-mono flex items-center gap-1">
+                              <Phone className="h-3.5 w-3.5 text-stone-550" /> {res.customerPhone}
+                            </p>
                           </div>
-                          <p className="text-[10px] text-stone-400 font-mono flex items-center gap-1">
-                            <Phone className="h-3.5 w-3.5 text-stone-550" /> {res.customerPhone}
-                          </p>
                         </div>
 
                         <div className="flex items-center gap-5 flex-wrap w-full sm:w-auto justify-between sm:justify-end">
@@ -1294,6 +1417,46 @@ WITH CHECK (
                       : 'Select which administrator accounts will receive email alerts when a new client booking is requested.'}
                   </p>
                 </div>
+
+                {/* EmailJS Quota Tracker Progress Widget */}
+                {emailUsage && (
+                  <div className="p-4 bg-stone-950/50 rounded-xl border border-white/5 space-y-3 font-sans mt-2">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-semibold text-stone-300">
+                        📬 {lang === 'ko' ? 'EmailJS 이번 달 알림 전송 사용량' : 'EmailJS Current Cycle Usage'}
+                      </span>
+                      <span className="font-mono text-stone-400">
+                        <strong className="text-gold-400 font-bold">{emailUsage.usage}</strong> / {emailUsage.limit} {lang === 'ko' ? '회' : 'reqs'}
+                      </span>
+                    </div>
+
+                    {/* Progress Bar Gauge */}
+                    <div className="w-full bg-stone-850 h-2.5 rounded-full overflow-hidden border border-white/5">
+                      <div 
+                        className={`h-full rounded-full transition-all duration-500 bg-gradient-to-r ${
+                          (emailUsage.usage / emailUsage.limit) > 0.85 
+                            ? 'from-red-500 to-rose-600' 
+                            : (emailUsage.usage / emailUsage.limit) > 0.6 
+                            ? 'from-amber-500 to-orange-600' 
+                            : 'from-gold-550 to-indigo-500'
+                        }`}
+                        style={{ width: `${Math.min(100, (emailUsage.usage / emailUsage.limit) * 100)}%` }}
+                      />
+                    </div>
+
+                    <div className="flex justify-between items-center text-[10px] text-stone-500 font-mono">
+                      <span>
+                        {lang === 'ko' ? '잔여 횟수: ' : 'Remaining: '} 
+                        <strong className="text-stone-300">{emailUsage.remaining}</strong> {lang === 'ko' ? '회' : 'times'}
+                      </span>
+                      <span>
+                        {lang === 'ko' 
+                          ? `초기화 기준일: 매월 ${emailUsage.startDate.split('-')[2]}일 (다음 리셋: ${emailUsage.resetDate})` 
+                          : `Reset Day: Day ${emailUsage.startDate.split('-')[2]} (Next reset: ${emailUsage.resetDate})`}
+                      </span>
+                    </div>
+                  </div>
+                )}
 
                 {isLoadingAdmins ? (
                   <div className="text-center py-12 text-stone-550 text-xs font-mono tracking-wider">

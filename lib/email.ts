@@ -2,6 +2,29 @@
 // This allows sending emails via a personal Gmail account through EmailJS,
 // bypassing the Node.js nodemailer socket limitation on Cloudflare Pages (Edge runtime)
 // and avoiding the need to purchase a custom domain.
+import { createClient } from '@supabase/supabase-js';
+
+const logEmailSent = async (recipient: string, templateType: string, status: 'success' | 'failed') => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceRole = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !supabaseServiceRole) return;
+
+  try {
+    const adminClient = createClient(supabaseUrl, supabaseServiceRole, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    });
+    await adminClient.from('email_logs').insert({
+      recipient,
+      template_type: templateType,
+      status,
+    });
+  } catch (err) {
+    console.error('Failed to log email usage in DB:', err);
+  }
+};
 const getEmailJSConfig = () => {
   const serviceId = process.env.EMAILJS_SERVICE_ID;
   const templateId = process.env.EMAILJS_TEMPLATE_ID;
@@ -77,13 +100,16 @@ export async function sendBookingConfirmationEmail({
     if (!res.ok) {
       const errorText = await res.text();
       console.error('EmailJS Error Response:', errorText);
+      await logEmailSent(toEmail, 'client_confirmation', 'failed');
       return { success: false, error: errorText || 'Failed to send email via EmailJS' };
     }
 
     console.log('EmailJS Email Sent Successfully!');
+    await logEmailSent(toEmail, 'client_confirmation', 'success');
     return { success: true };
   } catch (error: any) {
     console.error('Failed to send email via EmailJS API:', error);
+    await logEmailSent(toEmail, 'client_confirmation', 'failed');
     return { success: false, error: error.message };
   }
 }
@@ -155,13 +181,16 @@ export async function sendAdminBookingAlertEmail({
     if (!res.ok) {
       const errorText = await res.text();
       console.error('EmailJS Admin Alert Error Response:', errorText);
+      await logEmailSent(toEmail, 'admin_alert', 'failed');
       return { success: false, error: errorText || 'Failed to send admin alert email via EmailJS' };
     }
 
     console.log('EmailJS Admin Alert Email Sent Successfully!');
+    await logEmailSent(toEmail, 'admin_alert', 'success');
     return { success: true };
   } catch (error: any) {
     console.error('Failed to send admin alert email via EmailJS API:', error);
+    await logEmailSent(toEmail, 'admin_alert', 'failed');
     return { success: false, error: error.message };
   }
 }
