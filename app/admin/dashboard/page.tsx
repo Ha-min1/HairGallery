@@ -516,12 +516,21 @@ export default function AdminDashboard() {
 
   const loadServicesList = async () => {
     try {
-      const { data, error } = await supabase
-        .from('services')
-        .select('*')
-        .order('name', { ascending: true });
-      if (!error && data) {
-        setServicesList(data);
+      if (isUsingLocalStorage) {
+        const saved = localStorage.getItem(`custom_services_${lang}`);
+        if (saved) {
+          setServicesList(JSON.parse(saved));
+        } else {
+          setServicesList([]);
+        }
+      } else {
+        const { data, error } = await supabase
+          .from('services')
+          .select('*')
+          .order('name', { ascending: true });
+        if (!error && data) {
+          setServicesList(data);
+        }
       }
     } catch (err) {
       console.error('Failed to load services:', err);
@@ -605,58 +614,78 @@ export default function AdminDashboard() {
     e.preventDefault();
     if (!svcId || !svcName || svcDuration === undefined) return;
 
+    const serviceObj = {
+      id: svcId,
+      name: svcName,
+      price: svcPrice === '' || svcPrice === null ? null : Number(svcPrice),
+      duration_minutes: Number(svcDuration),
+      durationMinutes: Number(svcDuration),
+      description: svcDescription
+    };
+
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      if (!token) {
-        alert('로그인 세션이 만료되었습니다. 다시 로그인 해주세요.');
-        return;
-      }
-
-      if (editingService) {
-        const res = await fetch('/api/admin/services', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token
-          },
-          body: JSON.stringify({
-            originalId: editingService.id,
-            newId: svcId,
-            name: svcName,
-            price: svcPrice === '' || svcPrice === null ? null : Number(svcPrice),
-            durationMinutes: Number(svcDuration),
-            description: svcDescription
-          })
-        });
-
-        if (!res.ok) {
-          const errData = await res.json();
-          throw new Error(errData.error || 'Failed to update service');
+      if (isUsingLocalStorage) {
+        const saved = localStorage.getItem(`custom_services_${lang}`);
+        let services = saved ? JSON.parse(saved) : [];
+        if (editingService) {
+          services = services.map((s: any) => s.id === editingService.id ? serviceObj : s);
+        } else {
+          services.push(serviceObj);
         }
+        localStorage.setItem(`custom_services_${lang}`, JSON.stringify(services));
+        setServicesList(services);
       } else {
-        const res = await fetch('/api/admin/services', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token
-          },
-          body: JSON.stringify({
-            id: svcId,
-            name: svcName,
-            price: svcPrice === '' || svcPrice === null ? null : Number(svcPrice),
-            durationMinutes: Number(svcDuration),
-            description: svcDescription
-          })
-        });
-
-        if (!res.ok) {
-          const errData = await res.json();
-          throw new Error(errData.error || 'Failed to create service');
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        if (!token) {
+          alert('로그인 세션이 만료되었습니다. 다시 로그인 해주세요.');
+          return;
         }
-      }
 
-      await loadServicesList();
+        if (editingService) {
+          const res = await fetch('/api/admin/services', {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({
+              originalId: editingService.id,
+              newId: svcId,
+              name: svcName,
+              price: svcPrice === '' || svcPrice === null ? null : Number(svcPrice),
+              durationMinutes: Number(svcDuration),
+              description: svcDescription
+            })
+          });
+
+          if (!res.ok) {
+            const errData = await res.json();
+            throw new Error(errData.error || 'Failed to update service');
+          }
+        } else {
+          const res = await fetch('/api/admin/services', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({
+              id: svcId,
+              name: svcName,
+              price: svcPrice === '' || svcPrice === null ? null : Number(svcPrice),
+              durationMinutes: Number(svcDuration),
+              description: svcDescription
+            })
+          });
+
+          if (!res.ok) {
+            const errData = await res.json();
+            throw new Error(errData.error || 'Failed to create service');
+          }
+        }
+        await loadServicesList();
+      }
       setShowServiceModal(false);
     } catch (err: any) {
       console.error('Failed to save service:', err);
@@ -667,23 +696,31 @@ export default function AdminDashboard() {
   const handleDeleteService = async (id: string) => {
     if (!confirm('정말로 이 서비스를 삭제하시겠습니까?')) return;
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      if (!token) return;
+      if (isUsingLocalStorage) {
+        const saved = localStorage.getItem(`custom_services_${lang}`);
+        let services = saved ? JSON.parse(saved) : [];
+        services = services.filter((s: any) => s.id !== id);
+        localStorage.setItem(`custom_services_${lang}`, JSON.stringify(services));
+        setServicesList(services);
+      } else {
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        if (!token) return;
 
-      const res = await fetch('/api/admin/services?id=' + id, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': 'Bearer ' + token
+        const res = await fetch('/api/admin/services?id=' + id, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': 'Bearer ' + token
+          }
+        });
+
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.error || 'Failed to delete service');
         }
-      });
 
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.error || 'Failed to delete service');
+        await loadServicesList();
       }
-
-      await loadServicesList();
     } catch (err: any) {
       console.error('Failed to delete service:', err);
       alert('서비스 삭제 실패: ' + err.message);

@@ -116,8 +116,45 @@ CREATE POLICY "Delete users policy" ON users FOR DELETE USING (
     )
 );
 
--- Services: Public read-only access
+-- Services policies:
+-- Anyone can view services
+DROP POLICY IF EXISTS "Services read public" ON services;
 CREATE POLICY "Services read public" ON services FOR SELECT TO public USING (true);
+
+-- Authenticated admins can insert new services
+DROP POLICY IF EXISTS "Admins can insert services" ON services;
+CREATE POLICY "Admins can insert services" ON services FOR INSERT TO authenticated
+WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM users
+        WHERE users.id = auth.uid() AND users.role = 'ADMIN'
+    )
+);
+
+-- Authenticated admins can update services
+DROP POLICY IF EXISTS "Admins can update services" ON services;
+CREATE POLICY "Admins can update services" ON services FOR UPDATE TO authenticated
+USING (
+    EXISTS (
+        SELECT 1 FROM users
+        WHERE users.id = auth.uid() AND users.role = 'ADMIN'
+    )
+) WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM users
+        WHERE users.id = auth.uid() AND users.role = 'ADMIN'
+    )
+);
+
+-- Authenticated admins can delete services
+DROP POLICY IF EXISTS "Admins can delete services" ON services;
+CREATE POLICY "Admins can delete services" ON services FOR DELETE TO authenticated
+USING (
+    EXISTS (
+        SELECT 1 FROM users
+        WHERE users.id = auth.uid() AND users.role = 'ADMIN'
+    )
+);
 
 -- Reservations policies:
 -- Anyone can view reservations to check slot availability (necessary for the calendar to display disabled/booked slots)
