@@ -4,7 +4,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { 
   User, Phone, Calendar as CalendarIcon, Clock, Settings, AlertCircle, 
-  CheckCircle2, ArrowLeft, History, Sparkles, LogOut, Loader2, Undo2, Check, ShieldAlert
+  CheckCircle2, ArrowLeft, History, Sparkles, LogOut, Loader2, Undo2, Check, ShieldAlert,
+  Bell
 } from 'lucide-react';
 import { TRANSLATIONS } from '@/lib/i18n';
 import { getSupabaseClient } from '@/lib/supabase';
@@ -35,6 +36,10 @@ export default function MyPage() {
   const supabase = getSupabaseClient();
   const hasLoadedInitialReservations = useRef<boolean>(false);
 
+  // Notification dropdown state
+  const [isNotiOpen, setIsNotiOpen] = useState<boolean>(false);
+  const notiRef = useRef<HTMLDivElement>(null);
+
   // Format Korean mobile number (010-XXXX-XXXX)
   const formatPhoneNumber = (value: string) => {
     const cleaned = value.replace(/\D/g, '');
@@ -46,6 +51,19 @@ export default function MyPage() {
       return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 7)}-${cleaned.slice(7, 11)}`;
     }
   };
+
+  // Close notification dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (notiRef.current && !notiRef.current.contains(event.target as Node)) {
+        setIsNotiOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     const savedLang = localStorage.getItem('tg_lang') as 'ko' | 'en';
@@ -269,6 +287,10 @@ export default function MyPage() {
 
   const t = TRANSLATIONS[lang];
 
+  // Filter reservations that are Confirmed for the notification badge
+  const confirmedReservations = reservations.filter(resv => resv.status === 'Confirmed');
+  const confirmedCount = confirmedReservations.length;
+
   // Helper to translate status labels & colors
   const getStatusBadge = (status: string) => {
     let label = '';
@@ -316,6 +338,82 @@ export default function MyPage() {
           </Link>
 
           <div className="flex items-center gap-3">
+            {/* Notification Bell for Logged-in Users */}
+            {currentUser && (
+              <div className="relative" ref={notiRef}>
+                <button
+                  onClick={() => setIsNotiOpen(!isNotiOpen)}
+                  className="relative p-2 text-stone-700 hover:text-stone-950 hover:bg-stone-100 rounded-full transition-colors cursor-pointer focus:outline-none flex items-center justify-center"
+                  aria-label="Notifications"
+                >
+                  <Bell className="h-5 w-5" />
+                  {confirmedCount > 0 && (
+                    <>
+                      <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
+                      </span>
+                      <span className="absolute -top-1 -right-1 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-red-650 text-[9px] font-bold text-white border border-white">
+                        {confirmedCount}
+                      </span>
+                    </>
+                  )}
+                </button>
+
+                {/* Dropdown Menu */}
+                {isNotiOpen && (
+                  <div className="absolute right-0 mt-2 w-80 bg-white border border-stone-200 rounded-xl shadow-xl z-50 overflow-hidden animate-fadeIn">
+                    <div className="px-4 py-3 bg-stone-50 border-b border-stone-100 flex justify-between items-center">
+                      <span className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
+                        <Bell className="h-4 w-4 text-gold-600" />
+                        {lang === 'ko' ? '알림' : 'Notifications'}
+                      </span>
+                      {confirmedCount > 0 && (
+                        <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-bold">
+                          {confirmedCount}
+                        </span>
+                      )}
+                    </div>
+                    <div className="max-h-64 overflow-y-auto divide-y divide-stone-100">
+                      {confirmedCount === 0 ? (
+                        <div className="p-6 text-center text-xs text-stone-400 font-light">
+                          {lang === 'ko' ? '확정된 예약 알림이 없습니다.' : 'No confirmed reservation alerts.'}
+                        </div>
+                      ) : (
+                        confirmedReservations.map((resv) => {
+                          const dateObj = new Date(resv.date);
+                          const formattedDate = dateObj.toLocaleDateString(
+                            lang === 'ko' ? 'ko-KR' : 'en-US',
+                            { month: 'short', day: 'numeric', weekday: 'short' }
+                          );
+                          return (
+                            <div key={resv.id} className="p-4 hover:bg-stone-50 transition-colors text-xs space-y-1 text-left">
+                              <div className="flex justify-between items-center">
+                                <span className="font-bold text-emerald-600 font-mono text-[10px] bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded">
+                                  {lang === 'ko' ? '예약 확정' : 'Confirmed'}
+                                </span>
+                                <span className="text-[10px] text-stone-450 font-mono">
+                                  {formattedDate} {resv.time}
+                                </span>
+                              </div>
+                              <p className="text-stone-700 font-medium mt-1">
+                                {resv.services?.name || 'Hair Styling'}
+                              </p>
+                              <p className="text-[10px] text-stone-400">
+                                {lang === 'ko' 
+                                  ? '예약이 확정되었습니다. 방문을 환영합니다!' 
+                                  : 'Your reservation has been confirmed. We look forward to seeing you!'}
+                              </p>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             <Link 
               href="/" 
               className="text-[10px] sm:text-xs font-mono font-bold tracking-wider text-stone-700 hover:text-stone-950 flex items-center gap-1 border border-stone-200 hover:border-stone-300 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer bg-white"

@@ -33,6 +33,7 @@ export default function Home() {
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [isLoadingSlots, setIsLoadingSlots] = useState<boolean>(false);
+  const [bookingConsent, setBookingConsent] = useState<boolean>(false);
 
   // Auth & Onboarding states
   const [currentUser, setCurrentUser] = useState<any | null>(null);
@@ -526,6 +527,11 @@ export default function Home() {
       return;
     }
 
+    if (!bookingConsent) {
+      setErrorMessage(lang === 'ko' ? '개인정보 수집 및 이용에 동의해 주세요.' : 'Please accept the privacy consent to complete your booking.');
+      return;
+    }
+
     try {
       const response = await fetch('/api/bookings', {
         method: 'POST',
@@ -550,6 +556,7 @@ export default function Home() {
       setSelectedDay(null);
       setSelectedDate('');
       setSelectedTime('');
+      setBookingConsent(false);
     } catch (err: any) {
       setErrorMessage(err.message || 'Server collision. Please retry your submission.');
     }
@@ -864,7 +871,7 @@ export default function Home() {
                     </div>
                   </div>
 
-                  {/* Customer Info Box (Without Consent widget here, as it's signup only) */}
+                  {/* Customer Info Box (Includes Privacy Consent for direct input) */}
                   <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm space-y-4">
                     <h3 className="font-serif text-sm font-semibold text-stone-900">{t.contactDetails}</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -892,6 +899,31 @@ export default function Home() {
                       </div>
                     </div>
 
+                    {/* Consent Checkbox */}
+                    <div className="pt-2 space-y-3">
+                      <label className="flex items-center gap-2 cursor-pointer justify-start">
+                        <input 
+                          type="checkbox"
+                          required
+                          checked={bookingConsent}
+                          onChange={e => setBookingConsent(e.target.checked)}
+                          className="h-4.5 w-4.5 rounded border-stone-300 text-stone-900 focus:ring-stone-900 cursor-pointer"
+                        />
+                        <span className="text-xs font-semibold text-stone-950 text-left">
+                          {t.privacyConsent}
+                        </span>
+                      </label>
+
+                      <details className="border border-stone-200 rounded-lg bg-stone-50 text-[10px] outline-none">
+                        <summary className="font-semibold text-stone-700 py-2 px-3 select-none cursor-pointer outline-none hover:bg-stone-100 rounded-t-lg transition-colors flex items-center justify-between text-left">
+                          <span>{t.privacyDetailsTitle}</span>
+                        </summary>
+                        <div className="p-3 border-t border-stone-200 text-stone-600 whitespace-pre-line leading-relaxed bg-white rounded-b-lg text-left">
+                          {t.privacyDetailsContent}
+                        </div>
+                      </details>
+                    </div>
+
                     {errorMessage && (
                       <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-lg flex items-start gap-2">
                         <Info className="h-4 w-4 shrink-0 mt-0.5" />
@@ -901,9 +933,9 @@ export default function Home() {
 
                     <button
                       type="submit"
-                      disabled={!selectedDate || !selectedTime || !selectedServiceId}
+                      disabled={!selectedDate || !selectedTime || !selectedServiceId || !bookingConsent}
                       className={`w-full py-3.5 text-stone-900 text-xs font-semibold uppercase tracking-wider rounded-lg shadow-md transition-transform active:scale-[0.98] ${
-                        selectedDate && selectedTime && selectedServiceId
+                        selectedDate && selectedTime && selectedServiceId && bookingConsent
                           ? 'bg-gold-500 hover:bg-gold-600 cursor-pointer'
                           : 'bg-stone-200 text-stone-400 cursor-not-allowed shadow-none'
                       }`}

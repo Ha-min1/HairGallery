@@ -104,6 +104,11 @@ export default function AdminDashboard() {
       setLangState(savedLang);
     }
     
+    const savedNotify = localStorage.getItem('tg_send_client_notify');
+    if (savedNotify !== null) {
+      setSendClientNotify(savedNotify === 'true');
+    }
+    
     // Set default dates
     const today = new Date().toISOString().split('T')[0];
     setWorkDate(today);
@@ -1031,12 +1036,15 @@ WITH CHECK (
                       </span>
                     </button>
                   ) : (
-                    /* Notification Toggle Checkbox */
                     <label className="flex items-center gap-2 cursor-pointer text-[10px] font-mono uppercase tracking-wider text-stone-300 select-none bg-stone-950 border border-white/5 px-3 py-1.5 rounded-lg hover:bg-stone-900 transition duration-200">
                       <input
                         type="checkbox"
                         checked={sendClientNotify}
-                        onChange={e => setSendClientNotify(e.target.checked)}
+                        onChange={e => {
+                          const checked = e.target.checked;
+                          setSendClientNotify(checked);
+                          localStorage.setItem('tg_send_client_notify', checked ? 'true' : 'false');
+                        }}
                         className="h-3.5 w-3.5 rounded border-white/10 text-gold-500 focus:ring-gold-500 bg-stone-900 cursor-pointer"
                       />
                       <span>{lang === 'ko' ? '확정/취소 시 고객 알림 전송' : 'Send Notify on Update'}</span>
