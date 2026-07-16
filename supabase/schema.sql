@@ -17,6 +17,7 @@ CREATE TABLE users (
     role user_role DEFAULT 'USER',
     phone VARCHAR(50),
     provider VARCHAR(50) NOT NULL DEFAULT 'credentials', -- "credentials" or "google"
+    mobile_optimized BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 

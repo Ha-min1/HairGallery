@@ -39,6 +39,7 @@ export default function MyPage() {
   // Notification dropdown state
   const [isNotiOpen, setIsNotiOpen] = useState<boolean>(false);
   const notiRef = useRef<HTMLDivElement>(null);
+  const [mobileOptimized, setMobileOptimized] = useState<boolean>(true);
 
   // Format Korean mobile number (010-XXXX-XXXX)
   const formatPhoneNumber = (value: string) => {
@@ -88,8 +89,18 @@ export default function MyPage() {
             setEditName(profile.name || '');
             setEditPhone(profile.phone || '');
             
+            // Sync mobile optimization state
+            if (profile.mobile_optimized !== undefined && profile.mobile_optimized !== null) {
+              setMobileOptimized(profile.mobile_optimized);
+            } else {
+              const localOpt = localStorage.getItem('tg_mobile_optimized');
+              if (localOpt !== null) {
+                setMobileOptimized(localOpt === 'true');
+              }
+            }
+            
             // Automatically load member's reservations
-            await fetchMemberReservations(session.access_token);
+            await fetchMemberReservations(session.access_token, profile.role);
           }
         }
       } catch (err) {
@@ -114,8 +125,11 @@ export default function MyPage() {
           setCurrentUser(profile);
           setEditName(profile.name || '');
           setEditPhone(profile.phone || '');
+          if (profile.mobile_optimized !== undefined && profile.mobile_optimized !== null) {
+            setMobileOptimized(profile.mobile_optimized);
+          }
           if (!hasLoadedInitialReservations.current) {
-            await fetchMemberReservations(session.access_token);
+            await fetchMemberReservations(session.access_token, profile.role);
           }
         }
       } else {
@@ -136,12 +150,13 @@ export default function MyPage() {
     localStorage.setItem('tg_lang', newLang);
   };
 
-  // Fetch reservations for signed-in member
-  const fetchMemberReservations = async (token: string) => {
+  // Fetch reservations for signed-in member or admin
+  const fetchMemberReservations = async (token: string, userRole?: string) => {
     setIsLoadingReservations(true);
     hasLoadedInitialReservations.current = true;
     try {
-      const res = await fetch('/api/bookings/my', {
+      const endpoint = userRole === 'ADMIN' ? '/api/admin/reservations' : '/api/bookings/my';
+      const res = await fetch(endpoint, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -285,11 +300,32 @@ export default function MyPage() {
     setReservations([]);
   };
 
+  const handleToggleMobileOptimized = async () => {
+    const nextVal = !mobileOptimized;
+    setMobileOptimized(nextVal);
+    localStorage.setItem('tg_mobile_optimized', nextVal ? 'true' : 'false');
+
+    if (currentUser) {
+      try {
+        await supabase
+          .from('users')
+          .update({ mobile_optimized: nextVal })
+          .eq('id', currentUser.id);
+        
+        setCurrentUser((prev: any) => ({ ...prev, mobile_optimized: nextVal }));
+      } catch (err) {
+        console.error('Failed to update mobile optimization in DB:', err);
+      }
+    }
+  };
+
   const t = TRANSLATIONS[lang];
 
-  // Filter reservations that are Confirmed for the notification badge
-  const confirmedReservations = reservations.filter(resv => resv.status === 'Confirmed');
-  const confirmedCount = confirmedReservations.length;
+  // Filter reservations for the notification badge
+  const isAdmin = currentUser && currentUser.role === 'ADMIN';
+  const targetAlertStatus = isAdmin ? 'Pending' : 'Confirmed';
+  const notificationReservations = reservations.filter(resv => resv.status === targetAlertStatus);
+  const notificationCount = notificationReservations.length;
 
   // Helper to translate status labels & colors
   const getStatusBadge = (status: string) => {
@@ -330,14 +366,16 @@ export default function MyPage() {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white border-b border-stone-200 shadow-sm">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 bg-stone-950 flex items-center justify-center rounded-sm">
+          <Link href="/" className="flex items-center gap-2 group shrink-0">
+            <div className="w-8 h-8 bg-stone-950 flex items-center justify-center rounded-sm shrink-0">
               <span className="text-gold-500 font-serif text-lg font-bold italic">G</span>
             </div>
-            <span className="font-serif text-sm sm:text-base font-bold tracking-tight text-stone-900">THE HAIR GALLERY</span>
+            <span className={`font-serif font-bold tracking-tight text-stone-900 ${
+              mobileOptimized ? 'text-[11px] sm:text-base whitespace-nowrap shrink-0' : 'text-sm sm:text-base'
+            }`}>THE HAIR GALLERY</span>
           </Link>
 
-          <div className="flex items-center gap-3">
+          <div className={`flex items-center ${mobileOptimized ? 'gap-1.5 sm:gap-3 flex-wrap sm:flex-nowrap justify-end' : 'gap-3'}`}>
             {/* Notification Bell for Logged-in Users */}
             {currentUser && (
               <div className="relative" ref={notiRef}>
@@ -347,14 +385,14 @@ export default function MyPage() {
                   aria-label="Notifications"
                 >
                   <Bell className="h-5 w-5" />
-                  {confirmedCount > 0 && (
+                  {notificationCount > 0 && (
                     <>
                       <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
                       </span>
                       <span className="absolute -top-1 -right-1 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-red-650 text-[9px] font-bold text-white border border-white">
-                        {confirmedCount}
+                        {notificationCount}
                       </span>
                     </>
                   )}
@@ -368,41 +406,56 @@ export default function MyPage() {
                         <Bell className="h-4 w-4 text-gold-600" />
                         {lang === 'ko' ? '알림' : 'Notifications'}
                       </span>
-                      {confirmedCount > 0 && (
+                      {notificationCount > 0 && (
                         <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-bold">
-                          {confirmedCount}
+                          {notificationCount}
                         </span>
                       )}
                     </div>
                     <div className="max-h-64 overflow-y-auto divide-y divide-stone-100">
-                      {confirmedCount === 0 ? (
+                      {notificationCount === 0 ? (
                         <div className="p-6 text-center text-xs text-stone-400 font-light">
-                          {lang === 'ko' ? '확정된 예약 알림이 없습니다.' : 'No confirmed reservation alerts.'}
+                          {isAdmin 
+                            ? (lang === 'ko' ? '새로 들어온 예약 신청이 없습니다.' : 'No new booking requests.')
+                            : (lang === 'ko' ? '확정된 예약 알림이 없습니다.' : 'No confirmed reservation alerts.')}
                         </div>
                       ) : (
-                        confirmedReservations.map((resv) => {
+                        notificationReservations.map((resv) => {
                           const dateObj = new Date(resv.date);
                           const formattedDate = dateObj.toLocaleDateString(
                             lang === 'ko' ? 'ko-KR' : 'en-US',
                             { month: 'short', day: 'numeric', weekday: 'short' }
                           );
+                          const customerName = resv.customer_name || resv.customerName || '';
+                          const serviceName = resv.services?.name || resv.serviceName || 'Custom Styling';
+                          
                           return (
                             <div key={resv.id} className="p-4 hover:bg-stone-50 transition-colors text-xs space-y-1 text-left">
                               <div className="flex justify-between items-center">
-                                <span className="font-bold text-emerald-600 font-mono text-[10px] bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded">
-                                  {lang === 'ko' ? '예약 확정' : 'Confirmed'}
+                                <span className={`font-bold font-mono text-[10px] px-2 py-0.5 rounded border ${
+                                  isAdmin 
+                                    ? 'text-amber-700 bg-amber-50 border-amber-200' 
+                                    : 'text-emerald-600 bg-emerald-50 border-emerald-100'
+                                }`}>
+                                  {isAdmin 
+                                    ? (lang === 'ko' ? '신규 예약' : 'New Request')
+                                    : (lang === 'ko' ? '예약 확정' : 'Confirmed')}
                                 </span>
                                 <span className="text-[10px] text-stone-450 font-mono">
                                   {formattedDate} {resv.time}
                                 </span>
                               </div>
                               <p className="text-stone-700 font-medium mt-1">
-                                {resv.services?.name || 'Hair Styling'}
+                                {serviceName} ({customerName})
                               </p>
                               <p className="text-[10px] text-stone-400">
-                                {lang === 'ko' 
-                                  ? '예약이 확정되었습니다. 방문을 환영합니다!' 
-                                  : 'Your reservation has been confirmed. We look forward to seeing you!'}
+                                {isAdmin 
+                                  ? (lang === 'ko' 
+                                    ? '새로운 예약 신청이 접수되었습니다. 관리자 대시보드에서 확정/취소해 주세요.' 
+                                    : 'A new booking request has been received. Please review in Admin Dashboard.')
+                                  : (lang === 'ko' 
+                                    ? '예약이 확정되었습니다. 방문을 환영합니다!' 
+                                    : 'Your reservation has been confirmed. We look forward to seeing you!')}
                               </p>
                             </div>
                           );
@@ -414,16 +467,33 @@ export default function MyPage() {
               </div>
             )}
 
+            {/* Mobile Optimization Toggle */}
+            <button
+              onClick={handleToggleMobileOptimized}
+              className={`text-[9px] sm:text-[10px] font-mono font-bold tracking-wider px-2 py-1.5 rounded-lg border transition-all active:scale-[0.98] flex items-center gap-1 cursor-pointer shrink-0 whitespace-nowrap ${
+                mobileOptimized 
+                  ? 'border-stone-900 bg-stone-900 text-white shadow-sm' 
+                  : 'border-stone-200 bg-white text-stone-600 hover:text-stone-900'
+              }`}
+              title={lang === 'ko' ? '모바일 화면 최적화 토글' : 'Toggle Mobile Optimization'}
+            >
+              <span>📱</span>
+              <span className="hidden sm:inline">{lang === 'ko' ? '모바일 최적화' : 'Mobile Opt'}</span>
+              <span className="inline sm:hidden">{lang === 'ko' ? '최적화' : 'Opt'}</span>
+            </button>
+
             <Link 
               href="/" 
-              className="text-[10px] sm:text-xs font-mono font-bold tracking-wider text-stone-700 hover:text-stone-950 flex items-center gap-1 border border-stone-200 hover:border-stone-300 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer bg-white"
+              className={`font-mono font-bold tracking-wider text-stone-700 hover:text-stone-950 flex items-center gap-1 border border-stone-200 hover:border-stone-300 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer bg-white shrink-0 whitespace-nowrap ${
+                mobileOptimized ? 'text-[9px] sm:text-xs px-2 py-1.5' : 'text-[10px] sm:text-xs'
+              }`}
             >
               <Undo2 className="h-3.5 w-3.5" />
               <span>{t.backToHome}</span>
             </Link>
 
             {/* Language Selector */}
-            <div className="flex items-center gap-0.5 border border-stone-200 p-0.5 rounded-lg bg-stone-50 text-[9px] sm:text-[10px] font-mono font-bold">
+            <div className="flex items-center gap-0.5 border border-stone-200 p-0.5 rounded-lg bg-stone-50 text-[9px] sm:text-[10px] font-mono font-bold shrink-0 whitespace-nowrap">
               <button
                 onClick={() => setLang('ko')}
                 className={`px-2 py-1 rounded transition-all cursor-pointer ${
@@ -507,7 +577,9 @@ export default function MyPage() {
                     </div>
                     <button 
                       onClick={handleLogout}
-                      className="text-[10px] font-mono font-bold text-rose-600 hover:text-rose-800 border border-rose-200 hover:border-rose-300 px-2 py-1.5 rounded-lg transition-colors cursor-pointer bg-white"
+                      className={`font-mono font-bold text-rose-600 hover:text-rose-800 border border-rose-200 hover:border-rose-300 rounded-lg transition-colors cursor-pointer bg-white shrink-0 whitespace-nowrap ${
+                        mobileOptimized ? 'text-[9px] px-2 py-1' : 'text-[10px] px-2 py-1.5'
+                      }`}
                     >
                       <LogOut className="h-3 w-3 inline mr-1" />
                       {t.logout}

@@ -145,17 +145,21 @@ export async function POST(req: NextRequest) {
 
         const adminEmails = (queryResult?.data || []).map((admin: any) => admin.email).filter(Boolean);
 
-        // C. Send alert email to each configured administrator
-        for (const email of adminEmails) {
-          await sendAdminBookingAlertEmail({
-            toEmail: email,
-            customerName: data.customer_name,
-            customerPhone: data.customer_phone,
-            date: data.date,
-            time: data.time,
-            serviceName,
-            price: servicePrice
-          });
+        if (adminEmails.length === 0) {
+          console.log('[Notification Skip] No admin users have enabled receive_notifications.');
+        } else {
+          // C. Send alert email to each configured administrator
+          for (const email of adminEmails) {
+            await sendAdminBookingAlertEmail({
+              toEmail: email,
+              customerName: data.customer_name,
+              customerPhone: data.customer_phone,
+              date: data.date,
+              time: data.time,
+              serviceName,
+              price: servicePrice
+            });
+          }
         }
       } catch (alertErr) {
         console.error('Failed to send admin booking alert:', alertErr);

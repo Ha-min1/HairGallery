@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
-import { Calendar as CalendarIcon, Scissors, CheckCircle, Info, LayoutDashboard, ChevronLeft, ChevronRight, User, Key, ShieldCheck, History } from 'lucide-react';
+import { Calendar as CalendarIcon, Scissors, CheckCircle, Info, LayoutDashboard, ChevronLeft, ChevronRight, User, Key, ShieldCheck, History, Clock } from 'lucide-react';
 import { TRANSLATIONS, getLocalizedServices } from '@/lib/i18n';
 import { getSupabaseClient } from '@/lib/supabase';
 
@@ -1505,10 +1505,7 @@ export default function Home() {
 // Inline sub-components for layout safety
 function ClockIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-4.5 w-4.5 text-gold-600" fill="none" viewBox="2 2 20 20" stroke="currentColor" strokeWidth={2}>
-      <circle cx="12" cy="12" r="10" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2" />
-    </svg>
+    <Clock className="h-4.5 w-4.5 text-gold-600 shrink-0" />
   );
 }
 

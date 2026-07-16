@@ -20,7 +20,8 @@ import {
   AlertTriangle,
   FileSpreadsheet,
   Settings,
-  Bell
+  Bell,
+  ShieldAlert
 } from 'lucide-react';
 import { TRANSLATIONS, getLocalizedServices } from '@/lib/i18n';
 import { getSupabaseClient } from '@/lib/supabase';
@@ -94,6 +95,8 @@ export default function AdminDashboard() {
   // Authorization states
   const [isAdminAuthorized, setIsAdminAuthorized] = useState<boolean | null>(null); // null means checking
   const [checkingAuth, setCheckingAuth] = useState<boolean>(true);
+  const [adminProfile, setAdminProfile] = useState<any | null>(null);
+  const [mobileOptimized, setMobileOptimized] = useState<boolean>(true);
 
   const supabase = getSupabaseClient();
 
@@ -108,6 +111,11 @@ export default function AdminDashboard() {
     if (savedNotify !== null) {
       setSendClientNotify(savedNotify === 'true');
     }
+
+    const savedOpt = localStorage.getItem('tg_mobile_optimized');
+    if (savedOpt !== null) {
+      setMobileOptimized(savedOpt === 'true');
+    }
     
     // Set default dates
     const today = new Date().toISOString().split('T')[0];
@@ -121,6 +129,25 @@ export default function AdminDashboard() {
     localStorage.setItem('tg_lang', newLang);
   };
 
+  const handleToggleMobileOptimized = async () => {
+    const nextVal = !mobileOptimized;
+    setMobileOptimized(nextVal);
+    localStorage.setItem('tg_mobile_optimized', nextVal ? 'true' : 'false');
+
+    if (adminProfile) {
+      try {
+        await supabase
+          .from('users')
+          .update({ mobile_optimized: nextVal })
+          .eq('id', adminProfile.id);
+        
+        setAdminProfile((prev: any) => ({ ...prev, mobile_optimized: nextVal }));
+      } catch (err) {
+        console.error('Failed to update mobile optimization in DB:', err);
+      }
+    }
+  };
+
   // Check Admin Authorization
   useEffect(() => {
     async function checkAdminSession() {
@@ -131,12 +158,18 @@ export default function AdminDashboard() {
           // Query users table for role (user_role) = 'ADMIN'
           const { data: profile, error } = await supabase
             .from('users')
-            .select('role')
+            .select('*')
             .eq('id', session.user.id)
             .maybeSingle();
 
           if (profile && profile.role === 'ADMIN') {
             setIsAdminAuthorized(true);
+            setAdminProfile(profile);
+            
+            // Sync mobile optimization state
+            if (profile.mobile_optimized !== undefined && profile.mobile_optimized !== null) {
+              setMobileOptimized(profile.mobile_optimized);
+            }
           } else {
             setIsAdminAuthorized(false);
           }
@@ -747,6 +780,9 @@ export default function AdminDashboard() {
 -- Enable Row Level Security (RLS)
 ALTER TABLE work_records ENABLE ROW LEVEL SECURITY;
 
+-- users 테이블에 mobile_optimized 컬럼 추가 (존재하지 않는 경우)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS mobile_optimized BOOLEAN DEFAULT TRUE;
+
 -- Admins can do everything on work_records
 CREATE POLICY "Admins can do everything on work_records" 
 ON work_records FOR ALL TO authenticated 
@@ -831,6 +867,22 @@ WITH CHECK (
               <span>{t.goToHome}</span>
             </Link>
 
+            {/* Mobile Optimization Toggle */}
+            <button
+              onClick={handleToggleMobileOptimized}
+              className={`text-[9px] sm:text-[10px] font-mono font-bold tracking-wider px-2.5 py-1.5 rounded-lg border transition-all active:scale-[0.98] flex items-center gap-1 cursor-pointer ${
+                mobileOptimized 
+                  ? 'border-indigo-500/30 bg-indigo-500/10 text-indigo-300 hover:bg-indigo-500/20' 
+                  : 'border-white/5 bg-stone-900/50 text-stone-400 hover:text-white hover:bg-stone-850'
+              }`}
+              title={lang === 'ko' ? '모바일 화면 최적화 토글' : 'Toggle Mobile Optimization'}
+            >
+              <span>📱</span>
+              <span className="hidden sm:inline">{lang === 'ko' ? '모바일 최적화' : 'Mobile Opt'}</span>
+              <span className="inline sm:hidden">{lang === 'ko' ? '최적화' : 'Opt'}</span>
+              <span className={`w-1.5 h-1.5 rounded-full ${mobileOptimized ? 'bg-emerald-500 animate-pulse' : 'bg-stone-600'}`}></span>
+            </button>
+
             {/* Language Switcher */}
             <div className="flex items-center gap-1 border border-white/5 p-0.5 rounded-lg bg-stone-900/60 text-[10px] font-mono font-bold">
               <button
@@ -912,50 +964,60 @@ WITH CHECK (
           )}
 
           {/* Navigation Tabs */}
-          <div className="bg-stone-900/50 p-1.5 rounded-xl border border-white/5 flex flex-wrap gap-2 shadow-xl w-full backdrop-blur-md">
+          <div className={`bg-stone-900/50 p-1.5 rounded-xl border border-white/5 flex gap-2 shadow-xl w-full backdrop-blur-md overflow-x-auto scrollbar-none ${
+            mobileOptimized ? 'flex-nowrap whitespace-nowrap' : 'flex-wrap'
+          }`}>
             <button
               onClick={() => setActiveTab('reservations')}
               className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-xs font-mono font-bold tracking-wide transition-all cursor-pointer shrink-0 ${
+                mobileOptimized ? 'whitespace-nowrap' : ''
+              } ${
                 activeTab === 'reservations'
                   ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-[0_0_15px_rgba(109,40,217,0.25)]'
                   : 'text-stone-400 hover:text-white hover:bg-white/5'
               }`}
             >
-              <Calendar className="h-4 w-4" />
-              <span>{t.reservationsTab}</span>
+              <Calendar className="h-4 w-4 shrink-0" />
+              <span className={mobileOptimized ? 'whitespace-nowrap' : ''}>{t.reservationsTab}</span>
             </button>
             <button
               onClick={() => setActiveTab('work-records')}
               className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-xs font-mono font-bold tracking-wide transition-all cursor-pointer shrink-0 ${
+                mobileOptimized ? 'whitespace-nowrap' : ''
+              } ${
                 activeTab === 'work-records'
                   ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-[0_0_15px_rgba(109,40,217,0.25)]'
                   : 'text-stone-400 hover:text-white hover:bg-white/5'
               }`}
             >
-              <FileSpreadsheet className="h-4 w-4" />
-              <span>{t.workRecordsTab}</span>
+              <FileSpreadsheet className="h-4 w-4 shrink-0" />
+              <span className={mobileOptimized ? 'whitespace-nowrap' : ''}>{t.workRecordsTab}</span>
             </button>
             <button
               onClick={() => setActiveTab('sales')}
               className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-xs font-mono font-bold tracking-wide transition-all cursor-pointer shrink-0 ${
+                mobileOptimized ? 'whitespace-nowrap' : ''
+              } ${
                 activeTab === 'sales'
                   ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-[0_0_15px_rgba(109,40,217,0.25)]'
                   : 'text-stone-400 hover:text-white hover:bg-white/5'
               }`}
             >
-              <TrendingUp className="h-4 w-4" />
-              <span>{t.salesDashboardTab}</span>
+              <TrendingUp className="h-4 w-4 shrink-0" />
+              <span className={mobileOptimized ? 'whitespace-nowrap' : ''}>{t.salesDashboardTab}</span>
             </button>
             <button
               onClick={() => setActiveTab('admin-settings')}
               className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-xs font-mono font-bold tracking-wide transition-all cursor-pointer shrink-0 ${
+                mobileOptimized ? 'whitespace-nowrap' : ''
+              } ${
                 activeTab === 'admin-settings'
                   ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-[0_0_15px_rgba(109,40,217,0.25)]'
                   : 'text-stone-400 hover:text-white hover:bg-white/5'
               }`}
             >
-              <Bell className="h-4 w-4" />
-              <span>{lang === 'ko' ? '알림 수신 설정' : 'Alert Settings'}</span>
+              <Bell className="h-4 w-4 shrink-0" />
+              <span className={mobileOptimized ? 'whitespace-nowrap' : ''}>{lang === 'ko' ? '알림 수신 설정' : 'Alert Settings'}</span>
             </button>
           </div>
 
@@ -1425,6 +1487,23 @@ WITH CHECK (
                       : 'Select which administrator accounts will receive email alerts when a new client booking is requested.'}
                   </p>
                 </div>
+
+                {/* Receiver Empty Warning Banner */}
+                {!isLoadingAdmins && adminUsers.length > 0 && !adminUsers.some(u => u.receive_notifications) && (
+                  <div className="p-4 bg-red-950/40 border border-red-500/20 text-red-300 text-xs rounded-xl flex items-start gap-2.5 animate-pulse mt-2 text-left">
+                    <ShieldAlert className="h-4.5 w-4.5 shrink-0 text-red-500" />
+                    <div>
+                      <p className="font-semibold">
+                        {lang === 'ko' ? '⚠️ 경고: 이메일 알림 수신 지정자 없음' : '⚠️ Warning: No Email Alert Receiver Selected'}
+                      </p>
+                      <p className="text-[10px] text-red-400/80 mt-1 leading-normal">
+                        {lang === 'ko' 
+                          ? '현재 알림을 수신하도록 설정된 관리자가 아무도 없습니다. 신규 예약 신청이 등록되어도 이메일 알림이 발송되지 않습니다. 최소 한 명 이상의 관리자 설정을 켜주시기 바랍니다.' 
+                          : 'No administrator is currently selected to receive notifications. No email alerts will go out when a new booking is requested. Please activate notification for at least one administrator.'}
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {/* EmailJS Quota Tracker Progress Widget */}
                 {emailUsage && (
