@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendAdminBookingAlertEmail } from '@/lib/email';
+import { sendTelegramAdminAlert } from '@/lib/telegram';
 
 export const runtime = 'edge';
 
@@ -160,6 +161,20 @@ export async function POST(req: NextRequest) {
               price: servicePrice
             });
           }
+        }
+
+        // D. Send Telegram notification to administrator if configured
+        try {
+          await sendTelegramAdminAlert({
+            customerName: data.customer_name,
+            customerPhone: data.customer_phone,
+            date: data.date,
+            time: data.time,
+            serviceName,
+            price: servicePrice
+          });
+        } catch (tgErr) {
+          console.error('Failed to send Telegram admin alert:', tgErr);
         }
       } catch (alertErr) {
         console.error('Failed to send admin booking alert:', alertErr);
