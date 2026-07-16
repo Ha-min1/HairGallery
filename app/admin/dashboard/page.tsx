@@ -1371,6 +1371,32 @@ WITH CHECK (
               <span className={mobileOptimized ? 'whitespace-nowrap' : ''}>{t.salesDashboardTab}</span>
             </button>
             <button
+              onClick={() => setActiveTab('customers')}
+              className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-xs font-mono font-bold tracking-wide transition-all cursor-pointer shrink-0 ${
+                mobileOptimized ? 'whitespace-nowrap' : ''
+              } ${
+                activeTab === 'customers'
+                  ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-[0_0_15px_rgba(109,40,217,0.25)]'
+                  : 'text-stone-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Users className="h-4 w-4 shrink-0" />
+              <span className={mobileOptimized ? 'whitespace-nowrap' : ''}>{t.customersTab}</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('services')}
+              className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-xs font-mono font-bold tracking-wide transition-all cursor-pointer shrink-0 ${
+                mobileOptimized ? 'whitespace-nowrap' : ''
+              } ${
+                activeTab === 'services'
+                  ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-[0_0_15px_rgba(109,40,217,0.25)]'
+                  : 'text-stone-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Scissors className="h-4 w-4 shrink-0" />
+              <span className={mobileOptimized ? 'whitespace-nowrap' : ''}>{t.servicesTab}</span>
+            </button>
+            <button
               onClick={() => setActiveTab('admin-settings')}
               className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-xs font-mono font-bold tracking-wide transition-all cursor-pointer shrink-0 ${
                 mobileOptimized ? 'whitespace-nowrap' : ''
