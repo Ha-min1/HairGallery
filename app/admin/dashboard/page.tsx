@@ -493,18 +493,18 @@ export default function AdminDashboard() {
       } else {
         const { data, error } = await supabase
           .from('users')
-          .select('id, name, email, phone, price, work_menu')
+          .select('id, name, email, phone, work_menu')
           .eq('role', 'USER')
           .order('name', { ascending: true });
         
         if (error) {
-          if (error.message.includes('column "price" does not exist') || error.message.includes('column "work_menu" does not exist') || error.code === '42703') {
+          if (error.message.includes('column "work_menu" does not exist') || error.code === '42703') {
             const fallback = await supabase
               .from('users')
               .select('id, name, email, phone')
               .eq('role', 'USER')
               .order('name', { ascending: true });
-            setCustomersList((fallback.data || []).map((u) => Object.assign({}, u, { price: 0, work_menu: '' })));
+            setCustomersList((fallback.data || []).map((u) => Object.assign({}, u, { work_menu: '' })));
           } else {
             throw error;
           }
