@@ -27,7 +27,9 @@ export async function PUT(req: NextRequest) {
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
     const body = await req.json();
-    const { originalId, newId, name, price, durationMinutes, description, category, displayOrder } = body;
+    const { name, nameEn, price, durationMinutes, description, descriptionEn, category, displayOrder } = body;
+    const originalId = body.originalId || body.id;
+    const newId = body.newId || body.id;
 
     if (!originalId || !newId || !name || durationMinutes === undefined) {
       return NextResponse.json({ error: 'Required fields missing: originalId, newId, name, durationMinutes are required' }, { status: 400 });
@@ -62,9 +64,11 @@ export async function PUT(req: NextRequest) {
       .update({
         id: newId,
         name,
+        ...(nameEn !== undefined && { name_en: nameEn || null }),
         price: price === '' || price === null || price === undefined ? null : Number(price),
         duration_minutes: Number(durationMinutes),
         description,
+        ...(descriptionEn !== undefined && { description_en: descriptionEn || null }),
         category: category || 'Cut',
         display_order: displayOrder !== undefined ? Number(displayOrder) : undefined
       })
@@ -95,7 +99,7 @@ export async function POST(req: NextRequest) {
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
     const body = await req.json();
-    const { id, name, price, durationMinutes, description, category, displayOrder } = body;
+    const { id, name, nameEn, price, durationMinutes, description, descriptionEn, category, displayOrder } = body;
 
     if (!id || !name || durationMinutes === undefined) {
       return NextResponse.json({ error: 'Required fields missing: id, name, durationMinutes are required' }, { status: 400 });
@@ -131,9 +135,11 @@ export async function POST(req: NextRequest) {
         {
           id,
           name,
+          name_en: nameEn || null,
           price: price === '' || price === null || price === undefined ? null : Number(price),
           duration_minutes: Number(durationMinutes),
           description,
+          description_en: descriptionEn || null,
           category: category || 'Cut',
           display_order: displayOrder !== undefined ? Number(displayOrder) : 0
         }

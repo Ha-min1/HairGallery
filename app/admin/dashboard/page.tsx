@@ -116,9 +116,11 @@ export default function AdminDashboard() {
   const [editingService, setEditingService] = useState<any | null>(null);
   const [svcId, setSvcId] = useState<string>('');
   const [svcName, setSvcName] = useState<string>('');
+  const [svcNameEn, setSvcNameEn] = useState<string>('');
   const [svcPrice, setSvcPrice] = useState<number | ''>('');
   const [svcDuration, setSvcDuration] = useState<number>(30);
   const [svcDescription, setSvcDescription] = useState<string>('');
+  const [svcDescriptionEn, setSvcDescriptionEn] = useState<string>('');
   const [svcCategory, setSvcCategory] = useState<string>('Cut');
 
   // Sales statistics states
@@ -622,10 +624,12 @@ export default function AdminDashboard() {
     const serviceObj = {
       id: svcId,
       name: svcName,
+      name_en: svcNameEn || null,
       price: svcPrice === '' || svcPrice === null ? null : Number(svcPrice),
       duration_minutes: Number(svcDuration),
       durationMinutes: Number(svcDuration),
       description: svcDescription,
+      description_en: svcDescriptionEn || null,
       category: svcCategory
     };
 
@@ -659,9 +663,11 @@ export default function AdminDashboard() {
               originalId: editingService.id,
               newId: svcId,
               name: svcName,
+              nameEn: svcNameEn || null,
               price: svcPrice === '' || svcPrice === null ? null : Number(svcPrice),
               durationMinutes: Number(svcDuration),
               description: svcDescription,
+              descriptionEn: svcDescriptionEn || null,
               category: svcCategory
             })
           });
@@ -680,9 +686,11 @@ export default function AdminDashboard() {
             body: JSON.stringify({
               id: svcId,
               name: svcName,
+              nameEn: svcNameEn || null,
               price: svcPrice === '' || svcPrice === null ? null : Number(svcPrice),
               durationMinutes: Number(svcDuration),
               description: svcDescription,
+              descriptionEn: svcDescriptionEn || null,
               category: svcCategory
             })
           });
@@ -773,9 +781,11 @@ export default function AdminDashboard() {
             originalId: swapTarget.id,
             newId: swapTarget.id,
             name: swapTarget.name,
+            nameEn: swapTarget.name_en || null,
             price: swapTarget.price,
             durationMinutes: swapTarget.duration_minutes || swapTarget.durationMinutes || 30,
             description: swapTarget.description,
+            descriptionEn: swapTarget.description_en || null,
             category: swapTarget.category,
             displayOrder: currentIndex
           })
@@ -793,9 +803,11 @@ export default function AdminDashboard() {
             originalId: svc.id,
             newId: svc.id,
             name: svc.name,
+            nameEn: svc.name_en || null,
             price: svc.price,
             durationMinutes: svc.duration_minutes || svc.durationMinutes || 30,
             description: svc.description,
+            descriptionEn: svc.description_en || null,
             category: svc.category,
             displayOrder: targetIndex
           })
@@ -2306,9 +2318,11 @@ WITH CHECK (
                     setEditingService(null);
                     setSvcId('');
                     setSvcName('');
+                    setSvcNameEn('');
                     setSvcPrice('');
                     setSvcDuration(30);
                     setSvcDescription('');
+                    setSvcDescriptionEn('');
                     setSvcCategory('Cut');
                     setShowServiceModal(true);
                   }}
@@ -2331,12 +2345,19 @@ WITH CHECK (
                             <span className="font-mono text-[9px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded">
                               ID: {svc.id}
                             </span>
-                            <h3 className="font-serif text-sm font-semibold text-white">{svc.name}</h3>
+                            <h3 className="font-serif text-sm font-semibold text-white">
+                              {svc.name} {svc.name_en && <span className="text-xs text-stone-400 font-normal font-sans ml-1">/ {svc.name_en}</span>}
+                            </h3>
                             <span className="text-[10px] text-stone-455 font-mono">({(svc.duration_minutes || svc.durationMinutes || 30) + (lang === 'ko' ? '분' : 'm')})</span>
                           </div>
                           <p className="text-xs text-stone-300 leading-normal">
                             {svc.description}
                           </p>
+                          {svc.description_en && (
+                            <p className="text-xs text-stone-500 leading-normal italic mt-0.5">
+                              En: {svc.description_en}
+                            </p>
+                          )}
                         </div>
 
                         <div className="flex items-center justify-between md:justify-end gap-6 w-full md:w-auto shrink-0 border-t md:border-t-0 border-white/5 pt-3.5 md:pt-0">
@@ -2375,9 +2396,11 @@ WITH CHECK (
                                 setEditingService(svc);
                                 setSvcId(svc.id || '');
                                 setSvcName(svc.name || '');
+                                setSvcNameEn(svc.name_en || '');
                                 setSvcPrice(svc.price !== null && svc.price !== undefined ? svc.price : '');
                                 setSvcDuration(svc.duration_minutes || svc.durationMinutes || 30);
                                 setSvcDescription(svc.description || '');
+                                setSvcDescriptionEn(svc.description_en || '');
                                 setSvcCategory(svc.category || 'Cut');
                                 setShowServiceModal(true);
                               }}
@@ -2861,15 +2884,27 @@ WITH CHECK (
                 />
               </div>
 
-              {/* Service Name */}
+              {/* Service Name (Korean) */}
               <div className="space-y-1.5 text-left">
-                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{lang === 'ko' ? '시술명' : 'Service Name'} *</label>
+                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{lang === 'ko' ? '시술명 (한국어)' : 'Service Name (Korean)'} *</label>
                 <input 
                   type="text"
                   required
                   value={svcName}
                   onChange={e => setSvcName(e.target.value)}
                   placeholder="예: 시그니처 컷"
+                  className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white text-left"
+                />
+              </div>
+
+              {/* Service Name (English) */}
+              <div className="space-y-1.5 text-left">
+                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{lang === 'ko' ? '시술명 (영어)' : 'Service Name (English)'}</label>
+                <input 
+                  type="text"
+                  value={svcNameEn}
+                  onChange={e => setSvcNameEn(e.target.value)}
+                  placeholder="예: Signature Cut"
                   className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white text-left"
                 />
               </div>
@@ -2919,14 +2954,26 @@ WITH CHECK (
                 />
               </div>
 
-              {/* Description */}
+              {/* Description (Korean) */}
               <div className="space-y-1.5 text-left">
-                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{lang === 'ko' ? '상세 설명' : 'Description'}</label>
+                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{lang === 'ko' ? '상세 설명 (한국어)' : 'Description (Korean)'}</label>
                 <textarea 
-                  rows={3}
+                  rows={2}
                   value={svcDescription}
                   onChange={e => setSvcDescription(e.target.value)}
                   placeholder="예: 고급 샴푸와 두피 마사지가 포함된 시술입니다."
+                  className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white resize-none text-left"
+                />
+              </div>
+
+              {/* Description (English) */}
+              <div className="space-y-1.5 text-left">
+                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{lang === 'ko' ? '상세 설명 (영어)' : 'Description (English)'}</label>
+                <textarea 
+                  rows={2}
+                  value={svcDescriptionEn}
+                  onChange={e => setSvcDescriptionEn(e.target.value)}
+                  placeholder="예: Includes premium shampoo and scalp massage."
                   className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white resize-none text-left"
                 />
               </div>

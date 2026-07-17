@@ -214,20 +214,7 @@ export default function Home() {
 
   // Load services with database fetching and localStorage fallback
   const loadServices = async (currentLang: 'ko' | 'en') => {
-    // 1. Try local storage first to preserve any direct manual adjustments
-    const cached = localStorage.getItem(`custom_services_${currentLang}`);
-    if (cached) {
-      try {
-        const parsed = JSON.parse(cached);
-        parsed.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0) || a.id.localeCompare(b.id));
-        setServices(parsed);
-        return;
-      } catch (e) {
-        console.error('Failed to parse cached services:', e);
-      }
-    }
-
-    // 2. Query Supabase
+    // 1. Try to fetch from database first for real-time synchronization
     try {
       const { data, error } = await supabase
         .from('services')
@@ -235,16 +222,24 @@ export default function Home() {
         .order('display_order', { ascending: true })
         .order('id', { ascending: true });
       if (!error && data && data.length > 0) {
-        const mapped = data.map((s: any) => ({
-          id: s.id,
-          name: s.name,
-          price: s.price,
-          durationMinutes: s.duration_minutes,
-          description: s.description,
-          display_order: s.display_order || 0
-        }));
+        const mapped = data.map((s: any) => {
+          const displayName = currentLang === 'en' ? (s.name_en || s.name) : s.name;
+          const displayDesc = currentLang === 'en' ? (s.description_en || s.description) : s.description;
+          return {
+            id: s.id,
+            name: displayName,
+            price: s.price,
+            durationMinutes: s.duration_minutes,
+            description: displayDesc,
+            display_order: s.display_order || 0,
+            name_ko: s.name,
+            name_en: s.name_en || null,
+            description_ko: s.description,
+            description_en: s.description_en || null
+          };
+        });
         setServices(mapped);
-        // Cache it in localStorage
+        // Cache it in localStorage as fallback
         localStorage.setItem(`custom_services_${currentLang}`, JSON.stringify(mapped));
         return;
       }
@@ -252,7 +247,29 @@ export default function Home() {
       console.error('Failed to fetch services from Supabase:', e);
     }
 
-    // 3. Static fallback
+    // 2. Local storage fallback if offline or DB query fails
+    const cached = localStorage.getItem(`custom_services_${currentLang}`);
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        parsed.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0) || a.id.localeCompare(b.id));
+        const localized = parsed.map((s: any) => {
+          const displayName = currentLang === 'en' ? (s.name_en || s.name_ko || s.name) : (s.name_ko || s.name);
+          const displayDesc = currentLang === 'en' ? (s.description_en || s.description_ko || s.description) : (s.description_ko || s.description);
+          return {
+            ...s,
+            name: displayName,
+            description: displayDesc
+          };
+        });
+        setServices(localized);
+        return;
+      } catch (e) {
+        console.error('Failed to parse cached services:', e);
+      }
+    }
+
+    // 3. Static fallback if both DB and cache fail
     const staticSvc = getLocalizedServices(currentLang).map((s: any, idx: number) => Object.assign({}, s, { display_order: idx }));
     setServices(staticSvc);
   };
@@ -262,8 +279,38 @@ export default function Home() {
   }, [lang]);
 
   const handleUpdateService = async (updatedService: any) => {
-    // Update local state
-    const updatedServices = services.map(s => s.id === updatedService.id ? updatedService : s);
+    // Format the payload to match what the backend expects
+    const payload = {
+      originalId: updatedService.id,
+      newId: updatedService.id,
+      name: updatedService.name_ko || updatedService.name,
+      nameEn: updatedService.name_en || null,
+      price: updatedService.price === '' || updatedService.price === null ? null : Number(updatedService.price),
+      durationMinutes: updatedService.durationMinutes,
+      description: updatedService.description_ko || updatedService.description,
+      descriptionEn: updatedService.description_en || null,
+      category: updatedService.category || 'Cut'
+    };
+
+    // Update local state (simulate dynamic local update)
+    const updatedServices = services.map(s => {
+      if (s.id === updatedService.id) {
+        const displayName = lang === 'en' ? (payload.nameEn || payload.name) : payload.name;
+        const displayDesc = lang === 'en' ? (payload.descriptionEn || payload.description) : payload.description;
+        return {
+          ...s,
+          name: displayName,
+          price: payload.price,
+          durationMinutes: payload.durationMinutes,
+          description: displayDesc,
+          name_ko: payload.name,
+          name_en: payload.nameEn,
+          description_ko: payload.description,
+          description_en: payload.descriptionEn
+        };
+      }
+      return s;
+    });
     setServices(updatedServices);
 
     // Save to local storage for persistence
@@ -281,7 +328,7 @@ export default function Home() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(updatedService)
+        body: JSON.stringify(payload)
       });
       if (!res.ok) {
         const errData = await res.json();
@@ -1749,16 +1796,29 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Name */}
+              {/* Name (Korean) */}
               <div className="space-y-1 text-left">
                 <label className="text-[10px] font-mono text-stone-400 uppercase tracking-widest font-semibold block">
-                  {lang === 'ko' ? '시술 명 (Name)' : 'Service Name'}
+                  {lang === 'ko' ? '시술 명 (한국어)' : 'Service Name (Korean)'} *
                 </label>
                 <input
                   type="text"
                   required
-                  value={editingService.name}
-                  onChange={(e) => setEditingService({ ...editingService, name: e.target.value })}
+                  value={editingService.name_ko || editingService.name || ''}
+                  onChange={(e) => setEditingService({ ...editingService, name_ko: e.target.value, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-stone-200 rounded-lg text-xs font-bold focus:ring-1 focus:ring-gold-500 focus:border-gold-500 outline-none bg-stone-50"
+                />
+              </div>
+
+              {/* Name (English) */}
+              <div className="space-y-1 text-left">
+                <label className="text-[10px] font-mono text-stone-400 uppercase tracking-widest font-semibold block">
+                  {lang === 'ko' ? '시술 명 (영어)' : 'Service Name (English)'}
+                </label>
+                <input
+                  type="text"
+                  value={editingService.name_en || ''}
+                  onChange={(e) => setEditingService({ ...editingService, name_en: e.target.value })}
                   className="w-full px-3 py-2 border border-stone-200 rounded-lg text-xs font-bold focus:ring-1 focus:ring-gold-500 focus:border-gold-500 outline-none bg-stone-50"
                 />
               </div>
@@ -1794,15 +1854,28 @@ export default function Home() {
                 />
               </div>
 
-              {/* Description */}
+              {/* Description (Korean) */}
               <div className="space-y-1 text-left">
                 <label className="text-[10px] font-mono text-stone-400 uppercase tracking-widest font-semibold block">
-                  {lang === 'ko' ? '상세 설명 (Description)' : 'Description'}
+                  {lang === 'ko' ? '상세 설명 (한국어)' : 'Description (Korean)'}
                 </label>
                 <textarea
-                  rows={3}
-                  value={editingService.description}
-                  onChange={(e) => setEditingService({ ...editingService, description: e.target.value })}
+                  rows={2}
+                  value={editingService.description_ko || editingService.description || ''}
+                  onChange={(e) => setEditingService({ ...editingService, description_ko: e.target.value, description: e.target.value })}
+                  className="w-full px-3 py-2 border border-stone-200 rounded-lg text-xs focus:ring-1 focus:ring-gold-500 focus:border-gold-500 outline-none resize-none leading-relaxed bg-stone-50"
+                />
+              </div>
+
+              {/* Description (English) */}
+              <div className="space-y-1 text-left">
+                <label className="text-[10px] font-mono text-stone-400 uppercase tracking-widest font-semibold block">
+                  {lang === 'ko' ? '상세 설명 (영어)' : 'Description (English)'}
+                </label>
+                <textarea
+                  rows={2}
+                  value={editingService.description_en || ''}
+                  onChange={(e) => setEditingService({ ...editingService, description_en: e.target.value })}
                   className="w-full px-3 py-2 border border-stone-200 rounded-lg text-xs focus:ring-1 focus:ring-gold-500 focus:border-gold-500 outline-none resize-none leading-relaxed bg-stone-50"
                 />
               </div>
