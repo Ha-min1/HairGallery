@@ -1152,11 +1152,11 @@ export default function AdminDashboard() {
 
   const handleSaveWorkRecord = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!workCustomerName || !workCustomerPhone || !workContent) return;
+    if (!workContent) return;
 
     const recordData = {
-      customer_name: workCustomerName,
-      customer_phone: workCustomerPhone,
+      customer_name: workCustomerName || null,
+      customer_phone: workCustomerPhone || null,
       work_content: workContent,
       amount: Number(workAmount) || 0,
       date: workDate || new Date().toISOString().split('T')[0] // automatic fallback to today
@@ -1177,23 +1177,25 @@ export default function AdminDashboard() {
         setWorkRecords(records);
 
         // LocalStorage customer sync
-        const localCustData = localStorage.getItem('tg_customers');
-        let customers = localCustData ? JSON.parse(localCustData) : [];
-        const existingIdx = customers.findIndex((c: any) => c.name === workCustomerName);
-        const custData = {
-          name: workCustomerName,
-          price: Number(workAmount) || 0,
-          work_menu: workContent,
-          email: 'a@ex.com',
-          phone: null
-        };
-        if (existingIdx >= 0) {
-          customers[existingIdx] = Object.assign({}, customers[existingIdx], custData);
-        } else {
-          customers.push(Object.assign({}, custData, { id: crypto.randomUUID() }));
+        if (workCustomerName) {
+          const localCustData = localStorage.getItem('tg_customers');
+          let customers = localCustData ? JSON.parse(localCustData) : [];
+          const existingIdx = customers.findIndex((c: any) => c.name === workCustomerName);
+          const custData = {
+            name: workCustomerName,
+            price: Number(workAmount) || 0,
+            work_menu: workContent,
+            email: 'a@ex.com',
+            phone: null
+          };
+          if (existingIdx >= 0) {
+            customers[existingIdx] = Object.assign({}, customers[existingIdx], custData);
+          } else {
+            customers.push(Object.assign({}, custData, { id: crypto.randomUUID() }));
+          }
+          localStorage.setItem('tg_customers', JSON.stringify(customers));
+          setCustomersList(customers);
         }
-        localStorage.setItem('tg_customers', JSON.stringify(customers));
-        setCustomersList(customers);
       } else {
         if (editingRecord) {
           const { error } = await supabase
@@ -1210,37 +1212,39 @@ export default function AdminDashboard() {
         await loadWorkRecords();
 
         // Supabase customer sync
-        const { data: existingUser, error: checkError } = await supabase
-          .from('users')
-          .select('id, name')
-          .eq('name', workCustomerName)
-          .eq('role', 'USER')
-          .maybeSingle();
+        if (workCustomerName) {
+          const { data: existingUser, error: checkError } = await supabase
+            .from('users')
+            .select('id, name')
+            .eq('name', workCustomerName)
+            .eq('role', 'USER')
+            .maybeSingle();
 
-        if (!checkError) {
-          if (existingUser) {
-            await supabase
-              .from('users')
-              .update({
-                price: Number(workAmount) || 0,
-                work_menu: workContent
-              })
-              .eq('id', existingUser.id);
-          } else {
-            const tempEmail = 'a_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6) + '@ex.com';
-            await supabase
-              .from('users')
-              .insert([{
-                name: workCustomerName,
-                role: 'USER',
-                email: tempEmail,
-                phone: null,
-                price: Number(workAmount) || 0,
-                work_menu: workContent
-              }]);
+          if (!checkError) {
+            if (existingUser) {
+              await supabase
+                .from('users')
+                .update({
+                  price: Number(workAmount) || 0,
+                  work_menu: workContent
+                })
+                .eq('id', existingUser.id);
+            } else {
+              const tempEmail = 'a_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6) + '@ex.com';
+              await supabase
+                .from('users')
+                .insert([{
+                  name: workCustomerName,
+                  role: 'USER',
+                  email: tempEmail,
+                  phone: null,
+                  price: Number(workAmount) || 0,
+                  work_menu: workContent
+                }]);
+            }
           }
+          await loadCustomersList();
         }
-        await loadCustomersList();
       }
       setShowWorkModal(false);
     } catch (err) {
@@ -1393,8 +1397,8 @@ export default function AdminDashboard() {
 
   const sqlCode = `CREATE TABLE work_records (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    customer_name VARCHAR(255) NOT NULL,
-    customer_phone VARCHAR(50) NOT NULL,
+    customer_name VARCHAR(255),
+    customer_phone VARCHAR(50),
     work_content TEXT NOT NULL,
     amount INTEGER NOT NULL DEFAULT 0,
     date DATE NOT NULL DEFAULT CURRENT_DATE,

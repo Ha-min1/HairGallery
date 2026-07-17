@@ -143,8 +143,8 @@ CREATE POLICY "Users update own reservations" ON reservations FOR UPDATE USING (
 -- =====================================================================
 CREATE TABLE work_records (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    customer_name VARCHAR(255) NOT NULL,
-    customer_phone VARCHAR(50) NOT NULL,
+    customer_name VARCHAR(255),
+    customer_phone VARCHAR(50),
     work_content TEXT NOT NULL,
     amount INTEGER NOT NULL DEFAULT 0,
     date DATE NOT NULL DEFAULT CURRENT_DATE,
