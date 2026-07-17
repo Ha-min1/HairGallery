@@ -35,6 +35,15 @@ import {
 import { TRANSLATIONS, getLocalizedServices } from '@/lib/i18n';
 import { getSupabaseClient } from '@/lib/supabase';
 
+const matchCleanedPhone = (phoneStr: string | null | undefined, queryStr: string) => {
+  if (!phoneStr) return false;
+  const p = phoneStr.replace(/[^0-9]/g, '');
+  const q = queryStr.replace(/[^0-9]/g, '');
+  if (!q) return false;
+  return p.includes(q);
+};
+
+
 // Standard 24h styling slots
 const TIME_SLOTS = [
   '10:00', '11:00', '12:00', '13:00', '14:00',
@@ -109,6 +118,19 @@ export default function AdminDashboard() {
   const [custPrice, setCustPrice] = useState<number | ''>('');
   const [custWorkMenu, setCustWorkMenu] = useState<string>('');
   const [custPhone, setCustPhone] = useState<string>('');
+
+  // Telegram Settings States
+  const [telegramAlertConfirm, setTelegramAlertConfirm] = useState<boolean>(true);
+  const [telegramDailyBriefing, setTelegramDailyBriefing] = useState<boolean>(true);
+  const [isUpdatingTelegramSettings, setIsUpdatingTelegramSettings] = useState<boolean>(false);
+
+  // Announcement States
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [annDetails, setAnnDetails] = useState<string>('');
+  const [annDetailsEn, setAnnDetailsEn] = useState<string>('');
+  const [annStartTime, setAnnStartTime] = useState<string>('');
+  const [annEndTime, setAnnEndTime] = useState<string>('');
+  const [isSavingAnnouncement, setIsSavingAnnouncement] = useState<boolean>(false);
   const [customerSearchQuery, setCustomerSearchQuery] = useState<string>('');
 
   // Service Management states
@@ -338,10 +360,115 @@ export default function AdminDashboard() {
     }
   };
 
+  const loadAdminSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('admin_settings')
+        .select('key, value');
+      if (error) throw error;
+      if (data) {
+        data.forEach(item => {
+          if (item.key === 'telegram_alert_confirm') setTelegramAlertConfirm(item.value);
+          if (item.key === 'telegram_daily_briefing') setTelegramDailyBriefing(item.value);
+        });
+      }
+    } catch (err) {
+      console.error('Failed to load admin settings:', err);
+    }
+  };
+
+  const handleToggleSetting = async (key: string, currentValue: boolean) => {
+    setIsUpdatingTelegramSettings(true);
+    try {
+      const { error } = await supabase
+        .from('admin_settings')
+        .update({ value: !currentValue })
+        .eq('key', key);
+      
+      if (error) throw error;
+      
+      if (key === 'telegram_alert_confirm') setTelegramAlertConfirm(!currentValue);
+      if (key === 'telegram_daily_briefing') setTelegramDailyBriefing(!currentValue);
+    } catch (err: any) {
+      console.error('Failed to update setting:', err);
+      alert('설정 변경 실패: ' + err.message);
+    } finally {
+      setIsUpdatingTelegramSettings(false);
+    }
+  };
+
+  const loadAnnouncements = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('announcements')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setAnnouncements(data || []);
+    } catch (err) {
+      console.error('Failed to load announcements:', err);
+    }
+  };
+
+  const handleSaveAnnouncement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!annDetails || !annStartTime || !annEndTime) {
+      alert(lang === 'ko' ? '모든 필드를 입력해 주세요.' : 'Please fill all fields.');
+      return;
+    }
+    
+    setIsSavingAnnouncement(true);
+    try {
+      const { error } = await supabase
+        .from('announcements')
+        .insert([
+          {
+            details: annDetails,
+            details_en: annDetailsEn || null,
+            start_time: new Date(annStartTime).toISOString(),
+            end_time: new Date(annEndTime).toISOString()
+          }
+        ]);
+
+      if (error) throw error;
+
+      alert(lang === 'ko' ? '공지사항이 성공적으로 등록되었습니다.' : 'Announcement registered successfully.');
+      setAnnDetails('');
+      setAnnDetailsEn('');
+      setAnnStartTime('');
+      setAnnEndTime('');
+      await loadAnnouncements();
+    } catch (err: any) {
+      console.error('Failed to save announcement:', err);
+      alert('공지사항 등록 실패: ' + err.message);
+    } finally {
+      setIsSavingAnnouncement(false);
+    }
+  };
+
+  const handleDeleteAnnouncement = async (id: string) => {
+    if (!confirm(lang === 'ko' ? '정말 이 공지사항을 삭제하시겠습니까?' : 'Are you sure you want to delete this announcement?')) return;
+    
+    try {
+      const { error } = await supabase
+        .from('announcements')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      await loadAnnouncements();
+    } catch (err: any) {
+      console.error('Failed to delete announcement:', err);
+      alert('공지사항 삭제 실패: ' + err.message);
+    }
+  };
+
   useEffect(() => {
     if (isAdminAuthorized && activeTab === 'admin-settings') {
       loadAdminUsers();
       loadEmailUsage();
+      loadAdminSettings();
+      loadAnnouncements();
     }
   }, [isAdminAuthorized, activeTab]);
 
@@ -825,7 +952,7 @@ export default function AdminDashboard() {
 
   const handleSaveReservation = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!resCustomerName || !resCustomerPhone || !resServiceId || !resDate || !resTime) return;
+    if (!resCustomerName || !resServiceId || !resDate || !resTime) return;
 
     try {
       // 1. Check double booking
@@ -850,7 +977,7 @@ export default function AdminDashboard() {
           {
             user_id: resSelectedUserId || null,
             customer_name: resCustomerName,
-            customer_phone: resCustomerPhone,
+            customer_phone: resCustomerPhone || null,
             service_id: resServiceId,
             date: resDate,
             time: resTime,
@@ -1016,7 +1143,7 @@ export default function AdminDashboard() {
       const query = customerSearchQuery.toLowerCase().trim();
       list = list.filter(cust => {
         const nameMatch = (cust.name || '').toLowerCase().includes(query);
-        const phoneMatch = (cust.phone || '').toLowerCase().includes(query);
+        const phoneMatch = (cust.phone || '').toLowerCase().includes(query) || matchCleanedPhone(cust.phone, query);
         return nameMatch || phoneMatch;
       });
     }
@@ -1162,7 +1289,7 @@ export default function AdminDashboard() {
   // Filter reservations
   const filteredReservations = reservations.filter(res => {
     const nameMatch = res.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) || false;
-    const phoneMatch = res.customerPhone?.includes(searchQuery) || false;
+    const phoneMatch = (res.customerPhone?.toLowerCase().includes(searchQuery.toLowerCase()) || false) || matchCleanedPhone(res.customerPhone, searchQuery);
     const matchesSearch = nameMatch || phoneMatch;
     const matchesStatus = filterStatus === 'All' || res.status === filterStatus;
     return matchesSearch && matchesStatus;
@@ -1224,7 +1351,7 @@ export default function AdminDashboard() {
   // Filter work records (Search by phone or name)
   const filteredWorkRecords = workRecords.filter(rec => {
     const nameMatch = rec.customer_name?.toLowerCase().includes(searchWorkQuery.toLowerCase()) || false;
-    const phoneMatch = rec.customer_phone?.includes(searchWorkQuery) || false;
+    const phoneMatch = (rec.customer_phone?.toLowerCase().includes(searchWorkQuery.toLowerCase()) || false) || matchCleanedPhone(rec.customer_phone, searchWorkQuery);
     return nameMatch || phoneMatch;
   });
 
@@ -1683,9 +1810,11 @@ WITH CHECK (
                                           <span className="font-serif font-bold text-xs text-white">
                                             {res.customerName}
                                           </span>
-                                          <span className="text-[10px] text-stone-400 font-mono">
-                                            ({res.customerPhone})
-                                          </span>
+                                          {res.customerPhone ? (
+                                            <span className="text-[10px] text-stone-400 font-mono">
+                                              ({res.customerPhone})
+                                            </span>
+                                          ) : null}
                                         </div>
                                         <p className="text-[10px] text-stone-300 font-light">
                                           {res.serviceName} • ₩{res.price.toLocaleString()}
@@ -1885,7 +2014,8 @@ WITH CHECK (
                               <h3 className="font-serif text-sm font-semibold text-white">{res.customerName}</h3>
                             </div>
                             <p className="text-[10px] text-stone-400 font-mono flex items-center gap-1">
-                              <Phone className="h-3.5 w-3.5 text-stone-550" /> {res.customerPhone}
+                              <Phone className="h-3.5 w-3.5 text-stone-550" />
+                              {res.customerPhone ? res.customerPhone : <span className="text-stone-500">{lang === 'ko' ? '전화번호 미기재' : 'No Phone Number'}</span>}
                             </p>
                           </div>
                         </div>
@@ -1992,7 +2122,9 @@ WITH CHECK (
                               {formatDisplayDate(rec.date)}
                             </span>
                             <h3 className="font-serif text-sm font-semibold text-white">{rec.customer_name}</h3>
-                            <span className="text-[10px] text-stone-400 font-mono">({rec.customer_phone})</span>
+                            {rec.customer_phone ? (
+                              <span className="text-[10px] text-stone-400 font-mono">({rec.customer_phone})</span>
+                             ) : null}
                           </div>
                           <p className="text-xs text-stone-300 leading-relaxed bg-stone-950/60 p-3 rounded-lg border border-white/5">
                             {rec.work_content}
@@ -2537,6 +2669,207 @@ WITH CHECK (
                     ))}
                   </div>
                 )}
+              </div>
+
+              {/* Telegram Bot Alert Settings Card */}
+              <div className="bg-stone-900/30 p-6 rounded-2xl border border-white/5 backdrop-blur-md shadow-xl space-y-4 text-left">
+                <div>
+                  <h2 className="font-serif text-base font-semibold text-gold-400 tracking-wide flex items-center gap-2">
+                    <Bell className="h-5 w-5 text-gold-500" />
+                    {lang === 'ko' ? '텔레그램 알림 및 브리핑 설정' : 'Telegram Alert & Briefing Settings'}
+                  </h2>
+                  <p className="text-xs text-stone-400 mt-1 leading-relaxed">
+                    {lang === 'ko' 
+                      ? '관리자용 텔레그램 봇의 알림 및 자동 브리핑 기능을 활성화하거나 비활성화할 수 있습니다.' 
+                      : 'Toggle Telegram notifications for reservations confirmation and morning briefings.'}
+                  </p>
+                </div>
+
+                <div className="bg-stone-950/40 rounded-xl border border-white/5 divide-y divide-white/5 overflow-hidden">
+                  {/* Toggle 1: 예약 확정 알림 */}
+                  <div className="p-5 flex justify-between items-center gap-4 hover:bg-white/[0.01] transition-all">
+                    <div>
+                      <h3 className="font-serif text-sm font-semibold text-white">
+                        {lang === 'ko' ? '예약 확정 알림' : 'Confirm Alert'}
+                      </h3>
+                      <p className="text-[11px] text-stone-500 font-mono mt-0.5">
+                        {lang === 'ko' ? '대시보드에서 예약을 확정할 때 알림을 발송합니다.' : 'Dispatches telegram alert when reservation is confirmed.'}
+                      </p>
+                    </div>
+                    
+                    <button
+                      type="button"
+                      disabled={isUpdatingTelegramSettings}
+                      onClick={() => handleToggleSetting('telegram_alert_confirm', telegramAlertConfirm)}
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-250 outline-none ${
+                        telegramAlertConfirm ? 'bg-indigo-600' : 'bg-stone-700'
+                      } disabled:opacity-50`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-250 ease-in-out ${
+                          telegramAlertConfirm ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Toggle 2: 당일 9시 브리핑 */}
+                  <div className="p-5 flex justify-between items-center gap-4 hover:bg-white/[0.01] transition-all">
+                    <div>
+                      <h3 className="font-serif text-sm font-semibold text-white">
+                        {lang === 'ko' ? '당일 9시 예약 확정 브리핑' : 'Morning Daily Briefing'}
+                      </h3>
+                      <p className="text-[11px] text-stone-500 font-mono mt-0.5">
+                        {lang === 'ko' ? '매일 오전 9시에 금일 예약 확정 목록 브리핑을 발송합니다.' : 'Dispatches a summary list of today\'s bookings at 9 AM.'}
+                      </p>
+                    </div>
+                    
+                    <button
+                      type="button"
+                      disabled={isUpdatingTelegramSettings}
+                      onClick={() => handleToggleSetting('telegram_daily_briefing', telegramDailyBriefing)}
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-250 outline-none ${
+                        telegramDailyBriefing ? 'bg-indigo-600' : 'bg-stone-700'
+                      } disabled:opacity-50`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-250 ease-in-out ${
+                          telegramDailyBriefing ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Announcement / Holidays Settings Card */}
+              <div className="bg-stone-900/30 p-6 rounded-2xl border border-white/5 backdrop-blur-md shadow-xl space-y-6 text-left">
+                <div>
+                  <h2 className="font-serif text-base font-semibold text-gold-400 tracking-wide flex items-center gap-2">
+                    <Info className="h-5 w-5 text-gold-500" />
+                    {lang === 'ko' ? '사이트 공지사항 등록 및 관리' : 'Announcement Settings'}
+                  </h2>
+                  <p className="text-xs text-stone-400 mt-1 leading-relaxed">
+                    {lang === 'ko' 
+                      ? '휴가 일정, 이벤트 등의 소식을 상단 배너에 노출하기 위해 공지사항 기간을 설정하고 등록합니다.' 
+                      : 'Post announcements for events or salon holiday closures at the top banner.'}
+                  </p>
+                </div>
+
+                {/* Form to Create Announcement */}
+                <form onSubmit={handleSaveAnnouncement} className="space-y-4 bg-stone-950/20 p-5 rounded-xl border border-white/5 text-xs font-mono">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5 col-span-2">
+                      <label className="text-stone-400 font-bold block">{lang === 'ko' ? '세부사항 (국문)' : 'Details (KO)'}</label>
+                      <input
+                        type="text"
+                        required
+                        value={annDetails}
+                        onChange={e => setAnnDetails(e.target.value)}
+                        placeholder="예: 7/25~7/28 여름 휴가로 인해 임시 휴무합니다."
+                        className="w-full p-2.5 bg-stone-900 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-stone-200"
+                      />
+                    </div>
+                    <div className="space-y-1.5 col-span-2">
+                      <label className="text-stone-400 font-bold block">{lang === 'ko' ? '세부사항 (영문 - 선택)' : 'Details (EN - Optional)'}</label>
+                      <input
+                        type="text"
+                        value={annDetailsEn}
+                        onChange={e => setAnnDetailsEn(e.target.value)}
+                        placeholder="e.g. Closed from July 25th to 28th for summer vacation."
+                        className="w-full p-2.5 bg-stone-900 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-stone-200"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-stone-400 font-bold block">{lang === 'ko' ? '시작 일시' : 'Start Date & Time'}</label>
+                      <input
+                        type="datetime-local"
+                        required
+                        value={annStartTime}
+                        onChange={e => setAnnStartTime(e.target.value)}
+                        className="w-full p-2.5 bg-stone-900 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-stone-200"
+                        style={{ colorScheme: 'dark' }}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-stone-400 font-bold block">{lang === 'ko' ? '종료 일시' : 'End Date & Time'}</label>
+                      <input
+                        type="datetime-local"
+                        required
+                        value={annEndTime}
+                        onChange={e => setAnnEndTime(e.target.value)}
+                        className="w-full p-2.5 bg-stone-900 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-stone-200"
+                        style={{ colorScheme: 'dark' }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <button
+                      type="submit"
+                      disabled={isSavingAnnouncement}
+                      className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold transition-all shadow-md hover:shadow-lg disabled:opacity-50 cursor-pointer text-xs"
+                    >
+                      {isSavingAnnouncement 
+                        ? (lang === 'ko' ? '등록 중...' : 'Posting...') 
+                        : (lang === 'ko' ? '공지 등록하기' : 'Post Announcement')}
+                    </button>
+                  </div>
+                </form>
+
+                {/* Announcement List */}
+                <div className="space-y-3">
+                  <h3 className="font-serif text-sm font-semibold text-stone-200">
+                    {lang === 'ko' ? '현재 등록된 공지사항 목록' : 'Registered Announcements'}
+                  </h3>
+
+                  {announcements.length === 0 ? (
+                    <div className="text-center py-8 text-stone-500 text-xs font-light bg-stone-950/20 rounded-xl border border-white/5">
+                      {lang === 'ko' ? '등록된 공지사항이 없습니다.' : 'No announcements registered.'}
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+                      {announcements.map((ann) => {
+                        const isCurrentlyActive = new Date(ann.start_time) <= new Date() && new Date() <= new Date(ann.end_time);
+                        return (
+                          <div 
+                            key={ann.id} 
+                            className={`p-4 rounded-xl border flex justify-between items-center gap-4 transition-all ${
+                              isCurrentlyActive 
+                                ? 'bg-indigo-950/20 border-indigo-500/20 hover:border-indigo-500/30' 
+                                : 'bg-stone-950/40 border-white/5 hover:border-white/10'
+                            }`}
+                          >
+                            <div className="space-y-1.5 flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-mono text-[10px] font-bold text-white px-2 py-0.5 rounded uppercase">
+                                  {isCurrentlyActive 
+                                    ? (lang === 'ko' ? '🔴 노출 중' : '🔴 Active') 
+                                    : (lang === 'ko' ? '⚪ 비활성' : '⚪ Inactive')}
+                                </span>
+                                <span className="text-[10px] text-stone-500 font-mono">
+                                  {new Date(ann.start_time).toLocaleString()} ~ {new Date(ann.end_time).toLocaleString()}
+                                </span>
+                              </div>
+                              <p className="text-xs text-white font-serif truncate">{ann.details}</p>
+                              {ann.details_en && (
+                                <p className="text-[10px] text-stone-400 italic truncate">{ann.details_en}</p>
+                              )}
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteAnnouncement(ann.id)}
+                              className="p-2 text-rose-455 hover:text-white hover:bg-rose-600 rounded-lg border border-rose-500/20 hover:border-rose-500 transition-all cursor-pointer shrink-0"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}

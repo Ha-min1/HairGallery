@@ -18,6 +18,7 @@ export default function Home() {
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [customerName, setCustomerName] = useState<string>('');
   const [customerPhone, setCustomerPhone] = useState<string>('');
+  const [activeAnnouncement, setActiveAnnouncement] = useState<any | null>(null);
   
   // Visual Calendar states
   const [currentYear, setCurrentYear] = useState<number>(new Date().getFullYear());
@@ -129,6 +130,28 @@ export default function Home() {
     }
   };
 
+  const loadActiveAnnouncement = async () => {
+    try {
+      const nowIso = new Date().toISOString();
+      const { data, error } = await supabase
+        .from('announcements')
+        .select('*')
+        .lte('start_time', nowIso)
+        .gte('end_time', nowIso)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!error && data) {
+        setActiveAnnouncement(data);
+      } else {
+        setActiveAnnouncement(null);
+      }
+    } catch (e) {
+      console.error('Failed to load active announcement:', e);
+    }
+  };
+
   const supabase = getSupabaseClient();
 
   // Initialize lang and Supabase Session on Mount
@@ -142,6 +165,8 @@ export default function Home() {
     if (savedHelp !== null) {
       setShowHelpWidget(savedHelp === 'true');
     }
+
+    loadActiveAnnouncement();
 
     // Listen to Auth State Changes (Google/Kakao OAuth Redirect callback catch)
     // In Supabase v2, this listener automatically fires the initial event on subscription.
@@ -697,6 +722,20 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900 antialiased flex flex-col">
+      {/* Global Notice Banner */}
+      {activeAnnouncement && (
+        <div className="bg-amber-500 text-stone-955 text-[11px] sm:text-xs font-semibold py-2.5 px-4 text-center border-b border-amber-600/30 flex items-center justify-center gap-2 animate-fadeIn relative z-[60] shadow-sm">
+          <span className="flex-1 tracking-wide">
+            📢 {lang === 'ko' ? activeAnnouncement.details : (activeAnnouncement.details_en || activeAnnouncement.details)}
+          </span>
+          <button 
+            onClick={() => setActiveAnnouncement(null)} 
+            className="text-stone-955/65 hover:text-stone-955 absolute right-4 transition-colors font-bold cursor-pointer text-xs"
+          >
+            ✕
+          </button>
+        </div>
+      )}
       {/* Sticky Header */}
       <header className="sticky top-0 z-50 bg-white border-b border-stone-200 shadow-md">
         <div className="max-w-5xl mx-auto px-4 h-20 flex items-center justify-between">

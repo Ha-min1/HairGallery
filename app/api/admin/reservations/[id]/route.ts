@@ -132,6 +132,31 @@ export async function PATCH(
           console.log('[Notification Skip] No phone number found on reservation record.');
         }
 
+        // 5. Dispatch Telegram Confirmation Alert if enabled
+        try {
+          const { data: settingData } = await adminClient
+            .from('admin_settings')
+            .select('value')
+            .eq('key', 'telegram_alert_confirm')
+            .maybeSingle();
+
+          const isTelegramEnabled = settingData ? settingData.value : true;
+
+          if (isTelegramEnabled) {
+            const { sendTelegramConfirmAlert } = await import('@/lib/telegram');
+            await sendTelegramConfirmAlert({
+              customerName: data.customer_name,
+              customerPhone: data.customer_phone,
+              date: data.date,
+              time: data.time,
+              serviceName,
+              price: servicePrice
+            });
+          }
+        } catch (tgErr) {
+          console.error('Failed to dispatch telegram confirm alert:', tgErr);
+        }
+
       } catch (triggerErr) {
         console.error('Failed to dispatch booking confirmation notification:', triggerErr);
       }
