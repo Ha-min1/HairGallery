@@ -1354,8 +1354,9 @@ export default function AdminDashboard() {
 
   // Filter work records (Search by phone or name)
   const filteredWorkRecords = workRecords.filter(rec => {
-    const nameMatch = rec.customer_name?.toLowerCase().includes(searchWorkQuery.toLowerCase()) || false;
-    const phoneMatch = (rec.customer_phone?.toLowerCase().includes(searchWorkQuery.toLowerCase()) || false) || matchCleanedPhone(rec.customer_phone, searchWorkQuery);
+    if (!searchWorkQuery.trim()) return true;
+    const nameMatch = rec.customer_name?.toLowerCase().includes(searchWorkQuery.toLowerCase().trim()) || false;
+    const phoneMatch = (rec.customer_phone?.toLowerCase().includes(searchWorkQuery.toLowerCase().trim()) || false) || matchCleanedPhone(rec.customer_phone, searchWorkQuery.trim());
     return nameMatch || phoneMatch;
   });
 
@@ -2125,7 +2126,7 @@ WITH CHECK (
                             <span className="font-mono text-[10px] font-bold text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-0.5 rounded">
                               {formatDisplayDate(rec.date)}
                             </span>
-                            <h3 className="font-serif text-sm font-semibold text-white">{rec.customer_name}</h3>
+                            <h3 className="font-serif text-sm font-semibold text-white">{rec.customer_name || (lang === 'ko' ? '미기재' : 'Unspecified')}</h3>
                             {rec.customer_phone ? (
                               <span className="text-[10px] text-stone-400 font-mono">({rec.customer_phone})</span>
                              ) : null}
@@ -2300,7 +2301,7 @@ WITH CHECK (
                         {dailySalesRecords.map(rec => (
                           <div key={rec.id} className="py-3 flex justify-between items-center">
                             <div>
-                              <p className="font-semibold text-white">{rec.customer_name}</p>
+                              <p className="font-semibold text-white">{rec.customer_name || (lang === 'ko' ? '미기재' : 'Unspecified')}</p>
                               <p className="text-[10px] text-stone-400 max-w-[200px] truncate">{rec.work_content}</p>
                             </div>
                             <span className="font-mono font-bold text-stone-200">₩{rec.amount.toLocaleString()}</span>
@@ -2334,7 +2335,7 @@ WITH CHECK (
                                 <span className="font-mono text-[9px] bg-stone-850 border border-white/5 px-1.5 py-0.2 rounded text-stone-400">
                                   {formatDisplayDate(rec.date)}
                                 </span>
-                                <p className="font-semibold text-white">{rec.customer_name}</p>
+                                <p className="font-semibold text-white">{rec.customer_name || (lang === 'ko' ? '미기재' : 'Unspecified')}</p>
                               </div>
                               <p className="text-[10px] text-stone-400 max-w-[200px] truncate">{rec.work_content}</p>
                             </div>
@@ -3068,6 +3069,100 @@ WITH CHECK (
 
             <form onSubmit={handleSaveWorkRecord} className="space-y-4 text-xs">
               
+              {/* Select Registered Customer */}
+              <div className="space-y-1.5 text-left">
+                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{t.selectUser}</label>
+                <select
+                  value={workSelectedUserId}
+                  onChange={e => handleWorkUserSelectChange(e.target.value)}
+                  className="w-full p-2.5 bg-stone-955/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-stone-200 cursor-pointer"
+                  style={{ colorScheme: 'dark' }}
+                >
+                  <option value="" className="bg-stone-900 text-white">{t.manualInput}</option>
+                  {registeredUsers.map(user => (
+                    <option key={user.id} value={user.id} className="bg-stone-900 text-white">
+                      {user.name} ({user.email || user.phone || 'No Contact'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Select Past Customer */}
+              <div className="space-y-1.5 text-left">
+                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">
+                  {lang === 'ko' ? '기존 매출 고객 선택' : 'Select Past Customer'}
+                </label>
+                <select
+                  value={workSelectedPastKey}
+                  onChange={e => handleWorkPastUserSelectChange(e.target.value)}
+                  disabled={!!workSelectedUserId}
+                  className={`w-full p-2.5 border rounded-lg outline-none focus:border-indigo-500 text-stone-200 cursor-pointer ${
+                    workSelectedUserId 
+                      ? 'bg-stone-955/40 border-white/5 text-stone-550 cursor-not-allowed' 
+                      : 'bg-stone-955/80 border-white/5'
+                  }`}
+                  style={{ colorScheme: 'dark' }}
+                >
+                  <option value="" className="bg-stone-900 text-white">
+                    {lang === 'ko' ? '-- 직접 입력 / 선택 안 함 --' : '-- Direct Input / None --'}
+                  </option>
+                  {pastCustomersList.map(cust => (
+                    <option key={cust.key} value={cust.key} className="bg-stone-900 text-white">
+                      {cust.name} ({cust.phone})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Customer Name */}
+              <div className="space-y-1.5 text-left">
+                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{t.customerName}</label>
+                <input 
+                  type="text"
+                  value={workCustomerName}
+                  onChange={e => setWorkCustomerName(e.target.value)}
+                  placeholder="예: 홍길동 (미기재 가능)"
+                  disabled={!!workSelectedUserId || !!workSelectedPastKey}
+                  className={`w-full p-2.5 border rounded-lg outline-none focus:border-indigo-500 ${
+                    (workSelectedUserId || workSelectedPastKey)
+                      ? 'bg-stone-955/40 border-white/5 text-stone-550 cursor-not-allowed' 
+                      : 'bg-stone-955/80 border-white/5 text-white'
+                  }`}
+                />
+              </div>
+
+              {/* Customer Phone */}
+              <div className="space-y-1.5 text-left">
+                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">
+                  {lang === 'ko' ? '전화번호' : 'Phone'}
+                </label>
+                <input 
+                  type="text"
+                  value={workCustomerPhone}
+                  onChange={e => setWorkCustomerPhone(e.target.value)}
+                  placeholder="예: 010-1234-5678 (미기재 가능)"
+                  disabled={!!workSelectedUserId || !!workSelectedPastKey}
+                  className={`w-full p-2.5 border rounded-lg outline-none focus:border-indigo-500 ${
+                    (workSelectedUserId || workSelectedPastKey)
+                      ? 'bg-stone-955/40 border-white/5 text-stone-550 cursor-not-allowed' 
+                      : 'bg-stone-955/80 border-white/5 text-white'
+                  }`}
+                />
+              </div>
+
+              {/* Date */}
+              <div className="space-y-1.5 text-left">
+                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{t.date} *</label>
+                <input 
+                  type="date"
+                  required
+                  value={workDate}
+                  onChange={e => setWorkDate(e.target.value)}
+                  className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white"
+                  style={{ colorScheme: 'dark' }}
+                />
+              </div>
+
               {/* Work Details */}
               <div className="space-y-1.5 text-left">
                 <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{t.workContent} *</label>
