@@ -580,7 +580,8 @@ export default function AdminDashboard() {
       const { data, error } = await supabase
         .from('work_records')
         .select('*')
-        .order('date', { ascending: true }); // 정렬: 날짜 오름차순
+        .order('date', { ascending: false })
+        .order('created_at', { ascending: false });
 
       if (error) {
         // Table not found or caching error -> fall back to Local Storage
@@ -588,8 +589,15 @@ export default function AdminDashboard() {
           setIsUsingLocalStorage(true);
           const localData = localStorage.getItem('tg_work_records');
           const records = localData ? JSON.parse(localData) : [];
-          // Ensure ascending date sorting
-          records.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+          // Ensure descending date and created_at sorting
+          records.sort((a: any, b: any) => {
+            const dateA = new Date(a.date).getTime();
+            const dateB = new Date(b.date).getTime();
+            if (dateA !== dateB) return dateB - dateA;
+            const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+            const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+            return timeB - timeA;
+          });
           setWorkRecords(records);
         } else {
           throw error;
@@ -604,7 +612,14 @@ export default function AdminDashboard() {
       setIsUsingLocalStorage(true);
       const localData = localStorage.getItem('tg_work_records');
       const records = localData ? JSON.parse(localData) : [];
-      records.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      records.sort((a: any, b: any) => {
+        const dateA = new Date(a.date).getTime();
+        const dateB = new Date(b.date).getTime();
+        if (dateA !== dateB) return dateB - dateA;
+        const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return timeB - timeA;
+      });
       setWorkRecords(records);
     } finally {
       setIsWorkLoading(false);
@@ -1169,10 +1184,20 @@ export default function AdminDashboard() {
         if (editingRecord) {
           records = records.map((r: any) => r.id === editingRecord.id ? Object.assign({}, r, recordData) : r);
         } else {
-          records.push(Object.assign({}, recordData, { id: crypto.randomUUID() }));
+          records.push(Object.assign({}, recordData, { 
+            id: crypto.randomUUID(),
+            created_at: new Date().toISOString()
+          }));
         }
-        // sort ascending
-        records.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        // Ensure descending date and created_at sorting
+        records.sort((a: any, b: any) => {
+          const dateA = new Date(a.date).getTime();
+          const dateB = new Date(b.date).getTime();
+          if (dateA !== dateB) return dateB - dateA;
+          const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+          const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+          return timeB - timeA;
+        });
         localStorage.setItem('tg_work_records', JSON.stringify(records));
         setWorkRecords(records);
 
