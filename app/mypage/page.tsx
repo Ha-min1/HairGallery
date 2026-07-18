@@ -597,18 +597,16 @@ export default function MyPage() {
 
                     <div className="space-y-1.5">
                       <label className="text-[10px] uppercase font-mono text-stone-400 font-bold block">
-                        {lang === 'ko' ? '비회원 예약 비밀번호 (4자리)' : 'Query Password (4 Digits)'}
+                        {lang === 'ko' ? '비회원 예약 비밀번호 (4자 이상)' : 'Query Password (4+ characters)'}
                       </label>
                       <div className="relative">
                         <ShieldAlert className="absolute left-3 top-2.5 h-3.5 w-3.5 text-stone-400" />
                         <input
                           type="password"
                           required
-                          maxLength={4}
-                          pattern="\d{4}"
                           value={nonMemberPassword}
-                          onChange={e => setNonMemberPassword(e.target.value.replace(/\D/g, ''))}
-                          placeholder={lang === 'ko' ? '예: 1234' : 'e.g. 1234'}
+                          onChange={e => setNonMemberPassword(e.target.value)}
+                          placeholder={lang === 'ko' ? '비밀번호 입력' : 'Enter password'}
                           className="w-full pl-9 pr-3 py-2 border border-stone-200 rounded-lg text-xs outline-none bg-stone-50 focus:bg-white focus:border-stone-400 transition-all font-sans font-mono"
                         />
                       </div>
