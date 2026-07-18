@@ -18,6 +18,7 @@ export default function Home() {
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [customerName, setCustomerName] = useState<string>('');
   const [customerPhone, setCustomerPhone] = useState<string>('');
+  const [nonMemberPassword, setNonMemberPassword] = useState<string>('');
   const [activeAnnouncement, setActiveAnnouncement] = useState<any | null>(null);
   
   // Visual Calendar states
@@ -669,6 +670,16 @@ export default function Home() {
       return;
     }
 
+    if (!currentUser && !nonMemberPassword) {
+      setErrorMessage(lang === 'ko' ? '비회원 예약 조회용 비밀번호를 입력해 주세요.' : 'Please enter a password for non-member query.');
+      return;
+    }
+
+    if (!currentUser && nonMemberPassword.length !== 4) {
+      setErrorMessage(lang === 'ko' ? '비밀번호는 4자리 숫자로 입력해야 합니다.' : 'Password must be a 4-digit number.');
+      return;
+    }
+
     if (!bookingConsent) {
       setErrorMessage(lang === 'ko' ? '개인정보 수집 및 이용에 동의해 주세요.' : 'Please accept the privacy consent to complete your booking.');
       return;
@@ -685,6 +696,7 @@ export default function Home() {
           serviceId: selectedServiceId,
           date: selectedDate,
           time: selectedTime,
+          password: currentUser ? null : nonMemberPassword
         }),
       });
 
@@ -699,6 +711,7 @@ export default function Home() {
       setSelectedDate('');
       setSelectedTime('');
       setBookingConsent(false);
+      setNonMemberPassword('');
     } catch (err: any) {
       setErrorMessage(err.message || 'Server collision. Please retry your submission.');
     }
@@ -1304,6 +1317,28 @@ export default function Home() {
                           className="w-full px-3 py-2 border border-stone-200 rounded-lg text-xs outline-none bg-stone-50 focus:border-stone-400 transition-colors"
                         />
                       </div>
+                      {!currentUser && (
+                        <div className="space-y-1 sm:col-span-2">
+                          <label className="text-[10px] uppercase font-mono text-stone-400">
+                            {lang === 'ko' ? '비회원 예약 조회용 비밀번호 (4자리 숫자가 필수입니다)' : 'Query Password (4 digits required)'}
+                          </label>
+                          <input
+                            type="password"
+                            required
+                            maxLength={4}
+                            pattern="\d{4}"
+                            value={nonMemberPassword}
+                            onChange={e => setNonMemberPassword(e.target.value.replace(/\D/g, ''))}
+                            placeholder={lang === 'ko' ? '예: 1234' : 'e.g. 1234'}
+                            className="w-full px-3 py-2 border border-stone-200 rounded-lg text-xs outline-none bg-stone-50 focus:border-stone-400 transition-colors"
+                          />
+                          <p className="text-[9px] text-stone-500 font-sans mt-1">
+                            {lang === 'ko' 
+                              ? '※ 비회원 예약 조회 및 취소 시 사용됩니다. 안전한 4자리 숫자를 입력해주세요.' 
+                              : '※ Used for non-member query and cancellation. Enter a secure 4-digit number.'}
+                          </p>
+                        </div>
+                      )}
                     </div>
 
                     {/* Consent Checkbox */}

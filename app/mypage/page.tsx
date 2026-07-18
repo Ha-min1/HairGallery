@@ -18,6 +18,7 @@ export default function MyPage() {
   // Non-member inputs
   const [nonMemberName, setNonMemberName] = useState<string>('');
   const [nonMemberPhone, setNonMemberPhone] = useState<string>('');
+  const [nonMemberPassword, setNonMemberPassword] = useState<string>('');
   const [isSearching, setIsSearching] = useState<boolean>(false);
 
   // Member profile edit states
@@ -180,15 +181,15 @@ export default function MyPage() {
     setActionError('');
     setActionSuccess('');
 
-    if (!nonMemberName.trim() || !nonMemberPhone.trim()) {
-      setActionError(lang === 'ko' ? '이름과 전화번호를 모두 입력해 주세요.' : 'Please enter both name and phone number.');
+    if (!nonMemberName.trim() || !nonMemberPhone.trim() || !nonMemberPassword.trim()) {
+      setActionError(lang === 'ko' ? '이름, 전화번호, 비밀번호를 모두 입력해 주세요.' : 'Please enter name, phone number, and password.');
       return;
     }
 
     setIsSearching(true);
     setIsLoadingReservations(true);
     try {
-      const res = await fetch(`/api/bookings/my?name=${encodeURIComponent(nonMemberName.trim())}&phone=${encodeURIComponent(nonMemberPhone.trim())}`);
+      const res = await fetch(`/api/bookings/my?name=${encodeURIComponent(nonMemberName.trim())}&phone=${encodeURIComponent(nonMemberPhone.trim())}&password=${encodeURIComponent(nonMemberPassword.trim())}`);
       if (res.ok) {
         const data = await res.json();
         setReservations(data.reservations || []);
@@ -266,6 +267,7 @@ export default function MyPage() {
       } else {
         payload.name = nonMemberName.trim();
         payload.phone = nonMemberPhone.trim();
+        payload.password = nonMemberPassword.trim();
       }
 
       const res = await fetch('/api/bookings/my', {
@@ -584,6 +586,25 @@ export default function MyPage() {
                           value={nonMemberPhone}
                           onChange={e => setNonMemberPhone(formatPhoneNumber(e.target.value))}
                           placeholder="010-0000-0000"
+                          className="w-full pl-9 pr-3 py-2 border border-stone-200 rounded-lg text-xs outline-none bg-stone-50 focus:bg-white focus:border-stone-400 transition-all font-sans font-mono"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] uppercase font-mono text-stone-400 font-bold block">
+                        {lang === 'ko' ? '비회원 예약 비밀번호 (4자리)' : 'Query Password (4 Digits)'}
+                      </label>
+                      <div className="relative">
+                        <ShieldAlert className="absolute left-3 top-2.5 h-3.5 w-3.5 text-stone-400" />
+                        <input
+                          type="password"
+                          required
+                          maxLength={4}
+                          pattern="\d{4}"
+                          value={nonMemberPassword}
+                          onChange={e => setNonMemberPassword(e.target.value.replace(/\D/g, ''))}
+                          placeholder={lang === 'ko' ? '예: 1234' : 'e.g. 1234'}
                           className="w-full pl-9 pr-3 py-2 border border-stone-200 rounded-lg text-xs outline-none bg-stone-50 focus:bg-white focus:border-stone-400 transition-all font-sans font-mono"
                         />
                       </div>

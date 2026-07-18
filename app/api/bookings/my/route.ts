@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { hashNonMemberPassword } from '@/lib/crypto';
 
 export const runtime = 'edge';
 
@@ -63,6 +64,11 @@ export async function GET(req: NextRequest) {
 
     // 2. Otherwise, if name and phone are provided, query by customer details (non-member)
     if (name && phone) {
+      const password = searchParams.get('password');
+      if (!password) {
+        return NextResponse.json({ error: 'Password parameter is required' }, { status: 400 });
+      }
+
       const { data, error } = await adminClient
         .from('reservations')
         .select(`
@@ -82,7 +88,24 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
-      return NextResponse.json({ reservations: data });
+      // Filter reservations by matching the password hash
+      const filteredReservations = [];
+      for (const res of (data || [])) {
+        if (res.non_member_password) {
+          const matchHash = await hashNonMemberPassword(password, res.id);
+          if (matchHash === res.non_member_password) {
+            filteredReservations.push(res);
+          }
+        }
+      }
+
+      // If name & phone had bookings but none matched the password, return invalid password
+      const rawCount = data?.length || 0;
+      if (rawCount > 0 && filteredReservations.length === 0) {
+        return NextResponse.json({ error: 'Invalid password' }, { status: 401 });
+      }
+
+      return NextResponse.json({ reservations: filteredReservations });
     }
 
     return NextResponse.json({ error: 'Missing name/phone parameters or authentication header' }, { status: 400 });
@@ -153,10 +176,15 @@ export async function PATCH(req: NextRequest) {
 
     // 2. Non-member cancellation
     if (name && phone) {
+      const { password } = body;
+      if (!password) {
+        return NextResponse.json({ error: 'Password is required' }, { status: 400 });
+      }
+
       // First retrieve to verify matching details
       const { data: reservation, error: fetchError } = await adminClient
         .from('reservations')
-        .select('customer_name, customer_phone, status')
+        .select('customer_name, customer_phone, status, non_member_password')
         .eq('id', reservationId)
         .single();
 
@@ -169,6 +197,14 @@ export async function PATCH(req: NextRequest) {
         reservation.customer_phone.replace(/\D/g, '') !== phone.replace(/\D/g, '')
       ) {
         return NextResponse.json({ error: 'Unauthorized: Customer details do not match' }, { status: 403 });
+      }
+
+      // Verify the password hash
+      if (reservation.non_member_password) {
+        const matchHash = await hashNonMemberPassword(password, reservationId);
+        if (matchHash !== reservation.non_member_password) {
+          return NextResponse.json({ error: 'Unauthorized: Invalid password' }, { status: 403 });
+        }
       }
 
       if (reservation.status === 'Cancelled') {

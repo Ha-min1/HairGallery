@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendAdminBookingAlertEmail } from '@/lib/email';
 import { sendTelegramAdminAlert } from '@/lib/telegram';
+import { hashNonMemberPassword } from '@/lib/crypto';
 
 export const runtime = 'edge';
 
@@ -53,11 +54,16 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { userId, customerName, customerPhone, serviceId, date, time } = body;
+    const { userId, customerName, customerPhone, serviceId, date, time, password } = body;
 
     // Validate request inputs
     if (!customerName || !customerPhone || !serviceId || !date || !time) {
       return NextResponse.json({ error: 'Missing required reservation fields' }, { status: 400 });
+    }
+
+    // Non-member password validation
+    if (!userId && !password) {
+      return NextResponse.json({ error: 'Non-member reservations require a query password.' }, { status: 400 });
     }
 
     const adminClient = getAdminSupabase();
@@ -82,18 +88,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const reservationId = crypto.randomUUID();
+    let hashedPass = null;
+    if (!userId && password) {
+      hashedPass = await hashNonMemberPassword(password, reservationId);
+    }
+
     // B. Insert reservation. Database partial unique index handles concurrency.
     const { data, error } = await adminClient
       .from('reservations')
       .insert([
         {
+          id: reservationId,
           user_id: userId || null,
           customer_name: customerName,
           customer_phone: customerPhone,
           service_id: serviceId,
           date,
           time,
-          status: 'Pending' // Initial state pending salon owner's review
+          status: 'Pending', // Initial state pending salon owner's review
+          non_member_password: hashedPass
         }
       ])
       .select()
