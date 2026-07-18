@@ -102,6 +102,8 @@ export async function GET(req: NextRequest) {
       // If name & phone had bookings but none matched the password, return invalid password
       const rawCount = data?.length || 0;
       if (rawCount > 0 && filteredReservations.length === 0) {
+        // Brute-force delay defense: wait 1.5 seconds before rejecting
+        await new Promise(resolve => setTimeout(resolve, 1500));
         return NextResponse.json({ error: 'Invalid password' }, { status: 401 });
       }
 
@@ -203,6 +205,8 @@ export async function PATCH(req: NextRequest) {
       if (reservation.non_member_password) {
         const matchHash = await hashNonMemberPassword(password, reservationId);
         if (matchHash !== reservation.non_member_password) {
+          // Brute-force delay defense: wait 1.5 seconds before rejecting
+          await new Promise(resolve => setTimeout(resolve, 1500));
           return NextResponse.json({ error: 'Unauthorized: Invalid password' }, { status: 403 });
         }
       }
