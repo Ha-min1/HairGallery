@@ -28,6 +28,7 @@ export default function Home() {
   const [selectedDate, setSelectedDate] = useState<string>('');
   
   const [bookedTimes, setBookedTimes] = useState<string[]>([]);
+  const [pendingTimes, setPendingTimes] = useState<string[]>([]);
   const [closedTimes, setClosedTimes] = useState<string[]>([]);
   const [isBulkEditMode, setIsBulkEditMode] = useState<boolean>(false);
   const [bulkSelectedTimes, setBulkSelectedTimes] = useState<string[]>([]);
@@ -444,6 +445,7 @@ export default function Home() {
         if (res.ok) {
           const data = await res.json();
           setBookedTimes(data.bookedSlots || []);
+          setPendingTimes(data.pendingSlots || []);
           setClosedTimes(data.closedSlots || []);
         }
       } catch (err) {
@@ -632,6 +634,7 @@ export default function Home() {
         if (checkRes.ok) {
           const data = await checkRes.json();
           setBookedTimes(data.bookedSlots || []);
+          setPendingTimes(data.pendingSlots || []);
           setClosedTimes(data.closedSlots || []);
         }
       } else {
@@ -734,7 +737,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 text-stone-900 antialiased flex flex-col">
+    <div className="min-h-screen bg-stone-50 text-stone-950 antialiased flex flex-col">
       {/* Global Notice Banner */}
       {activeAnnouncement && (
         <div className="bg-amber-500 text-stone-955 text-[11px] sm:text-xs font-semibold py-2.5 px-4 text-center border-b border-amber-600/30 flex items-center justify-center gap-2 animate-fadeIn relative z-[60] shadow-sm">
@@ -1196,8 +1199,30 @@ export default function Home() {
                       {t.successDesc}
                     </p>
 
+                    {/* Booking Pending & Rescheduling Alert Box */}
+                    <div className="mt-5 p-4.5 bg-amber-500/5 border border-amber-200/40 rounded-xl text-left text-[11px] leading-relaxed text-stone-700 space-y-1.5 font-sans">
+                      <span className="font-bold text-amber-900 flex items-center gap-1.5 text-xs mb-1">
+                        ⚠️ {lang === 'ko' ? '예약 대기 및 시간 조율 안내' : 'Booking Pending & Rescheduling Notice'}
+                      </span>
+                      <p className="font-semibold text-amber-800">
+                        {lang === 'ko' 
+                          ? '• 신청하신 예약은 현재 [접수 대기] 상태이며, 아직 최종 확정이 아닙니다.' 
+                          : '• Your requested booking is currently [Pending] and is not yet fully confirmed.'}
+                      </p>
+                      <p>
+                        {lang === 'ko' 
+                          ? '• 원장님이 확인 후, 남겨주신 전화번호로 직접 연락(전화 또는 카카오톡)을 드려 최종 시술 시간 조율이 필요할 수 있습니다.' 
+                          : '• After review, the stylist will contact you directly via phone or KakaoTalk to coordinate and finalize the exact slot.'}
+                      </p>
+                      <p>
+                        {lang === 'ko' 
+                          ? '• 최종 조율 및 확인을 마친 후 예약이 [확정]되면 알림톡 및 안내 메일이 발송됩니다.' 
+                          : '• Once coordinated, your booking status will change to [Confirmed] and you will receive notifications.'}
+                      </p>
+                    </div>
+
                     {/* Email Spam Filter Alert Warning Box */}
-                    <div className="mt-5 p-4.5 bg-stone-50 border border-stone-200 rounded-xl text-left text-[11px] leading-relaxed text-stone-650 space-y-1 font-sans">
+                    <div className="mt-3.5 p-4.5 bg-stone-50 border border-stone-200 rounded-xl text-left text-[11px] leading-relaxed text-stone-650 space-y-1 font-sans">
                       <span className="font-bold text-stone-900 block text-xs mb-1.5">
                         📧 {lang === 'ko' ? '예약 확정 이메일 수신 안내' : 'Booking Confirmation Email Notice'}
                       </span>
@@ -1215,11 +1240,6 @@ export default function Home() {
                         {lang === 'ko' 
                           ? '• 예약 발송 이메일: thehairgalleryreservation@gmail.com' 
                           : '• Sender Address: thehairgalleryreservation@gmail.com'}
-                      </p>
-                      <p className="text-[10px] text-stone-400 pt-1 border-t border-stone-200/60 mt-1.5">
-                        {lang === 'ko' 
-                          ? '※ 원활한 예약을 위해 필요한 경우 매장에서 별도의 개별 연락을 드릴 수 있습니다.' 
-                          : '※ The salon administration may also contact you individually if needed.'}
                       </p>
                     </div>
                   </div>
@@ -1476,6 +1496,7 @@ export default function Home() {
                     )}
                   </div>
 
+{/* Bulk Edit Mode Block */}
                   {isBulkEditMode && (
                     <div className="bg-stone-50 border border-stone-200 rounded-xl p-3.5 space-y-2.5 text-xs text-left">
                       <div className="flex justify-between items-center text-[10px] font-mono font-bold text-stone-500 uppercase tracking-wider">
@@ -1516,9 +1537,10 @@ export default function Home() {
                     <div className="text-center py-6 text-xs text-stone-400 font-mono">{t.checkingSchedules}</div>
                   ) : (
                     <div className="grid grid-cols-3 gap-2">
-                      {TIME_SLOTS_24H.map(slot => {
+                       {TIME_SLOTS_24H.map(slot => {
                         const isCustomerReserved = bookedTimes.includes(slot) && !closedTimes.includes(slot);
                         const isBooked = bookedTimes.includes(slot);
+                        const isPending = pendingTimes.includes(slot);
                         const isSelected = selectedTime === slot;
                         const isAdminClosedInMode = bulkSelectedTimes.includes(slot);
 
@@ -1547,16 +1569,33 @@ export default function Home() {
                             key={slot}
                             type="button"
                             disabled={isBooked}
-                            onClick={() => setSelectedTime(slot)}
-                            className={`py-2.5 text-xs font-mono font-semibold rounded border transition-colors cursor-pointer ${
+                            onClick={() => {
+                              if (isPending) {
+                                const confirmMsg = lang === 'ko'
+                                  ? '⚠️ 이 시간대는 현재 다른 고객님의 예약이 대기 중입니다. 원장님과의 전화/카톡 조율을 통해 시술 시간이 조정될 수 있습니다. 이대로 예약을 진행하시겠습니까?'
+                                  : '⚠️ This slot is currently pending for another client. Stylist may need to reschedule. Proceed?';
+                                if (!confirm(confirmMsg)) {
+                                  return;
+                                }
+                              }
+                              setSelectedTime(slot);
+                            }}
+                            className={`py-2.5 text-xs font-mono font-semibold rounded border transition-colors cursor-pointer flex flex-col items-center justify-center ${
                               isBooked
                                 ? 'bg-stone-100 text-stone-300 border-stone-100 line-through cursor-not-allowed'
                                 : isSelected
                                 ? 'bg-stone-950 text-stone-100 border-stone-950 font-bold'
+                                : isPending
+                                ? 'bg-amber-50/70 text-amber-700/80 border-amber-200/60 line-through hover:bg-amber-50'
                                 : 'bg-white hover:bg-stone-50 border-stone-200 text-stone-700'
                             }`}
                           >
-                            {slot}
+                            <span>{slot}</span>
+                            {isPending && !isSelected && (
+                              <span className="text-[8px] no-underline block text-amber-600 font-sans font-bold mt-0.5 leading-none">
+                                {lang === 'ko' ? '대기중' : 'Pending'}
+                              </span>
+                            )}
                           </button>
                         );
                       })}

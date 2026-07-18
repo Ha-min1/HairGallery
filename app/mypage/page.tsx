@@ -340,7 +340,7 @@ export default function MyPage() {
 
     switch (status) {
       case 'Pending':
-        label = t.statusPending || '접수대기';
+        label = lang === 'ko' ? '접수대기 (조율 필요)' : 'Pending (Coordinating)';
         style = 'bg-amber-50 text-amber-700 border-amber-200';
         break;
       case 'Confirmed':
@@ -709,6 +709,17 @@ export default function MyPage() {
                               <span>{resv.time}</span>
                             </div>
                           </div>
+
+                          {resv.status === 'Pending' && (
+                            <div className="text-[10px] text-amber-800 bg-amber-500/5 border border-amber-200/40 p-2.5 rounded-lg leading-relaxed font-sans flex items-start gap-1.5">
+                              <span className="shrink-0 mt-0.5 text-amber-600">⚠️</span>
+                              <span>
+                                {lang === 'ko' 
+                                  ? '현재 예약 대기 상태(미확정)입니다. 원장님이 확인 후 직접 연락(전화 또는 카톡)을 드려 최종 시간대 조율이 필요할 수 있습니다.' 
+                                  : 'Currently pending. Stylist will review and may contact you via phone/KakaoTalk to coordinate and finalize the exact slot.'}
+                              </span>
+                            </div>
+                          )}
 
                           <div className="flex justify-between items-center pt-1 flex-wrap gap-2 text-[9px] text-stone-400 font-mono">
                             <div>

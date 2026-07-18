@@ -41,10 +41,17 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Return the list of booked slots (times) to disable them on client
-    const bookedSlots = data.map((item: any) => item.time);
+    // Return the list of confirmed slots (bookedSlots) and pending slots separately
+    const confirmedSlots = data
+      .filter((item: any) => item.status === 'Confirmed' || item.status === 'Completed' || item.customer_name === '예약 마감')
+      .map((item: any) => item.time);
+
+    const pendingSlots = data
+      .filter((item: any) => item.status === 'Pending' && item.customer_name !== '예약 마감')
+      .map((item: any) => item.time);
+
     const closedSlots = data.filter((item: any) => item.customer_name === '예약 마감').map((item: any) => item.time);
-    return NextResponse.json({ date, bookedSlots, closedSlots });
+    return NextResponse.json({ date, bookedSlots: confirmedSlots, pendingSlots, closedSlots });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -68,13 +75,13 @@ export async function POST(req: NextRequest) {
 
     const adminClient = getAdminSupabase();
 
-    // A. Pre-insert check for double booking
+    // A. Pre-insert check for double booking (Only Confirmed/Completed bookings block new reservations)
     const { data: duplicateCheck, error: checkError } = await adminClient
       .from('reservations')
       .select('id')
       .eq('date', date)
       .eq('time', time)
-      .neq('status', 'Cancelled')
+      .in('status', ['Confirmed', 'Completed'])
       .maybeSingle();
 
     if (checkError) {
@@ -86,6 +93,21 @@ export async function POST(req: NextRequest) {
         { error: 'This time slot was already booked by another client.' },
         { status: 409 }
       );
+    }
+
+    // Fetch service price and name pre-insert to store in reservations and use for notifications
+    let servicePrice = 0;
+    let serviceName = 'Custom Styling';
+    if (serviceId) {
+      const { data: serviceData } = await adminClient
+        .from('services')
+        .select('name, price')
+        .eq('id', serviceId)
+        .maybeSingle();
+      if (serviceData) {
+        serviceName = serviceData.name;
+        servicePrice = serviceData.price || 0;
+      }
     }
 
     const reservationId = crypto.randomUUID();
@@ -107,7 +129,8 @@ export async function POST(req: NextRequest) {
           date,
           time,
           status: 'Pending', // Initial state pending salon owner's review
-          non_member_password: hashedPass
+          non_member_password: hashedPass,
+          price: servicePrice
         }
       ])
       .select()
@@ -127,20 +150,8 @@ export async function POST(req: NextRequest) {
     // Trigger admin alert notifications for new booking (awaited to prevent Cloudflare Pages context termination)
     if (data) {
       try {
-        // A. Fetch service details to get display name and price
-        let serviceName = 'Custom Styling';
-        let servicePrice = 0;
-        if (data.service_id) {
-          const { data: serviceData } = await adminClient
-            .from('services')
-            .select('name, price')
-            .eq('id', data.service_id)
-            .maybeSingle();
-          if (serviceData) {
-            serviceName = serviceData.name;
-            servicePrice = serviceData.price || 0;
-          }
-        }
+        // serviceName and servicePrice are already fetched before insert
+
 
         // B. Query administrators who enabled receive_notifications
         let queryResult;
