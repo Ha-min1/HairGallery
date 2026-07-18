@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
 
     // 2. Otherwise, if name and phone are provided, query by customer details (non-member)
     if (name && phone) {
-      const password = searchParams.get('password');
+      const password = req.headers.get('X-Non-Member-Password');
       if (!password) {
         return NextResponse.json({ error: 'Password parameter is required' }, { status: 400 });
       }

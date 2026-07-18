@@ -189,7 +189,11 @@ export default function MyPage() {
     setIsSearching(true);
     setIsLoadingReservations(true);
     try {
-      const res = await fetch(`/api/bookings/my?name=${encodeURIComponent(nonMemberName.trim())}&phone=${encodeURIComponent(nonMemberPhone.trim())}&password=${encodeURIComponent(nonMemberPassword.trim())}`);
+      const res = await fetch(`/api/bookings/my?name=${encodeURIComponent(nonMemberName.trim())}&phone=${encodeURIComponent(nonMemberPhone.trim())}`, {
+        headers: {
+          'X-Non-Member-Password': nonMemberPassword.trim()
+        }
+      });
       if (res.ok) {
         const data = await res.json();
         setReservations(data.reservations || []);
