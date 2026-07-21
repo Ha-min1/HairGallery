@@ -30,10 +30,12 @@ import {
   Users,
   Scissors,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  MessageSquarePlus
 } from 'lucide-react';
 import { TRANSLATIONS, getLocalizedServices } from '@/lib/i18n';
 import { getSupabaseClient } from '@/lib/supabase';
+import AdminInquiryViewer from '@/app/components/AdminInquiryViewer';
 
 const matchCleanedPhone = (phoneStr: string | null | undefined, queryStr: string) => {
   if (!phoneStr) return false;
@@ -46,13 +48,13 @@ const matchCleanedPhone = (phoneStr: string | null | undefined, queryStr: string
 
 // Standard 24h styling slots
 const TIME_SLOTS = [
-  '10:00', '11:00', '12:00', '13:00', '14:00',
-  '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'
+  '10:30', '11:30', '12:30', '13:30', '14:30',
+  '15:30', '16:30', '17:30', '18:30', '19:30'
 ];
 
 export default function AdminDashboard() {
   const [lang, setLangState] = useState<'ko' | 'en'>('ko');
-  const [activeTab, setActiveTab] = useState<'reservations' | 'work-records' | 'sales' | 'customers' | 'services' | 'admin-settings'>('reservations');
+  const [activeTab, setActiveTab] = useState<'reservations' | 'work-records' | 'sales' | 'customers' | 'services' | 'admin-settings' | 'inquiries'>('reservations');
   
   // Admin user notification setting states
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
@@ -88,7 +90,7 @@ export default function AdminDashboard() {
   const [resCustomerPhone, setResCustomerPhone] = useState<string>('');
   const [resServiceId, setResServiceId] = useState<string>('');
   const [resDate, setResDate] = useState<string>('');
-  const [resTime, setResTime] = useState<string>('10:00');
+  const [resTime, setResTime] = useState<string>('10:30');
   const [resStatus, setResStatus] = useState<string>('Confirmed');
   const [resPrice, setResPrice] = useState<string>('');
 
@@ -1699,6 +1701,19 @@ WITH CHECK (
               <Bell className="h-4 w-4 shrink-0" />
               <span className={mobileOptimized ? 'whitespace-nowrap' : ''}>{lang === 'ko' ? '알림 수신 설정' : 'Alert Settings'}</span>
             </button>
+            <button
+              onClick={() => setActiveTab('inquiries')}
+              className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-xs font-mono font-bold tracking-wide transition-all cursor-pointer shrink-0 ${
+                mobileOptimized ? 'whitespace-nowrap' : ''
+              } ${
+                activeTab === 'inquiries'
+                  ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-[0_0_15px_rgba(217,119,6,0.25)]'
+                  : 'text-stone-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <MessageSquarePlus className="h-4 w-4 shrink-0 text-amber-400" />
+              <span className={mobileOptimized ? 'whitespace-nowrap' : ''}>{lang === 'ko' ? '컴포넌트 문의 관리' : 'Component Inquiries'}</span>
+            </button>
           </div>
 
           {/* TAB CONTENT: 1. Reservations */}
@@ -2900,6 +2915,29 @@ WITH CHECK (
                     </div>
                   )}
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB CONTENT: 7. Component Inquiries */}
+          {activeTab === 'inquiries' && (
+            <div className="space-y-6 animate-fadeIn text-left">
+              <div className="bg-stone-900/30 p-6 rounded-2xl border border-white/5 backdrop-blur-md shadow-xl space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <h2 className="font-serif text-base font-semibold text-amber-400 tracking-wide flex items-center gap-2">
+                      <MessageSquarePlus className="h-5 w-5 text-amber-500" />
+                      {lang === 'ko' ? '컴포넌트 문의 및 디버깅 로그 관리' : 'Component Inquiries & Debug Logs'}
+                    </h2>
+                    <p className="text-xs text-stone-400 mt-1 leading-relaxed">
+                      {lang === 'ko' 
+                        ? '사용자 및 관리자가 특정 컴포넌트를 지정하여 접수한 문의 및 디버깅 정보를 확인하고 상태를 관리합니다.' 
+                        : 'Inspect component-targeted inquiries and developer debug contexts.'}
+                    </p>
+                  </div>
+                </div>
+                
+                <AdminInquiryViewer lang={lang} />
               </div>
             </div>
           )}

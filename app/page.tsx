@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
-import { Calendar as CalendarIcon, Scissors, CheckCircle, Info, LayoutDashboard, ChevronLeft, ChevronRight, User, Key, ShieldCheck, History, Clock, Bell } from 'lucide-react';
+import { Calendar as CalendarIcon, Scissors, CheckCircle, Info, LayoutDashboard, ChevronLeft, ChevronRight, User, Key, ShieldCheck, History, Clock, Bell, MessageSquarePlus, MapPin } from 'lucide-react';
 import { TRANSLATIONS, getLocalizedServices } from '@/lib/i18n';
 import { getSupabaseClient } from '@/lib/supabase';
+import ComponentInquiryModal from '@/app/components/ComponentInquiryModal';
 
 const TIME_SLOTS_24H = [
-  '10:00', '11:00', '12:00', '13:00', '14:00',
-  '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'
+  '10:30', '11:30', '12:30', '13:30', '14:30',
+  '15:30', '16:30', '17:30', '18:30', '19:30'
 ];
 
 export default function Home() {
@@ -41,6 +42,10 @@ export default function Home() {
   // Help widget states
   const [showHelpWidget, setShowHelpWidget] = useState<boolean>(true);
   const [helpActiveStep, setHelpActiveStep] = useState<number>(0);
+
+  // Component Inquiry states
+  const [showInquiryModal, setShowInquiryModal] = useState<boolean>(false);
+  const [inquiryDefaultComp, setInquiryDefaultComp] = useState<string>('헤더 (Header & Navigation)');
 
   // Toggle help widget and persist to localStorage
   const handleToggleHelpWidget = () => {
@@ -892,6 +897,15 @@ export default function Home() {
               </div>
             )}
 
+            {/* Store Location Quick Link */}
+            <a 
+              href="#store-location" 
+              className="text-[10px] sm:text-xs font-mono font-bold tracking-wider text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1 shrink-0"
+            >
+              <MapPin className="h-3.5 w-3.5 text-amber-600" />
+              <span className="hidden sm:inline">{lang === 'ko' ? '오시는 길' : 'Location'}</span>
+            </a>
+
             {/* Language Selector */}
             <div className="flex items-center gap-0.5 border border-stone-200 p-0.5 rounded-lg bg-stone-50 text-[9px] sm:text-[10px] font-mono font-bold">
               <button
@@ -1653,6 +1667,94 @@ export default function Home() {
                   </div>
                 )}
               </div>
+
+              {/* Dedicated Store Location & Directions Section */}
+              <section id="store-location" className="bg-gradient-to-b from-stone-900 to-stone-950 border border-stone-800 rounded-3xl p-6 sm:p-10 shadow-2xl space-y-6 text-stone-100 mt-12 animate-fadeIn scroll-mt-24">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-800/80 pb-5 text-left">
+                  <div className="space-y-1">
+                    <div className="inline-flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-amber-400 bg-amber-400/10 border border-amber-400/20 px-3 py-1 rounded-full">
+                      <MapPin className="w-3.5 h-3.5" />
+                      <span>LOCATION & DIRECTIONS</span>
+                    </div>
+                    <h2 className="font-serif text-xl sm:text-2xl font-bold text-stone-100 tracking-tight">
+                      {lang === 'ko' ? '오시는 길 & 매장 안내' : 'Store Location & Directions'}
+                    </h2>
+                    <p className="text-xs text-stone-400">
+                      {lang === 'ko' ? '더 헤어 갤러리를 찾아오시는 길을 원하시는 지도로 빠르게 안내해 드립니다.' : 'Find your way to The Hair Gallery easily with map navigation.'}
+                    </p>
+                  </div>
+
+                  {/* Map Direct Action Buttons */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <a 
+                      href="https://place.map.kakao.com/656750040" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-[#191919] bg-[#FEE500] hover:bg-[#FEE500]/90 px-4 py-2.5 rounded-xl transition-all shadow-md active:scale-95 cursor-pointer"
+                    >
+                      <span>🟡 카카오맵 바로가기</span>
+                    </a>
+
+                    <a 
+                      href="https://naver.me/IFEOOT3j" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-[#03C75A] hover:bg-[#03C75A]/90 px-4 py-2.5 rounded-xl transition-all shadow-md active:scale-95 cursor-pointer"
+                    >
+                      <span>🟢 네이버지도 바로가기</span>
+                    </a>
+
+                    <a 
+                      href="https://maps.app.goo.gl/AzNDXDy9uLtMB5u3A" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 bg-stone-900 border border-stone-800 px-4 py-2.5 rounded-xl transition-all hover:bg-stone-850 shadow-md cursor-pointer"
+                    >
+                      <span>📍 구글 지도 (Google Maps)</span>
+                    </a>
+                  </div>
+                </div>
+
+                {/* Info Grid Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
+                  {/* Address Card */}
+                  <div className="bg-stone-900/80 border border-stone-800 p-5 rounded-2xl space-y-2">
+                    <div className="text-amber-400 text-xs font-mono font-bold flex items-center gap-1.5">
+                      <MapPin className="w-4 h-4" />
+                      <span>ADDRESS (주소)</span>
+                    </div>
+                    <p className="text-stone-200 text-xs leading-relaxed">
+                      {lang === 'ko'
+                        ? '경기도 김포시 북변동 806번지 상가동 103호 (풍년마을 삼성3단지 아파트 상가)'
+                        : 'Room 103, Commercial Bldg, Pungnyeon Maeul Samsung 3-danji Apt, 806, Bukbyeon-dong, Gimpo-si, Gyeonggi-do, KR'}
+                    </p>
+                  </div>
+
+                  {/* Hours Card */}
+                  <div className="bg-stone-900/80 border border-stone-800 p-5 rounded-2xl space-y-2">
+                    <div className="text-amber-400 text-xs font-mono font-bold flex items-center gap-1.5">
+                      <Clock className="w-4 h-4" />
+                      <span>BUSINESS HOURS (영업 시간)</span>
+                    </div>
+                    <p className="text-stone-200 text-xs leading-relaxed">
+                      {lang === 'ko' ? '매일 10:30 - 19:30 (100% 우선 예약제 운영)' : 'Daily 10:30 - 19:30 (100% Reservation Based)'}
+                    </p>
+                  </div>
+
+                  {/* Contact & Parking Card */}
+                  <div className="bg-stone-900/80 border border-stone-800 p-5 rounded-2xl space-y-2">
+                    <div className="text-amber-400 text-xs font-mono font-bold flex items-center gap-1.5">
+                      <Scissors className="w-4 h-4" />
+                      <span>PARKING & CONTACT (주차 및 문의)</span>
+                    </div>
+                    <p className="text-stone-200 text-xs leading-relaxed">
+                      {lang === 'ko'
+                        ? '아파트 상가 주차장 이용 가능 / 전화 문의 및 온라인 예약 지원'
+                        : 'Apartment commercial parking space available / Online booking supported'}
+                    </p>
+                  </div>
+                </div>
+              </section>
             </div>
 
           </div>
@@ -1665,28 +1767,87 @@ export default function Home() {
           <div className="text-sm font-mono tracking-widest text-gold-500 uppercase font-bold">
             THE HAIR GALLERY
           </div>
-          <div className="text-xs text-stone-400 space-y-1">
+          <div className="text-xs text-stone-400 space-y-3">
             <p className="font-light">
               {lang === 'ko' 
                 ? '주소: 경기도 김포시 북변동 806번지 상가동 103호 풍년마을삼성3단지아파트' 
                 : 'Address: Room 103, Commercial Bldg, Pungnyeon Maeul Samsung 3-danji Apt, 806, Bukbyeon-dong, Gimpo-si, Gyeonggi-do, KR'}
             </p>
-            <p className="pt-2">
+
+            {/* Map Action Links (Kakao Map, Naver Map, Google Maps) */}
+            <div className="pt-2 flex flex-wrap items-center justify-center gap-2.5">
+              <a 
+                href="https://place.map.kakao.com/656750040" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#191919] bg-[#FEE500] hover:bg-[#FEE500]/90 px-3.5 py-1.5 rounded-lg transition-transform active:scale-95 shadow-sm"
+              >
+                <span className="font-bold">🟡 카카오맵 (Kakao Map)</span>
+              </a>
+
+              <a 
+                href="https://naver.me/IFEOOT3j" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-white bg-[#03C75A] hover:bg-[#03C75A]/90 px-3.5 py-1.5 rounded-lg transition-transform active:scale-95 shadow-sm"
+              >
+                <span className="font-bold">🟢 네이버지도 (Naver Map)</span>
+              </a>
+
               <a 
                 href="https://maps.app.goo.gl/AzNDXDy9uLtMB5u3A" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-[11px] font-mono font-bold text-gold-500 hover:text-gold-400 hover:underline transition-colors bg-stone-900 border border-stone-800 px-3.5 py-1.5 rounded-lg hover:bg-stone-850"
+                className="inline-flex items-center gap-1.5 text-[11px] font-mono font-bold text-gold-500 hover:text-gold-400 transition-colors bg-stone-900 border border-stone-800 px-3.5 py-1.5 rounded-lg hover:bg-stone-850"
               >
-                <span>📍 Google Maps에서 위치 보기 (View on Google Maps)</span>
+                <span>📍 Google Maps (구글지도)</span>
               </a>
-            </p>
+            </div>
+
+            {/* Component Inquiry Footer Link */}
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setInquiryDefaultComp('하단 푸터 & 지도 (Footer & Map)');
+                  setShowInquiryModal(true);
+                }}
+                className="inline-flex items-center gap-1.5 text-[11px] font-mono text-amber-400 hover:text-amber-300 underline transition-colors cursor-pointer"
+              >
+                <MessageSquarePlus className="w-3.5 h-3.5" />
+                <span>{lang === 'ko' ? '💬 특정 컴포넌트 문의 및 디버그 신고' : '💬 Component Inquiry & Debug Report'}</span>
+              </button>
+            </div>
           </div>
+
           <p className="text-[10px] text-stone-600 font-mono pt-4">
             © {new Date().getFullYear()} THE HAIR GALLERY. All rights reserved.
           </p>
         </div>
       </footer>
+
+      {/* Floating Component Inquiry Button */}
+      <button
+        type="button"
+        onClick={() => {
+          setInquiryDefaultComp('메인 소개 / 메인 갤러리 (Hero & Gallery)');
+          setShowInquiryModal(true);
+        }}
+        className="fixed bottom-6 right-6 z-40 bg-amber-500 hover:bg-amber-400 text-stone-950 px-4 py-2.5 rounded-full shadow-2xl font-mono text-xs font-bold flex items-center gap-2 transition-all hover:scale-105 active:scale-95 border border-amber-300/40 cursor-pointer"
+        title="컴포넌트 지정 문의 / 버그 신고"
+      >
+        <MessageSquarePlus className="w-4 h-4" />
+        <span className="hidden sm:inline">{lang === 'ko' ? '컴포넌트 문의' : 'Component Inquiry'}</span>
+      </button>
+
+      {/* Component Inquiry Modal */}
+      <ComponentInquiryModal
+        isOpen={showInquiryModal}
+        onClose={() => setShowInquiryModal(false)}
+        defaultTargetComponent={inquiryDefaultComp}
+        currentUser={currentUser}
+        lang={lang}
+      />
 
       {/* Auth Modal (Unified Login & Sign Up) */}
       {showAuthModal && (
