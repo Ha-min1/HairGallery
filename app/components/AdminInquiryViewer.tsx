@@ -20,6 +20,7 @@ import {
   AlertCircle,
   ShieldAlert
 } from 'lucide-react';
+import { getSupabaseClient } from '@/lib/supabase';
 
 interface AdminInquiryViewerProps {
   lang?: 'ko' | 'en';
@@ -41,24 +42,23 @@ export default function AdminInquiryViewer({ lang = 'ko', token }: AdminInquiryV
   const [replyTextMap, setReplyTextMap] = useState<{ [key: string]: string }>({});
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
+  const getAuthToken = async (): Promise<string | null> => {
+    if (token) return token;
+    try {
+      const supabase = getSupabaseClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      return session?.access_token || null;
+    } catch (err) {
+      console.error('Failed to get session token:', err);
+      return null;
+    }
+  };
+
   const fetchInquiries = async () => {
     setIsLoading(true);
     setErrorMsg(null);
     try {
-      // Retrieve token from localStorage if not passed
-      let authToken = token;
-      if (!authToken && typeof window !== 'undefined') {
-        const storedSession = localStorage.getItem('supabase.auth.token') || localStorage.getItem('sb-access-token');
-        if (storedSession) {
-          try {
-            const parsed = JSON.parse(storedSession);
-            authToken = parsed.access_token || parsed?.currentSession?.access_token;
-          } catch {
-            authToken = storedSession;
-          }
-        }
-      }
-
+      const authToken = await getAuthToken();
       const headers: any = {};
       if (authToken) {
         headers['Authorization'] = `Bearer ${authToken}`;
@@ -87,19 +87,7 @@ export default function AdminInquiryViewer({ lang = 'ko', token }: AdminInquiryV
   const handleUpdateStatus = async (id: string, newStatus: string, replyText?: string) => {
     setUpdatingId(id);
     try {
-      let authToken = token;
-      if (!authToken && typeof window !== 'undefined') {
-        const storedSession = localStorage.getItem('supabase.auth.token') || localStorage.getItem('sb-access-token');
-        if (storedSession) {
-          try {
-            const parsed = JSON.parse(storedSession);
-            authToken = parsed.access_token || parsed?.currentSession?.access_token;
-          } catch {
-            authToken = storedSession;
-          }
-        }
-      }
-
+      const authToken = await getAuthToken();
       const headers: any = { 'Content-Type': 'application/json' };
       if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
 
@@ -134,19 +122,7 @@ export default function AdminInquiryViewer({ lang = 'ko', token }: AdminInquiryV
     }
 
     try {
-      let authToken = token;
-      if (!authToken && typeof window !== 'undefined') {
-        const storedSession = localStorage.getItem('supabase.auth.token') || localStorage.getItem('sb-access-token');
-        if (storedSession) {
-          try {
-            const parsed = JSON.parse(storedSession);
-            authToken = parsed.access_token || parsed?.currentSession?.access_token;
-          } catch {
-            authToken = storedSession;
-          }
-        }
-      }
-
+      const authToken = await getAuthToken();
       const headers: any = {};
       if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
 
@@ -191,7 +167,7 @@ export default function AdminInquiryViewer({ lang = 'ko', token }: AdminInquiryV
   return (
     <div className="space-y-6">
       {/* Header Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-stone-900 border border-stone-800 p-4 rounded-2xl flex items-center justify-between">
           <div>
             <p className="text-xs font-mono text-stone-400 font-medium">{lang === 'ko' ? '전체 접수 건수' : 'Total Inquiries'}</p>

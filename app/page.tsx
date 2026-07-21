@@ -1667,97 +1667,98 @@ export default function Home() {
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
 
-              {/* Dedicated Store Location & Directions Section */}
-              <section id="store-location" className="bg-gradient-to-b from-stone-900 to-stone-950 border border-stone-800 rounded-3xl p-6 sm:p-10 shadow-2xl space-y-6 text-stone-100 mt-12 animate-fadeIn scroll-mt-24">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-800/80 pb-5 text-left">
-                  <div className="space-y-1">
-                    <div className="inline-flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-amber-400 bg-amber-400/10 border border-amber-400/20 px-3 py-1 rounded-full">
-                      <MapPin className="w-3.5 h-3.5" />
-                      <span>LOCATION & DIRECTIONS</span>
-                    </div>
-                    <h2 className="font-serif text-xl sm:text-2xl font-bold text-stone-100 tracking-tight">
-                      {lang === 'ko' ? '오시는 길 & 매장 안내' : 'Store Location & Directions'}
-                    </h2>
-                    <p className="text-xs text-stone-400">
-                      {lang === 'ko' ? '더 헤어 갤러리를 찾아오시는 길을 원하시는 지도로 빠르게 안내해 드립니다.' : 'Find your way to The Hair Gallery easily with map navigation.'}
-                    </p>
-                  </div>
-
-                  {/* Map Direct Action Buttons */}
-                  <div className="flex flex-wrap items-center gap-2">
-                    <a 
-                      href="https://place.map.kakao.com/656750040" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-xs font-bold text-[#191919] bg-[#FEE500] hover:bg-[#FEE500]/90 px-4 py-2.5 rounded-xl transition-all shadow-md active:scale-95 cursor-pointer"
-                    >
-                      <span>🟡 카카오맵 바로가기</span>
-                    </a>
-
-                    <a 
-                      href="https://naver.me/IFEOOT3j" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-[#03C75A] hover:bg-[#03C75A]/90 px-4 py-2.5 rounded-xl transition-all shadow-md active:scale-95 cursor-pointer"
-                    >
-                      <span>🟢 네이버지도 바로가기</span>
-                    </a>
-
-                    <a 
-                      href="https://maps.app.goo.gl/AzNDXDy9uLtMB5u3A" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 bg-stone-900 border border-stone-800 px-4 py-2.5 rounded-xl transition-all hover:bg-stone-850 shadow-md cursor-pointer"
-                    >
-                      <span>📍 구글 지도 (Google Maps)</span>
-                    </a>
-                  </div>
+        {/* Dedicated Store Location & Directions Section (Full Width Desktop Card at Very Bottom) */}
+        <div className="max-w-5xl mx-auto px-4 my-12 w-full">
+          <section id="store-location" className="bg-gradient-to-b from-stone-900 to-stone-950 border border-stone-800 rounded-3xl p-6 sm:p-8 md:p-10 shadow-2xl space-y-6 text-stone-100 animate-fadeIn scroll-mt-24 w-full">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-stone-800/80 pb-6 text-left">
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-amber-400 bg-amber-400/10 border border-amber-400/20 px-3 py-1 rounded-full">
+                  <MapPin className="w-3.5 h-3.5" />
+                  <span>LOCATION & DIRECTIONS</span>
                 </div>
+                <h2 className="font-serif text-xl sm:text-2xl font-bold text-stone-100 tracking-tight">
+                  {lang === 'ko' ? '오시는 길 & 매장 안내' : 'Store Location & Directions'}
+                </h2>
+                <p className="text-xs text-stone-400">
+                  {lang === 'ko' ? '더 헤어 갤러리를 찾아오시는 길을 원하시는 지도로 빠르게 안내해 드립니다.' : 'Find your way to The Hair Gallery easily with map navigation.'}
+                </p>
+              </div>
 
-                {/* Info Grid Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
-                  {/* Address Card */}
-                  <div className="bg-stone-900/80 border border-stone-800 p-5 rounded-2xl space-y-2">
-                    <div className="text-amber-400 text-xs font-mono font-bold flex items-center gap-1.5">
-                      <MapPin className="w-4 h-4" />
-                      <span>ADDRESS (주소)</span>
-                    </div>
-                    <p className="text-stone-200 text-xs leading-relaxed">
-                      {lang === 'ko'
-                        ? '경기도 김포시 북변동 806번지 상가동 103호 (풍년마을 삼성3단지 아파트 상가)'
-                        : 'Room 103, Commercial Bldg, Pungnyeon Maeul Samsung 3-danji Apt, 806, Bukbyeon-dong, Gimpo-si, Gyeonggi-do, KR'}
-                    </p>
-                  </div>
+              {/* Map Direct Action Buttons */}
+              <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                <a 
+                  href="https://place.map.kakao.com/656750040" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#191919] bg-[#FEE500] hover:bg-[#FEE500]/90 px-4 py-2.5 rounded-xl transition-all shadow-md active:scale-95 cursor-pointer"
+                >
+                  <span>🟡 카카오맵 바로가기</span>
+                </a>
 
-                  {/* Hours Card */}
-                  <div className="bg-stone-900/80 border border-stone-800 p-5 rounded-2xl space-y-2">
-                    <div className="text-amber-400 text-xs font-mono font-bold flex items-center gap-1.5">
-                      <Clock className="w-4 h-4" />
-                      <span>BUSINESS HOURS (영업 시간)</span>
-                    </div>
-                    <p className="text-stone-200 text-xs leading-relaxed">
-                      {lang === 'ko' ? '매일 10:30 - 19:30 (100% 우선 예약제 운영)' : 'Daily 10:30 - 19:30 (100% Reservation Based)'}
-                    </p>
-                  </div>
+                <a 
+                  href="https://naver.me/IFEOOT3j" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-[#03C75A] hover:bg-[#03C75A]/90 px-4 py-2.5 rounded-xl transition-all shadow-md active:scale-95 cursor-pointer"
+                >
+                  <span>🟢 네이버지도 바로가기</span>
+                </a>
 
-                  {/* Contact & Parking Card */}
-                  <div className="bg-stone-900/80 border border-stone-800 p-5 rounded-2xl space-y-2">
-                    <div className="text-amber-400 text-xs font-mono font-bold flex items-center gap-1.5">
-                      <Scissors className="w-4 h-4" />
-                      <span>PARKING & CONTACT (주차 및 문의)</span>
-                    </div>
-                    <p className="text-stone-200 text-xs leading-relaxed">
-                      {lang === 'ko'
-                        ? '아파트 상가 주차장 이용 가능 / 전화 문의 및 온라인 예약 지원'
-                        : 'Apartment commercial parking space available / Online booking supported'}
-                    </p>
-                  </div>
-                </div>
-              </section>
+                <a 
+                  href="https://maps.app.goo.gl/AzNDXDy9uLtMB5u3A" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 bg-stone-900 border border-stone-800 px-4 py-2.5 rounded-xl transition-all hover:bg-stone-850 shadow-md cursor-pointer"
+                >
+                  <span>📍 구글 지도 (Google Maps)</span>
+                </a>
+              </div>
             </div>
 
-          </div>
+            {/* Info Grid Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
+              {/* Address Card */}
+              <div className="bg-stone-900/80 border border-stone-800 p-5 rounded-2xl space-y-2">
+                <div className="text-amber-400 text-xs font-mono font-bold flex items-center gap-1.5">
+                  <MapPin className="w-4 h-4" />
+                  <span>ADDRESS (주소)</span>
+                </div>
+                <p className="text-stone-200 text-xs leading-relaxed">
+                  {lang === 'ko'
+                    ? '경기도 김포시 북변동 806번지 상가동 103호 (풍년마을 삼성3단지 아파트 상가)'
+                    : 'Room 103, Commercial Bldg, Pungnyeon Maeul Samsung 3-danji Apt, 806, Bukbyeon-dong, Gimpo-si, Gyeonggi-do, KR'}
+                </p>
+              </div>
+
+              {/* Hours Card */}
+              <div className="bg-stone-900/80 border border-stone-800 p-5 rounded-2xl space-y-2">
+                <div className="text-amber-400 text-xs font-mono font-bold flex items-center gap-1.5">
+                  <Clock className="w-4 h-4" />
+                  <span>BUSINESS HOURS (영업 시간)</span>
+                </div>
+                <p className="text-stone-200 text-xs leading-relaxed">
+                  {lang === 'ko' ? '매일 10:30 - 19:30 (100% 우선 예약제 운영)' : 'Daily 10:30 - 19:30 (100% Reservation Based)'}
+                </p>
+              </div>
+
+              {/* Contact & Parking Card */}
+              <div className="bg-stone-900/80 border border-stone-800 p-5 rounded-2xl space-y-2">
+                <div className="text-amber-400 text-xs font-mono font-bold flex items-center gap-1.5">
+                  <Scissors className="w-4 h-4" />
+                  <span>PARKING & CONTACT (주차 및 문의)</span>
+                </div>
+                <p className="text-stone-200 text-xs leading-relaxed">
+                  {lang === 'ko'
+                    ? '아파트 상가 주차장 이용 가능 / 전화 문의 및 온라인 예약 지원'
+                    : 'Apartment commercial parking space available / Online booking supported'}
+                </p>
+              </div>
+            </div>
+          </section>
         </div>
       </main>
 
