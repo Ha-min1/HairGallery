@@ -21,6 +21,7 @@ export async function GET(req: NextRequest) {
       .from('reservations')
       .select(`
         id,
+        user_id,
         customer_name,
         customer_phone,
         date,
@@ -64,19 +65,99 @@ export async function GET(req: NextRequest) {
       return str;
     };
 
-    // Map database snake_case back to camelCase expected by the admin cockpit
+    // Map database fields to unified camelCase + snake_case structure for full frontend compatibility
     const mappedReservations = (data || []).map((item: any) => ({
       id: item.id,
-      customerName: item.customer_name,
-      customerPhone: item.customer_phone,
+      userId: item.user_id || null,
+      user_id: item.user_id || null,
+      customerName: item.customer_name || '',
+      customer_name: item.customer_name || '',
+      customerPhone: item.customer_phone || '',
+      customer_phone: item.customer_phone || '',
+      serviceId: item.service_id || null,
+      service_id: item.service_id || null,
       serviceName: item.services?.name || 'Custom Styling',
+      service_name: item.services?.name || 'Custom Styling',
       price: item.price !== null && item.price !== undefined ? item.price : (item.services?.price || 0),
       date: item.date ? String(item.date).split('T')[0].trim() : '',
       time: formatTimeHHMM(item.time),
-      status: item.status,
+      status: item.status || 'Pending',
+      services: item.services || {
+        name: item.services?.name || 'Custom Styling',
+        price: item.price || 0
+      }
     }));
 
     return NextResponse.json({ reservations: mappedReservations });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return NextResponse.json({ error: 'Server configuration error: Missing environment variables' }, { status: 500 });
+    }
+
+    const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { persistSession: false }
+    });
+
+    const body = await req.json();
+    const { userId, customerName, customerPhone, serviceId, date, time, status, price } = body;
+
+    if (!customerName || !date || !time) {
+      return NextResponse.json({ error: 'Missing required reservation fields (customerName, date, time)' }, { status: 400 });
+    }
+
+    // Pre-insert check for double booking on the same date and time
+    const { data: duplicateCheck, error: checkError } = await adminClient
+      .from('reservations')
+      .select('id')
+      .eq('date', date)
+      .eq('time', time)
+      .neq('status', 'Cancelled')
+      .maybeSingle();
+
+    if (checkError) {
+      return NextResponse.json({ error: checkError.message }, { status: 500 });
+    }
+
+    if (duplicateCheck) {
+      return NextResponse.json({ error: 'This time slot is already booked.' }, { status: 409 });
+    }
+
+    const reservationId = crypto.randomUUID();
+    const { data, error } = await adminClient
+      .from('reservations')
+      .insert([
+        {
+          id: reservationId,
+          user_id: userId || null,
+          customer_name: customerName,
+          customer_phone: customerPhone || null,
+          service_id: serviceId || null,
+          date,
+          time,
+          status: status || 'Confirmed',
+          price: price !== undefined && price !== null ? Number(price) : null
+        }
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === '23505') {
+        return NextResponse.json({ error: 'This time slot is already booked.' }, { status: 409 });
+      }
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, reservation: data }, { status: 201 });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

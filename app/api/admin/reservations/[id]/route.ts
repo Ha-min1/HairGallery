@@ -26,11 +26,17 @@ export async function PATCH(
     }
 
     const body = await req.json();
-    const { status, sendNotification = true } = body;
-
-    if (!status) {
-      return NextResponse.json({ error: 'Status field is required' }, { status: 400 });
-    }
+    const { 
+      status, 
+      customerName, 
+      customerPhone, 
+      serviceId, 
+      date, 
+      time, 
+      price, 
+      userId, 
+      sendNotification = true 
+    } = body;
 
     // 1. Verify user token
     const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
@@ -67,10 +73,24 @@ export async function PATCH(
       auth: { persistSession: false }
     });
 
-    // Update reservation status in database
+    const updatePayload: any = {};
+    if (status !== undefined) updatePayload.status = status;
+    if (customerName !== undefined) updatePayload.customer_name = customerName;
+    if (customerPhone !== undefined) updatePayload.customer_phone = customerPhone;
+    if (serviceId !== undefined) updatePayload.service_id = serviceId || null;
+    if (date !== undefined) updatePayload.date = date;
+    if (time !== undefined) updatePayload.time = time;
+    if (price !== undefined) updatePayload.price = price ? Number(price) : null;
+    if (userId !== undefined) updatePayload.user_id = userId || null;
+
+    if (Object.keys(updatePayload).length === 0) {
+      return NextResponse.json({ error: 'No fields provided to update' }, { status: 400 });
+    }
+
+    // Update reservation details in database
     const { data, error } = await adminClient
       .from('reservations')
-      .update({ status })
+      .update(updatePayload)
       .eq('id', id)
       .select()
       .single();

@@ -327,12 +327,14 @@ export default function AdminDashboard() {
         .from('reservations')
         .select(`
           id,
+          user_id,
           customer_name,
           customer_phone,
           date,
           time,
           status,
           price,
+          service_id,
           services!left (
             name,
             price
@@ -353,13 +355,24 @@ export default function AdminDashboard() {
       if (directData && directData.length > 0) {
         const formatted = directData.map((item: any) => ({
           id: item.id,
-          customerName: item.customer_name,
-          customerPhone: item.customer_phone,
+          userId: item.user_id || null,
+          user_id: item.user_id || null,
+          customerName: item.customer_name || '',
+          customer_name: item.customer_name || '',
+          customerPhone: item.customer_phone || '',
+          customer_phone: item.customer_phone || '',
+          serviceId: item.service_id || null,
+          service_id: item.service_id || null,
           serviceName: item.services?.name || 'Custom Styling',
+          service_name: item.services?.name || 'Custom Styling',
           price: item.price !== null && item.price !== undefined ? item.price : (item.services?.price || 0),
           date: item.date ? String(item.date).split('T')[0].trim() : '',
           time: item.time || '10:00',
-          status: item.status,
+          status: item.status || 'Pending',
+          services: item.services || {
+            name: item.services?.name || 'Custom Styling',
+            price: item.price || 0
+          }
         }));
         setReservations(formatted);
       } else {
@@ -1021,61 +1034,59 @@ export default function AdminDashboard() {
     if (!resCustomerName || !resDate || !resTime) return;
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const authHeaders = {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      };
+
       if (editingResId) {
-        // Update existing reservation
-        const { error } = await supabase
-          .from('reservations')
-          .update({
-            user_id: resSelectedUserId || null,
-            customer_name: resCustomerName,
-            customer_phone: resCustomerPhone || null,
-            service_id: resServiceId || null,
+        // Update existing reservation via API
+        const response = await fetch(`/api/admin/reservations/${editingResId}`, {
+          method: 'PATCH',
+          headers: authHeaders,
+          body: JSON.stringify({
+            userId: resSelectedUserId || null,
+            customerName: resCustomerName,
+            customerPhone: resCustomerPhone || null,
+            serviceId: resServiceId || null,
+            date: resDate,
+            time: resTime,
+            status: resStatus,
+            price: resPrice ? Number(resPrice) : null,
+            sendNotification: false
+          })
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error || 'Failed to update reservation');
+        }
+      } else {
+        // Create new reservation via API
+        const response = await fetch('/api/admin/reservations', {
+          method: 'POST',
+          headers: authHeaders,
+          body: JSON.stringify({
+            userId: resSelectedUserId || null,
+            customerName: resCustomerName,
+            customerPhone: resCustomerPhone || null,
+            serviceId: resServiceId || null,
             date: resDate,
             time: resTime,
             status: resStatus,
             price: resPrice ? Number(resPrice) : null
           })
-          .eq('id', editingResId);
+        });
 
-        if (error) throw error;
-      } else {
-        // Create new reservation
-        const { data: duplicateCheck, error: checkError } = await supabase
-          .from('reservations')
-          .select('id')
-          .eq('date', resDate)
-          .eq('time', resTime)
-          .neq('status', 'Cancelled')
-          .maybeSingle();
-
-        if (checkError) throw checkError;
-        if (duplicateCheck) {
-          alert(lang === 'ko' ? '이미 해당 시간대에 다른 예약이 존재합니다.' : 'This time slot is already booked.');
-          return;
-        }
-
-        const { error } = await supabase
-          .from('reservations')
-          .insert([
-            {
-              user_id: resSelectedUserId || null,
-              customer_name: resCustomerName,
-              customer_phone: resCustomerPhone || null,
-              service_id: resServiceId || null,
-              date: resDate,
-              time: resTime,
-              status: resStatus,
-              price: resPrice ? Number(resPrice) : null
-            }
-          ]);
-
-        if (error) {
-          if (error.code === '23505') {
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          if (response.status === 409) {
             alert(lang === 'ko' ? '이미 해당 시간대에 다른 예약이 존재합니다.' : 'This time slot is already booked.');
             return;
-          } else {
-            throw error;
           }
+          throw new Error(errData.error || 'Failed to create reservation');
         }
       }
 
@@ -1919,8 +1930,6 @@ WITH CHECK (
                                       <div 
                                         onClick={() => {
                                           setEditingResId(res.id);
-                                          setResSelectedUserId(res.userId || '');
-                                          setResCustomerName(res.customerName || '');
                                           setResCustomerPhone(res.customerPhone || '');
                                           setResDate(res.date || adminSelectedDate);
                                           setResTime(res.time || '10:00');
