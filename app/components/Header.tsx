@@ -361,6 +361,15 @@ export default function Header({
             </button>
           )}
 
+          <Link
+            href="/price"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="w-full py-2.5 bg-amber-950/60 text-gold-300 border border-gold-500/50 rounded-xl text-xs font-mono font-bold flex items-center justify-center gap-2"
+          >
+            <Tag className="h-4 w-4 text-gold-400" />
+            <span>{lang === 'ko' ? '🏷️ 시술별 상세 가격안내 바로가기' : '🏷️ View Price Guide Page'}</span>
+          </Link>
+
           {isAdmin && (
             <Link
               href="/admin/dashboard"

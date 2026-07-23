@@ -909,10 +909,7 @@ export default function Home() {
         {/* Dynamic Hair Portfolio Gallery Component */}
         <HairPortfolioGallery lang={lang} currentUser={currentUser} />
 
-        {/* Dynamic Hair Gallery Price Guide Section */}
-        <section id="price-section" className="bg-stone-100/60 border-y border-stone-200/80 py-12 px-4 sm:px-6">
-          <PriceList lang={lang} currentUser={currentUser} isEmbedded={true} />
-        </section>
+
 
         <div className="max-w-5xl mx-auto py-12 px-4">
           {/* 도움말 위젯 (Help & Booking Guide Widget) */}
