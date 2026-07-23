@@ -279,6 +279,21 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (isAdminAuthorized !== true) return;
     loadReservations();
+
+    // Auto-refresh reservations every 30s to keep timeline updated with new client bookings
+    const interval = setInterval(() => {
+      loadReservations();
+    }, 30000);
+
+    const handleWindowFocus = () => {
+      loadReservations();
+    };
+    window.addEventListener('focus', handleWindowFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleWindowFocus);
+    };
   }, [isAdminAuthorized]);
 
   // Load and manage administrators receive_notifications configuration
@@ -665,24 +680,12 @@ export default function AdminDashboard() {
 
   const loadServicesList = async () => {
     try {
-      if (isUsingLocalStorage) {
-        const saved = localStorage.getItem(`custom_services_${lang}`);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          parsed.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0) || a.id.localeCompare(b.id));
-          setServicesList(parsed);
-        } else {
-          setServicesList([]);
-        }
-      } else {
-        const { data, error } = await supabase
-          .from('services')
-          .select('*')
-          .order('display_order', { ascending: true })
-          .order('id', { ascending: true });
-        if (!error && data) {
-          setServicesList(data);
-        }
+      const { data, error } = await supabase
+        .from('services')
+        .select('*')
+        .order('display_order', { ascending: true });
+      if (!error && data) {
+        setServicesList(data);
       }
     } catch (err) {
       console.error('Failed to load services:', err);
@@ -763,89 +766,67 @@ export default function AdminDashboard() {
 
   const handleSaveService = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!svcId || !svcName || svcDuration === undefined) return;
-
-    const serviceObj = {
-      id: svcId,
-      name: svcName,
-      name_en: svcNameEn || null,
-      price: svcPrice === '' || svcPrice === null ? null : Number(svcPrice),
-      duration_minutes: Number(svcDuration),
-      durationMinutes: Number(svcDuration),
-      description: svcDescription,
-      description_en: svcDescriptionEn || null,
-      category: svcCategory
-    };
+    if (!svcName || svcDuration === undefined) return;
 
     try {
-      if (isUsingLocalStorage) {
-        const saved = localStorage.getItem(`custom_services_${lang}`);
-        let services = saved ? JSON.parse(saved) : [];
-        if (editingService) {
-          services = services.map((s: any) => s.id === editingService.id ? serviceObj : s);
-        } else {
-          services.push(serviceObj);
-        }
-        localStorage.setItem(`custom_services_${lang}`, JSON.stringify(services));
-        setServicesList(services);
-      } else {
-        const { data: { session } } = await supabase.auth.getSession();
-        const token = session?.access_token;
-        if (!token) {
-          alert('로그인 세션이 만료되었습니다. 다시 로그인 해주세요.');
-          return;
-        }
-
-        if (editingService) {
-          const res = await fetch('/api/admin/services', {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer ' + token
-            },
-            body: JSON.stringify({
-              originalId: editingService.id,
-              newId: svcId,
-              name: svcName,
-              nameEn: svcNameEn || null,
-              price: svcPrice === '' || svcPrice === null ? null : Number(svcPrice),
-              durationMinutes: Number(svcDuration),
-              description: svcDescription,
-              descriptionEn: svcDescriptionEn || null,
-              category: svcCategory
-            })
-          });
-
-          if (!res.ok) {
-            const errData = await res.json();
-            throw new Error(errData.error || 'Failed to update service');
-          }
-        } else {
-          const res = await fetch('/api/admin/services', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer ' + token
-            },
-            body: JSON.stringify({
-              id: svcId,
-              name: svcName,
-              nameEn: svcNameEn || null,
-              price: svcPrice === '' || svcPrice === null ? null : Number(svcPrice),
-              durationMinutes: Number(svcDuration),
-              description: svcDescription,
-              descriptionEn: svcDescriptionEn || null,
-              category: svcCategory
-            })
-          });
-
-          if (!res.ok) {
-            const errData = await res.json();
-            throw new Error(errData.error || 'Failed to create service');
-          }
-        }
-        await loadServicesList();
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) {
+        alert('로그인 세션이 만료되었습니다. 다시 로그인 해주세요.');
+        return;
       }
+
+      if (editingService) {
+        const res = await fetch('/api/admin/services', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({
+            id: editingService.id,
+            originalId: editingService.id,
+            newId: svcId || editingService.id,
+            name: svcName,
+            nameEn: svcNameEn || null,
+            price: svcPrice === '' || svcPrice === null ? 0 : Number(svcPrice),
+            durationMinutes: Number(svcDuration),
+            description: svcDescription,
+            descriptionEn: svcDescriptionEn || null,
+            category: svcCategory || '커트'
+          })
+        });
+
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.error || 'Failed to update service');
+        }
+      } else {
+        const res = await fetch('/api/admin/services', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({
+            id: svcId || undefined,
+            name: svcName,
+            nameEn: svcNameEn || null,
+            price: svcPrice === '' || svcPrice === null ? 0 : Number(svcPrice),
+            durationMinutes: Number(svcDuration),
+            description: svcDescription,
+            descriptionEn: svcDescriptionEn || null,
+            category: svcCategory || '커트',
+            displayOrder: servicesList.length + 1
+          })
+        });
+
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.error || 'Failed to create service');
+        }
+      }
+      await loadServicesList();
       setShowServiceModal(false);
     } catch (err: any) {
       console.error('Failed to save service:', err);
@@ -856,31 +837,23 @@ export default function AdminDashboard() {
   const handleDeleteService = async (id: string) => {
     if (!confirm('정말로 이 서비스를 삭제하시겠습니까?')) return;
     try {
-      if (isUsingLocalStorage) {
-        const saved = localStorage.getItem(`custom_services_${lang}`);
-        let services = saved ? JSON.parse(saved) : [];
-        services = services.filter((s: any) => s.id !== id);
-        localStorage.setItem(`custom_services_${lang}`, JSON.stringify(services));
-        setServicesList(services);
-      } else {
-        const { data: { session } } = await supabase.auth.getSession();
-        const token = session?.access_token;
-        if (!token) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) return;
 
-        const res = await fetch('/api/admin/services?id=' + id, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': 'Bearer ' + token
-          }
-        });
-
-        if (!res.ok) {
-          const errData = await res.json();
-          throw new Error(errData.error || 'Failed to delete service');
+      const res = await fetch('/api/admin/services?id=' + id, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': 'Bearer ' + token
         }
+      });
 
-        await loadServicesList();
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Failed to delete service');
       }
+
+      await loadServicesList();
     } catch (err: any) {
       console.error('Failed to delete service:', err);
       alert('서비스 삭제 실패: ' + err.message);
@@ -892,75 +865,54 @@ export default function AdminDashboard() {
     if (currentIndex === -1) return;
     
     const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-    if (targetIndex < 0 || targetIndex >= servicesList.length) return; // boundary check
+    if (targetIndex < 0 || targetIndex >= servicesList.length) return;
 
     const swapTarget = servicesList[targetIndex];
 
     try {
-      if (isUsingLocalStorage) {
-        const listCopy = [...servicesList];
-        const currentOrder = svc.display_order || currentIndex;
-        const targetOrder = swapTarget.display_order || targetIndex;
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) return;
 
-        listCopy[currentIndex] = { ...swapTarget, display_order: currentOrder };
-        listCopy[targetIndex] = { ...svc, display_order: targetOrder };
-        
-        listCopy.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0) || a.id.localeCompare(b.id));
-        const finalized = listCopy.map((s, idx) => Object.assign({}, s, { display_order: idx }));
+      const res1 = await fetch('/api/admin/services', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify({
+          id: swapTarget.id,
+          name: swapTarget.name,
+          price: swapTarget.price,
+          durationMinutes: swapTarget.duration_minutes || swapTarget.durationMinutes || 30,
+          description: swapTarget.description,
+          category: swapTarget.category,
+          displayOrder: currentIndex
+        })
+      });
 
-        localStorage.setItem(`custom_services_${lang}`, JSON.stringify(finalized));
-        setServicesList(finalized);
-      } else {
-        const { data: { session } } = await supabase.auth.getSession();
-        const token = session?.access_token;
-        if (!token) return;
+      if (!res1.ok) throw new Error('Failed to update display order of adjacent service');
 
-        const res1 = await fetch('/api/admin/services', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token
-          },
-          body: JSON.stringify({
-            originalId: swapTarget.id,
-            newId: swapTarget.id,
-            name: swapTarget.name,
-            nameEn: swapTarget.name_en || null,
-            price: swapTarget.price,
-            durationMinutes: swapTarget.duration_minutes || swapTarget.durationMinutes || 30,
-            description: swapTarget.description,
-            descriptionEn: swapTarget.description_en || null,
-            category: swapTarget.category,
-            displayOrder: currentIndex
-          })
-        });
+      const res2 = await fetch('/api/admin/services', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify({
+          id: svc.id,
+          name: svc.name,
+          price: svc.price,
+          durationMinutes: svc.duration_minutes || svc.durationMinutes || 30,
+          description: svc.description,
+          category: svc.category,
+          displayOrder: targetIndex
+        })
+      });
 
-        if (!res1.ok) throw new Error('Failed to update display order of adjacent service');
+      if (!res2.ok) throw new Error('Failed to update display order of current service');
 
-        const res2 = await fetch('/api/admin/services', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token
-          },
-          body: JSON.stringify({
-            originalId: svc.id,
-            newId: svc.id,
-            name: svc.name,
-            nameEn: svc.name_en || null,
-            price: svc.price,
-            durationMinutes: svc.duration_minutes || svc.durationMinutes || 30,
-            description: svc.description,
-            descriptionEn: svc.description_en || null,
-            category: svc.category,
-            displayOrder: targetIndex
-          })
-        });
-
-        if (!res2.ok) throw new Error('Failed to update display order of current service');
-
-        await loadServicesList();
-      }
+      await loadServicesList();
     } catch (err: any) {
       console.error('Failed to move service:', err);
       alert('순서 변경 실패: ' + err.message);
@@ -1074,10 +1026,12 @@ export default function AdminDashboard() {
         setReservations(prev =>
           prev.map(res => (res.id === id ? { ...res, status: newStatus } : res))
         );
+        await loadReservations();
       } else {
         setReservations(prev =>
           prev.map(res => (res.id === id ? { ...res, status: newStatus } : res))
         );
+        await loadReservations();
       }
     } catch (err) {
       console.error('Failed to patch status:', err);
@@ -1373,10 +1327,27 @@ export default function AdminDashboard() {
     adminCalendarGrid.push(i);
   }
 
+  // Helper to normalize reservation date to YYYY-MM-DD
+  const normDateStr = (rawDate: any): string => {
+    if (!rawDate) return '';
+    return String(rawDate).split('T')[0].trim();
+  };
+
+  // Helper to normalize reservation time to HH:mm
+  const normTimeStr = (rawTime: any): string => {
+    if (!rawTime) return '';
+    const str = String(rawTime).trim();
+    const parts = str.split(':');
+    if (parts.length >= 2) {
+      return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
+    }
+    return str;
+  };
+
   // Check if a specific date has any reservations (for showing dot indicator)
   const hasReservationsOnDate = (day: number) => {
     const dateStr = `${adminYear}-${String(adminMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    return reservations.some(res => res.date === dateStr && res.status !== 'Cancelled');
+    return reservations.some(res => normDateStr(res.date) === dateStr && res.status !== 'Cancelled');
   };
 
   // Filter work records (Search by phone or name)
@@ -1807,7 +1778,7 @@ WITH CHECK (
                         <span className="text-[10px] font-mono text-stone-400">
                           {
                             (() => {
-                              const count = reservations.filter(res => res.date === adminSelectedDate && res.status !== 'Cancelled').length;
+                              const count = reservations.filter(res => normDateStr(res.date) === adminSelectedDate && res.status !== 'Cancelled').length;
                               return lang === 'ko' ? `총 ${count}건의 예약` : `${count} booking(s)`;
                             })()
                           }
@@ -1825,15 +1796,16 @@ WITH CHECK (
                           '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'
                         ].map((hour) => {
                           // Find reservations for this day that fall into this hour slot
-                          const hourStr = hour.split(':')[0];
+                          const hourStr = hour.split(':')[0].padStart(2, '0');
                           const slotReservations = reservations.filter(res => {
-                            if (res.date !== adminSelectedDate) return false;
-                            const resHour = res.time.split(':')[0];
+                            if (normDateStr(res.date) !== adminSelectedDate) return false;
+                            const resTimeNorm = normTimeStr(res.time);
+                            const resHour = resTimeNorm.split(':')[0].padStart(2, '0');
                             return resHour === hourStr;
                           });
 
                           // Sort slot reservations ascending (just in case there are multiple)
-                          slotReservations.sort((a, b) => a.time.localeCompare(b.time));
+                          slotReservations.sort((a, b) => normTimeStr(a.time).localeCompare(normTimeStr(b.time)));
 
                           return (
                             <div key={hour} className="flex gap-4 items-stretch border-b border-white/[0.03] pb-2.5 last:border-b-0 last:pb-0 pt-2.5 first:pt-0">
@@ -1935,6 +1907,90 @@ WITH CHECK (
                             </div>
                           );
                         })}
+
+                        {/* Off-peak / Other Hours Reservations Fallback */}
+                        {(() => {
+                          const standardHours = ['08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20'];
+                          const otherReservations = reservations.filter(res => {
+                            if (normDateStr(res.date) !== adminSelectedDate) return false;
+                            const resHour = normTimeStr(res.time).split(':')[0].padStart(2, '0');
+                            return !standardHours.includes(resHour);
+                          });
+
+                          if (otherReservations.length === 0) return null;
+
+                          return (
+                            <div className="mt-3 pt-3 border-t border-indigo-500/20 bg-indigo-950/10 p-3 rounded-lg">
+                              <div className="text-[10px] font-mono font-bold text-amber-400 mb-2 uppercase tracking-wide flex items-center gap-1.5">
+                                <span>⚠️</span>
+                                <span>{lang === 'ko' ? '기타 시간대 / 지정 외 예약' : 'Off-Peak / Custom Hour Bookings'}</span>
+                              </div>
+                              <div className="space-y-2">
+                                {otherReservations.map(res => (
+                                  <div key={res.id} className="flex items-center justify-between gap-3 p-3 rounded-lg bg-stone-900 border border-amber-500/20">
+                                    <div className="text-left space-y-0.5">
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-mono text-[10px] font-bold text-indigo-300">
+                                          {res.time}
+                                        </span>
+                                        <span className="font-serif font-bold text-xs text-white">
+                                          {res.customerName}
+                                        </span>
+                                        {res.customerPhone ? (
+                                          <span className="text-[10px] text-stone-400 font-mono">
+                                            ({res.customerPhone})
+                                          </span>
+                                        ) : null}
+                                      </div>
+                                      <p className="text-[10px] text-stone-300 font-light">
+                                        {res.serviceName} • ₩{(res.price || 0).toLocaleString()}
+                                      </p>
+                                    </div>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      <div className="flex items-center gap-1.5">
+                                        {res.status === 'Pending' && (
+                                          <button
+                                            onClick={() => handleUpdateStatus(res.id, 'Confirmed')}
+                                            className="p-1 bg-sky-500/10 hover:bg-sky-600 text-sky-400 hover:text-white rounded border border-sky-500/20 transition-all cursor-pointer animate-pulse"
+                                            title={t.confirmReservation}
+                                          >
+                                            <Check className="h-3.5 w-3.5" />
+                                          </button>
+                                        )}
+                                        {res.status === 'Confirmed' && (
+                                          <button
+                                            onClick={() => handleUpdateStatus(res.id, 'Completed')}
+                                            className="p-1 bg-emerald-500/10 hover:bg-emerald-600 text-emerald-400 hover:text-white rounded border border-emerald-500/20 transition-all cursor-pointer"
+                                            title={t.completeAppointment}
+                                          >
+                                            <Check className="h-3.5 w-3.5" />
+                                          </button>
+                                        )}
+                                        {res.status !== 'Cancelled' && res.status !== 'Completed' && (
+                                          <button
+                                            onClick={() => handleUpdateStatus(res.id, 'Cancelled')}
+                                            className="p-1 bg-stone-850 hover:bg-rose-600 text-stone-400 hover:text-white rounded border border-white/5 hover:border-rose-500 transition-all cursor-pointer"
+                                            title={t.cancelAppointment}
+                                          >
+                                            <X className="h-3.5 w-3.5" />
+                                          </button>
+                                        )}
+                                      </div>
+                                      <span className={`text-[9px] font-mono font-bold tracking-wide uppercase px-2 py-0.5 rounded border shrink-0 ${
+                                        res.status === 'Pending' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                                        res.status === 'Confirmed' ? 'bg-sky-500/10 text-sky-400 border-sky-500/20' :
+                                        res.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                                        'bg-stone-800/80 text-stone-400 border-white/5'
+                                      }`}>
+                                        {getStatusText(res.status)}
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>
@@ -3412,11 +3468,13 @@ WITH CHECK (
                   onChange={e => setSvcCategory(e.target.value)}
                   className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white text-left"
                 >
-                  <option value="Cut" className="bg-stone-900 text-white">{lang === 'ko' ? '커트 (Cut)' : 'Cut'}</option>
-                  <option value="Color" className="bg-stone-900 text-white">{lang === 'ko' ? '염색 (Color)' : 'Color'}</option>
-                  <option value="Perm" className="bg-stone-900 text-white">{lang === 'ko' ? '펌 (Perm)' : 'Perm'}</option>
-                  <option value="Treatment" className="bg-stone-900 text-white">{lang === 'ko' ? '클리닉 (Treatment)' : 'Treatment'}</option>
-                  <option value="Styling" className="bg-stone-900 text-white">{lang === 'ko' ? '스타일링 (Styling)' : 'Styling'}</option>
+                  <option value="커트" className="bg-stone-900 text-white">커트 (Cut)</option>
+                  <option value="염색" className="bg-stone-900 text-white">염색 (Color)</option>
+                  <option value="펌" className="bg-stone-900 text-white">펌 (Perm)</option>
+                  <option value="클리닉" className="bg-stone-900 text-white">클리닉 (Treatment)</option>
+                  <option value="스타일링" className="bg-stone-900 text-white">스타일링 (Styling)</option>
+                  <option value="샴푸" className="bg-stone-900 text-white">샴푸 (Shampoo)</option>
+                  <option value="업스타일" className="bg-stone-900 text-white">업스타일 (Upstyle)</option>
                 </select>
               </div>
 

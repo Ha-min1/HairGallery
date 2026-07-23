@@ -96,6 +96,17 @@ export async function GET(req: NextRequest) {
       data = firstTryData;
     }
 
+    // Helper to format time as HH:mm
+    const formatTimeHHMM = (rawTime: any): string => {
+      if (!rawTime) return '10:00';
+      const str = String(rawTime).trim();
+      const parts = str.split(':');
+      if (parts.length >= 2) {
+        return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
+      }
+      return str;
+    };
+
     // Map database snake_case back to camelCase expected by the admin cockpit
     const mappedReservations = (data || []).map((item: any) => ({
       id: item.id,
@@ -103,8 +114,8 @@ export async function GET(req: NextRequest) {
       customerPhone: item.customer_phone,
       serviceName: item.services?.name || 'Custom Styling',
       price: item.price !== null && item.price !== undefined ? item.price : (item.services?.price || 0),
-      date: item.date,
-      time: item.time,
+      date: item.date ? String(item.date).split('T')[0].trim() : '',
+      time: formatTimeHHMM(item.time),
       status: item.status,
     }));
 

@@ -43,7 +43,7 @@ export default function Home() {
           setPriceItems(data.items);
         }
       })
-      .catch(err => console.error('Failed to fetch price_list for reservation:', err));
+      .catch(err => console.error('Failed to fetch services list for reservation:', err));
   }, []);
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [customerName, setCustomerName] = useState<string>('');
@@ -275,66 +275,40 @@ export default function Home() {
     }
   };
 
-  // Load services with database fetching and localStorage fallback
+  // Load services with database fetching from public.services table
   const loadServices = async (currentLang: 'ko' | 'en') => {
-    // 1. Try to fetch from database first for real-time synchronization
     try {
       const { data, error } = await supabase
         .from('services')
         .select('*')
-        .order('display_order', { ascending: true })
-        .order('id', { ascending: true });
-      if (!error && data && data.length > 0) {
+        .order('display_order', { ascending: true });
+        
+      if (!error && data) {
         const mapped = data.map((s: any) => {
           const displayName = currentLang === 'en' ? (s.name_en || s.name) : s.name;
           const displayDesc = currentLang === 'en' ? (s.description_en || s.description) : s.description;
           return {
             id: s.id,
+            category: s.category || '커트',
             name: displayName,
+            title: displayName,
             price: s.price,
-            durationMinutes: s.duration_minutes,
+            durationMinutes: s.duration_minutes || 30,
+            duration_minutes: s.duration_minutes || 30,
             description: displayDesc,
             display_order: s.display_order || 0,
+            is_active: s.is_active ?? true,
             name_ko: s.name,
-            name_en: s.name_en || null,
-            description_ko: s.description,
-            description_en: s.description_en || null
+            description_ko: s.description
           };
         });
         setServices(mapped);
-        // Cache it in localStorage as fallback
-        localStorage.setItem(`custom_services_${currentLang}`, JSON.stringify(mapped));
         return;
       }
     } catch (e) {
       console.error('Failed to fetch services from Supabase:', e);
     }
-
-    // 2. Local storage fallback if offline or DB query fails
-    const cached = localStorage.getItem(`custom_services_${currentLang}`);
-    if (cached) {
-      try {
-        const parsed = JSON.parse(cached);
-        parsed.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0) || a.id.localeCompare(b.id));
-        const localized = parsed.map((s: any) => {
-          const displayName = currentLang === 'en' ? (s.name_en || s.name_ko || s.name) : (s.name_ko || s.name);
-          const displayDesc = currentLang === 'en' ? (s.description_en || s.description_ko || s.description) : (s.description_ko || s.description);
-          return {
-            ...s,
-            name: displayName,
-            description: displayDesc
-          };
-        });
-        setServices(localized);
-        return;
-      } catch (e) {
-        console.error('Failed to parse cached services:', e);
-      }
-    }
-
-    // 3. Static fallback if both DB and cache fail
-    const staticSvc = getLocalizedServices(currentLang).map((s: any, idx: number) => Object.assign({}, s, { display_order: idx }));
-    setServices(staticSvc);
+    setServices([]);
   };
 
   useEffect(() => {

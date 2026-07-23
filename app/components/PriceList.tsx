@@ -436,7 +436,7 @@ export default function PriceList({ lang = 'ko', currentUser = null, isEmbedded 
                           </h3>
                           <div className="flex flex-col items-end gap-1 shrink-0">
                             <span className="inline-block px-2.5 py-1 bg-amber-50 border border-gold-500/30 text-gold-700 rounded-lg text-xs sm:text-sm font-bold font-serif whitespace-nowrap shadow-2xs">
-                              {item.price}
+                              {typeof item.price === 'number' ? `${(item.price as number).toLocaleString()}원` : (item.price || '가격 문의')}
                             </span>
                             {item.duration_minutes !== undefined && (
                               <span className="text-[10px] px-2 py-0.5 bg-stone-100 border border-stone-200 text-stone-600 rounded-full font-mono font-semibold">

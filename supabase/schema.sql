@@ -23,13 +23,16 @@ CREATE TABLE users (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 4. Create 'services' table (8,000 KRW to 15,000 KRW pricing)
+-- 4. Create unified 'services' table (Single consolidated table for procedure & pricing management)
 CREATE TABLE services (
-    id VARCHAR(50) PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    category VARCHAR(100) NOT NULL DEFAULT '커트',
     name VARCHAR(255) NOT NULL,
-    price INTEGER, -- Stored in KRW (e.g. 10000, can be NULL for custom mockup)
-    duration_minutes INTEGER NOT NULL,
+    price INTEGER NOT NULL DEFAULT 0, -- Stored in KRW
+    duration_minutes INTEGER DEFAULT 30,
     description TEXT,
+    display_order INTEGER DEFAULT 0,
+    is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -39,7 +42,7 @@ CREATE TABLE reservations (
     user_id UUID REFERENCES users(id) ON DELETE SET NULL,
     customer_name VARCHAR(255) NOT NULL,
     customer_phone VARCHAR(50) NOT NULL,
-    service_id VARCHAR(50) REFERENCES services(id) ON DELETE RESTRICT,
+    service_id UUID REFERENCES services(id) ON DELETE SET NULL,
     date DATE NOT NULL,
     time VARCHAR(10) NOT NULL, -- "09:00", "14:00" etc.
     status reservation_status DEFAULT 'Pending',
@@ -58,15 +61,25 @@ CREATE UNIQUE INDEX idx_reservations_prevent_double_booking
 ON reservations (date, time)
 WHERE (status <> 'Cancelled');
 
--- 8. Seed Initial Service Registry (KRW Price List: 8,000 to 15,000 KRW)
-INSERT INTO services (id, name, price, duration_minutes, description) VALUES
-('s1', 'Signature Cut & Blowout', 15000, 60, 'A bespoke cutting experience tailored to your facial structure, complete with a luxury wash and bouncy signature blowout.'),
-('s2', 'Gents Precision Cut', 10000, 45, 'Clean scissor-and-clipper work, detailed texturizing, hot towel neck shave, and premium styling.'),
-('s3', 'Quick Trim & Clean-up', 8000, 30, 'A fast touch-up for split ends or bangs to keep your current cut looking fresh.'),
-('s4', 'Balayage Color Touch', 13000, 120, 'Hand-painted highlights creating seamless, low-maintenance dimensional transitions.'),
-('s5', 'Root Touch-up Gloss', 11000, 75, 'Precise coverage of root growth or gray hair, complete with a restorative protein glaze.'),
-('s6', 'Scalp Therapy & Treatment', 12000, 60, 'Intense micro-emulsion moisture therapy to restore lipid protection and high shine.'),
-('s7', 'Red Carpet Blowout & Style', 9000, 45, 'Premium styling with thermal round-brush sculpting, high-gloss finish, and pin-set volume.');
+-- 8. Seed Initial Service Registry (Unified Services Table)
+INSERT INTO services (category, name, price, duration_minutes, description, display_order, is_active) VALUES
+('커트', '어린이커트', 13000, 30, '자극 없는 미취학/초등 전용 컷', 1, true),
+('커트', '중.고생커트', 15000, 30, '학업 친화적 트렌디 커트', 2, true),
+('커트', '남성커트', 17000, 45, '정교한 가위/클리퍼 컷 및 프리미엄 스타일링', 3, true),
+('커트', '여자커트', 19000, 30, '맞춤 샴푸 및 볼륨 레이어드 컷', 4, true),
+('염색', '새치머리 뿌리염색 기본', 40000, 120, '두피에서 산생모 3cm이하', 5, true),
+('염색', '멋내기 뿌리염색', 50000, 60, '새로 자란 모발의 자연스러운 톤 연결 및 광택 케어', 6, true),
+('염색', '전체 디자인 컬러', 80000, 120, '고급 아베다/밀본 프리미엄 염모제 사용', 7, true),
+('펌', '베이직 펌', 70000, 90, '내추럴 컬 & 볼륨 세팅', 8, true),
+('펌', '열펌 / 디지털 & 세팅펌', 110000, 120, '탄력 있는 S컬 / C컬 원장 직접 시술', 9, true),
+('펌', '볼륨 매직 & 다운펌', 120000, 150, '곱슬 교정 및 깔끔한 차분함 연출', 10, true),
+('클리닉', '모발 수분 집중 케어', 60000, 45, '3단계 단백질 충전 & 스팀 미스트', 11, true),
+('클리닉', '두피 스파 & 디톡스 테라피', 70000, 50, '두피 스케일링 & 각질 스파 타월 마사지', 12, true),
+('스타일링', '드라이', 20000, 45, '특별한 약속이나 이벤트를 위한 고급스러운 볼륨 드라이', 13, true),
+('스타일링', '아이론 & 웨이브 세팅', 25000, 40, '특별한 모임/행사를 위한 아이론 드라이', 14, true),
+('샴푸', '스페셜 릴렉싱 샴푸', 15000, 25, '두피 두들링 지압 & 스팀 타월 마무리', 15, true),
+('업스타일', '행사 / 파티 업스타일', 80000, 60, '드레스/한복 연출을 위한 단아한 고전 세팅', 16, true),
+('업스타일', '웨딩 / 혼주 메이크업 헤어', 120000, 90, '1:1 맞춤 볼륨 고정 프리미엄 업스타일', 17, true);
 
 -- 9. Enable Row Level Security (RLS) on Supabase
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
