@@ -32,6 +32,19 @@ export default function Home() {
   const [lang, setLangState] = useState<'ko' | 'en'>('ko');
   const [services, setServices] = useState<any[]>([]);
   const [selectedServiceId, setSelectedServiceId] = useState<string>('');
+  const [activeCategory, setActiveCategory] = useState<string>('커트');
+  const [priceItems, setPriceItems] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch('/api/price-list')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.items)) {
+          setPriceItems(data.items);
+        }
+      })
+      .catch(err => console.error('Failed to fetch price_list for reservation:', err));
+  }, []);
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [customerName, setCustomerName] = useState<string>('');
   const [customerPhone, setCustomerPhone] = useState<string>('');
@@ -1135,62 +1148,142 @@ export default function Home() {
                 </div>
               ) : (
                 <form onSubmit={handleBookingSubmit} className="space-y-6">
-                  {/* Select Service */}
+                                    {/* Unified Procedure Category & Detail Items Selection Widget */}
                   <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm space-y-6">
-                    <h2 className="font-serif text-base font-semibold text-stone-900 flex items-center gap-2">
-                      <Scissors className="h-4.5 w-4.5 text-gold-600" />
-                      {t.selectService}
-                    </h2>
+                    {/* Header */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-100 pb-4">
+                      <div>
+                        <h2 className="font-serif text-base sm:text-lg font-semibold text-stone-900 flex items-center gap-2">
+                          <Scissors className="h-5 w-5 text-gold-600" />
+                          {lang === 'ko' ? '시술 선택 (Service Selection)' : 'Select Hair Procedure'}
+                        </h2>
+                        <p className="text-xs text-stone-500 mt-1">
+                          {lang === 'ko' 
+                            ? '상단 대분류 카테고리를 선택한 후, 하단에서 원하시는 상세 시술 항목을 클릭해 주세요.' 
+                            : 'Select a main category above, then click your desired procedure below.'}
+                        </p>
+                      </div>
 
-                    <div className="space-y-3">
-                      {services.map(s => (
-                        <label
-                          key={s.id}
-                          className={`block p-4 rounded-xl border cursor-pointer transition-colors ${
-                            selectedServiceId === s.id ? 'bg-amber-50/40 border-gold-500/80 ring-1 ring-gold-500/50' : 'border-stone-200 hover:border-stone-300'
-                          }`}
-                        >
-                          <div className="flex justify-between items-start gap-4">
-                            <div className="flex gap-2.5">
-                              <input
-                                type="radio"
-                                name="service"
-                                checked={selectedServiceId === s.id}
-                                onChange={() => setSelectedServiceId(s.id)}
-                                className="mt-1 accent-stone-900"
-                              />
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-[9px] font-mono text-stone-400 uppercase tracking-widest font-semibold block">{lang === 'ko' ? '시술' : 'HAIR'}</span>
-                                  {currentUser && currentUser.role === 'ADMIN' && (
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        e.preventDefault();
-                                        setEditingService(s);
-                                      }}
-                                      className="text-[9px] text-gold-600 hover:text-gold-700 hover:underline font-semibold flex items-center gap-0.5 cursor-pointer border-none bg-transparent p-0"
-                                    >
-                                      [수정 / Edit]
-                                    </button>
-                                  )}
-                                </div>
-                                <h3 className="text-xs font-bold text-stone-900">{s.name}</h3>
-                                <p className="text-[10px] text-stone-500 mt-1 leading-normal">{s.description}</p>
-                              </div>
-                            </div>
-                            <div className="text-right shrink-0">
-                               <span className="text-xs font-bold font-serif block">
-                                 {s.price !== null && s.price !== undefined 
-                                   ? `₩${s.price.toLocaleString()}` 
-                                   : (lang === 'ko' ? '가격 문의' : 'Inquiry')}
-                               </span>
-                              <span className="text-[9px] text-stone-400 font-mono">{s.durationMinutes}m</span>
-                            </div>
-                          </div>
+                      <Link
+                        href="/price"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-50 hover:bg-amber-100 text-gold-700 border border-gold-400/60 rounded-xl text-xs font-bold transition-all shadow-2xs shrink-0 cursor-pointer"
+                      >
+                        <Tag className="w-3.5 h-3.5" />
+                        <span>{lang === 'ko' ? '🏷️ 전체 가변 가격안내 보기' : '🏷️ View Price Guide'}</span>
+                      </Link>
+                    </div>
+
+                    {/* Top Row: 7 Procedure Category Tabs / Buttons */}
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-stone-700 uppercase font-mono tracking-wider block">
+                        {lang === 'ko' ? '1. 시술 대분류 선택 (Category)' : '1. Select Procedure Category'}
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+                        {RESERVATION_CATEGORIES.map(cat => {
+                          const Icon = cat.icon;
+                          const isCatActive = activeCategory === cat.nameKo || activeCategory === cat.id || activeCategory === cat.nameEn || cat.nameKo.startsWith(activeCategory);
+                          return (
+                            <button
+                              key={cat.id}
+                              type="button"
+                              onClick={() => setActiveCategory(cat.nameKo.split(' ')[0])}
+                              style={{ color: isCatActive ? '#FFFFFF' : undefined }}
+                              className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
+                                isCatActive
+                                  ? 'bg-stone-950 text-white font-bold border-gold-500/80 shadow-md ring-2 ring-gold-500/50 scale-[1.02]'
+                                  : 'bg-stone-50 hover:bg-stone-100 text-stone-700 border-stone-200 hover:border-stone-300'
+                              }`}
+                            >
+                              <Icon className={`w-4 h-4 mb-1 ${isCatActive ? 'text-gold-400' : 'text-stone-500'}`} />
+                              <span className={`text-xs font-bold ${isCatActive ? 'text-white' : 'text-stone-800'}`} style={{ color: isCatActive ? '#FFFFFF' : undefined }}>
+                                {cat.nameKo.split(' ')[0]}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Bottom Row: Detailed Procedure Items fetched from DB */}
+                    <div className="space-y-3 pt-2 border-t border-stone-100">
+                      <div className="flex justify-between items-center">
+                        <label className="text-[11px] font-bold text-stone-700 uppercase font-mono tracking-wider">
+                          {lang === 'ko' ? `2. [${activeCategory}] 세부 시술 선택` : `2. Select [${activeCategory}] Procedure`}
                         </label>
-                      ))}
+                        <span className="text-[10px] text-stone-400 font-mono">
+                          {priceItems.filter(i => i.category === activeCategory).length} {lang === 'ko' ? '개 항목' : 'items'}
+                        </span>
+                      </div>
+
+                      {(() => {
+                        const filteredProcedures = priceItems.filter(i => i.category === activeCategory);
+                        if (filteredProcedures.length === 0) {
+                          return (
+                            <div className="p-6 bg-stone-50 border border-dashed border-stone-200 rounded-xl text-center text-xs text-stone-500 space-y-1">
+                              <p className="font-bold text-stone-700">{lang === 'ko' ? '선택하신 카테고리에 등록된 상세 시술이 없습니다.' : 'No procedure items in this category.'}</p>
+                              <p>{lang === 'ko' ? '가격안내 전용 페이지에서 새 시술 항목을 등록하실 수 있습니다.' : 'Add new items on the Price Guide page.'}</p>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {filteredProcedures.map(proc => {
+                              const isSelected = selectedServiceId === proc.id || selectedServiceId === proc.title;
+                              const duration = proc.duration_minutes !== undefined ? proc.duration_minutes : proc.durationMinutes;
+
+                              return (
+                                <div
+                                  key={proc.id}
+                                  onClick={() => setSelectedServiceId(proc.title)}
+                                  className={`p-4 rounded-xl border cursor-pointer transition-all duration-200 relative ${
+                                    isSelected
+                                      ? 'bg-stone-950 text-white border-gold-500 shadow-md ring-2 ring-gold-500/50'
+                                      : 'bg-stone-50/50 border-stone-200 hover:border-stone-300 hover:bg-white text-stone-900'
+                                  }`}
+                                >
+                                  <div className="flex justify-between items-start gap-3">
+                                    <div className="flex items-start gap-2.5">
+                                      <input
+                                        type="radio"
+                                        name="procedureSelection"
+                                        checked={isSelected}
+                                        onChange={() => setSelectedServiceId(proc.title)}
+                                        className="mt-1 accent-gold-400 h-4 w-4 shrink-0 cursor-pointer"
+                                      />
+                                      <div className="space-y-1">
+                                        <h3 className={`text-xs sm:text-sm font-bold ${isSelected ? 'text-white' : 'text-stone-900'}`}>
+                                          {proc.title || proc.name}
+                                        </h3>
+                                        {proc.description && (
+                                          <p className={`text-[11px] leading-relaxed line-clamp-2 ${isSelected ? 'text-stone-300' : 'text-stone-500'}`}>
+                                            {proc.description}
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    <div className="text-right shrink-0 space-y-1">
+                                      <span className={`text-xs sm:text-sm font-bold font-serif block ${isSelected ? 'text-gold-400' : 'text-stone-950'}`}>
+                                        {proc.price}
+                                      </span>
+                                      {duration !== undefined && (
+                                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono inline-block ${
+                                          isSelected 
+                                            ? 'bg-gold-500/20 text-gold-300 border border-gold-500/30' 
+                                            : 'bg-stone-100 text-stone-600'
+                                        }`}>
+                                          {duration}m
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
 

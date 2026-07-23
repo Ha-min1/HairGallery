@@ -28,6 +28,7 @@ export interface PriceItem {
   title: string;
   price: string;
   description?: string | null;
+  duration_minutes?: number;
   display_order?: number;
   created_at?: string;
 }
@@ -63,6 +64,7 @@ export default function PriceList({ lang = 'ko', currentUser = null, isEmbedded 
   const [formTitle, setFormTitle] = useState<string>('');
   const [formPrice, setFormPrice] = useState<string>('');
   const [formDescription, setFormDescription] = useState<string>('');
+  const [formDurationMinutes, setFormDurationMinutes] = useState<number>(30);
   const [formDisplayOrder, setFormDisplayOrder] = useState<number>(0);
   
   const [submitting, setSubmitting] = useState<boolean>(false);
@@ -105,6 +107,7 @@ export default function PriceList({ lang = 'ko', currentUser = null, isEmbedded 
     setFormTitle('');
     setFormPrice('');
     setFormDescription('');
+    setFormDurationMinutes(30);
     setFormDisplayOrder(items.length + 1);
     setErrorMsg('');
     setIsModalOpen(true);
@@ -116,6 +119,7 @@ export default function PriceList({ lang = 'ko', currentUser = null, isEmbedded 
     setFormTitle(item.title || '');
     setFormPrice(item.price || '');
     setFormDescription(item.description || '');
+    setFormDurationMinutes(item.duration_minutes ?? 30);
     setFormDisplayOrder(item.display_order ?? 0);
     setErrorMsg('');
     setIsModalOpen(true);
@@ -143,6 +147,7 @@ export default function PriceList({ lang = 'ko', currentUser = null, isEmbedded 
         title: formTitle,
         price: formPrice,
         description: formDescription,
+        duration_minutes: formDurationMinutes,
         display_order: formDisplayOrder
       };
 
@@ -427,9 +432,16 @@ export default function PriceList({ lang = 'ko', currentUser = null, isEmbedded 
                           <h3 className="text-base font-bold text-stone-900 group-hover:text-gold-700 transition-colors leading-snug">
                             {item.title}
                           </h3>
-                          <span className="inline-block px-2.5 py-1 bg-amber-50 border border-gold-500/30 text-gold-700 rounded-lg text-xs sm:text-sm font-bold font-serif whitespace-nowrap shrink-0 shadow-2xs">
-                            {item.price}
-                          </span>
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                            <span className="inline-block px-2.5 py-1 bg-amber-50 border border-gold-500/30 text-gold-700 rounded-lg text-xs sm:text-sm font-bold font-serif whitespace-nowrap shadow-2xs">
+                              {item.price}
+                            </span>
+                            {item.duration_minutes !== undefined && (
+                              <span className="text-[10px] px-2 py-0.5 bg-stone-100 border border-stone-200 text-stone-600 rounded-full font-mono font-semibold">
+                                ⏱️ {item.duration_minutes}m
+                              </span>
+                            )}
+                          </div>
                         </div>
 
                         {item.description && (
@@ -558,16 +570,30 @@ export default function PriceList({ lang = 'ko', currentUser = null, isEmbedded 
                 />
               </div>
 
+              {/* Duration Minutes */}
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1.5">
+                  {lang === 'ko' ? '시술 소요 시간 (분 / Minutes)' : 'Duration (Minutes)'}
+                </label>
+                <input
+                  type="number"
+                  value={formDurationMinutes}
+                  onChange={(e) => setFormDurationMinutes(Number(e.target.value))}
+                  placeholder="30"
+                  className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-300 rounded-xl text-xs sm:text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-gold-500"
+                />
+              </div>
+
               {/* Description */}
               <div>
                 <label className="block text-xs font-bold text-stone-700 mb-1.5">
-                  {lang === 'ko' ? '상세 설명 및 소요 시간 (Description)' : 'Description'}
+                  {lang === 'ko' ? '상세 설명 (Description)' : 'Description'}
                 </label>
                 <textarea
                   value={formDescription}
                   onChange={(e) => setFormDescription(e.target.value)}
-                  placeholder={lang === 'ko' ? '예: 샴푸 및 스타일링 포함 (45분)' : 'e.g. Includes shampoo & styling (45m)'}
-                  rows={3}
+                  placeholder={lang === 'ko' ? '예: 두피 스케일링 & 단백질 케어 포함' : 'e.g. Includes scalp scaling'}
+                  rows={2}
                   className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-300 rounded-xl text-xs sm:text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-gold-500"
                 />
               </div>
