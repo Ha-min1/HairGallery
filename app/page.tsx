@@ -915,9 +915,9 @@ export default function Home() {
                 {/* Stepper Tabs */}
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
                   {[
-                    { title: lang === 'ko' ? '1. 연락처 & 동의' : '1. Contact & Consent', icon: User },
+                    { title: lang === 'ko' ? '1. 시술 서비스 선택' : '1. Service Selection', icon: Scissors },
                     { title: lang === 'ko' ? '2. 날짜 & 시간 선택' : '2. Date & Time', icon: CalendarIcon },
-                    { title: lang === 'ko' ? '3. 시술 서비스 선택' : '3. Service Selection', icon: Scissors },
+                    { title: lang === 'ko' ? '3. 연락처 & 동의' : '3. Contact & Consent', icon: User },
                     { title: lang === 'ko' ? '4. 예약 신청 완료' : '4. Complete Booking', icon: CheckCircle },
                   ].map((step, idx) => {
                     const StepIcon = step.icon;
@@ -950,22 +950,17 @@ export default function Home() {
                     <div className="space-y-2 text-left">
                       <h4 className="font-bold text-stone-900 text-sm flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-gold-600"></span>
-                        {lang === 'ko' ? '회원 로그인 또는 연락처 직접 기입 및 개인정보 활용 동의' : 'Sign In or Direct Contact Info & Privacy Consent'}
+                        {lang === 'ko' ? '1. 시술 대분류 카테고리 선택' : '1. Hair Styling Category Selection'}
                       </h4>
                       <p className="text-stone-600 pl-3">
                         {lang === 'ko' 
-                          ? '• 상단 우측의 "로그인 / 회원가입"을 누르고 Google/Kakao 소셜 계정으로 로그인하시면, 예약 신청 시 성함과 연락처가 자동으로 연동되어 매번 기입할 필요가 없어 편리합니다.' 
-                          : '• Click "Login / Sign Up" in the top header and sign in with your Google/Kakao social account. Your details will automatically sync, saving you time.'}
+                          ? '• 예약 폼의 "1. 시술 선택" 상자에서 원하시는 시술 카테고리(커트, 염색, 펌, 클리닉, 스타일링, 샴푸, 업스타일)를 라디오 버튼으로 1개 선택해 주세요.' 
+                          : '• Select your desired procedure category (Cut, Color, Perm, Treatment, Styling, Shampoo, Upstyle) using radio buttons.'}
                       </p>
                       <p className="text-stone-600 pl-3">
                         {lang === 'ko' 
-                          ? '• 로그인 없이 예약하시려면(비회원 예약), 아래의 "예약자 연락처 정보" 입력란에 직접 성함과 연락처 휴대폰 번호를 기입해 주세요.' 
-                          : '• If you prefer booking as a guest, please manually fill in your "Full Name" and "Phone Number" in the contact details form below.'}
-                      </p>
-                      <p className="text-amber-800 font-semibold pl-3">
-                        {lang === 'ko' 
-                          ? '※ 필수의무 사항인 "개인정보 수집 및 이용에 동의합니다" 체크박스를 반드시 선택해 주셔야 예약 신청 버튼이 활성화됩니다.' 
-                          : '※ Checking the mandatory "I agree to the collection and use of personal info" box is required to proceed.'}
+                          ? '• 세부 시술별 디테일한 세부 가변 가격표는 우측 상단의 "🏷️ 시술별 상세 가격표 보기" 버튼 또는 메뉴의 [가격안내] 페이지에서 한눈에 확인하실 수 있습니다.' 
+                          : '• Detailed procedure price guide is available via the "View Price Guide" button or the Price Guide menu.'}
                       </p>
                     </div>
                   )}
@@ -974,16 +969,16 @@ export default function Home() {
                     <div className="space-y-2 text-left">
                       <h4 className="font-bold text-stone-900 text-sm flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-gold-600"></span>
-                        {lang === 'ko' ? '예약 날짜 및 시간 선택' : 'Appointment Date & Time Slot Selection'}
+                        {lang === 'ko' ? '2. 예약 날짜 및 시간 선택' : '2. Appointment Date & Time Slot Selection'}
                       </h4>
                       <p className="text-stone-600 pl-3">
                         {lang === 'ko' 
-                          ? '• 화면 우측(모바일에서는 아래)의 "예약 날짜 선택" 달력에서 방문을 원하시는 날짜를 클릭하여 선택하세요. (지나간 날짜는 선택할 수 없습니다.)' 
-                          : '• On the right side (or bottom on mobile), select your desired visit date from the calendar. Past dates cannot be booked.'}
+                          ? '• "2. 예약 날짜 및 시간 선택" 달력에서 방문을 원하시는 날짜를 클릭하여 선택하세요. (지나간 날짜는 선택할 수 없습니다.)' 
+                          : '• On the calendar, select your desired visit date. Past dates cannot be booked.'}
                       </p>
                       <p className="text-stone-600 pl-3">
                         {lang === 'ko' 
-                          ? '• 날짜를 고르고 나면 그 아래에 "선택 가능한 시간대" 목록이 활성화됩니다. 예약 가능한 시간 단추를 눌러 시간대를 선택하세요. (선이 그어진 시간은 예약 마감 혹은 마감된 시간대입니다.)' 
+                          ? '• 날짜를 고르고 나면 그 아래에 "선택 가능한 시간대" 목록이 활성화됩니다. 원하시는 시간 단추를 선택하세요. (선이 그어진 시간은 이미 예약 마감된 시간대입니다.)' 
                           : '• Once a date is selected, the "Available Time Slots" list will appear underneath. Select a time slot. (Strikethrough slots are already blocked or reserved.)'}
                       </p>
                     </div>
@@ -993,17 +988,22 @@ export default function Home() {
                     <div className="space-y-2 text-left">
                       <h4 className="font-bold text-stone-900 text-sm flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-gold-600"></span>
-                        {lang === 'ko' ? '시술 대분류 카테고리 선택' : 'Hair Styling Category Selection'}
+                        {lang === 'ko' ? '3. 예약자 연락처 정보 및 동의' : '3. Booker Contact Info & Privacy Consent'}
                       </h4>
                       <p className="text-stone-600 pl-3">
                         {lang === 'ko' 
-                          ? '• 아래 예약 폼의 "시술 대분류 선택" 상자에서 원하시는 시술 카테고리(커트, 염색, 펌, 클리닉, 스타일링, 샴푸, 업스타일)를 라디오 버튼으로 선택해 주세요.' 
-                          : '• Select your desired procedure category (Cut, Color, Perm, Treatment, Styling, Shampoo, Upstyle) using radio buttons in the form below.'}
+                          ? '• 소셜 계정(Google/Kakao)으로 로그인하신 상태라면 성함과 연락처가 자동으로 연동되어 편리합니다.' 
+                          : '• Signing in with Google/Kakao automatically populates your contact details for convenience.'}
                       </p>
                       <p className="text-stone-600 pl-3">
                         {lang === 'ko' 
-                          ? '• 세부 시술별 가변 가격표는 상단 [가격안내] 전용 페이지나 섹션에서 한눈에 확인하실 수 있습니다.' 
-                          : '• Detailed procedure price guide is available in the Price Guide section or page.'}
+                          ? '• 로그인 없이 예약(비회원 예약)하시는 경우, 성함, 연락처 휴대폰 번호, 비회원 예약 조회용 비밀번호(4자 이상)를 직접 입력해 주세요.' 
+                          : '• If booking without signing in (guest booking), enter your Name, Phone Number, and a Query Password (4+ characters).'}
+                      </p>
+                      <p className="text-amber-800 font-semibold pl-3">
+                        {lang === 'ko' 
+                          ? '※ 필수의무 사항인 "개인정보 수집 및 이용에 동의합니다" 체크박스를 반드시 선택해 주셔야 예약 신청 버튼이 활성화됩니다.' 
+                          : '※ Checking the mandatory "I agree to the collection and use of personal info" box is required to proceed.'}
                       </p>
                     </div>
                   )}
@@ -1012,17 +1012,17 @@ export default function Home() {
                     <div className="space-y-2 text-left">
                       <h4 className="font-bold text-stone-900 text-sm flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-gold-600"></span>
-                        {lang === 'ko' ? '예약 신청 및 완료 상태 확인' : 'Submitting Booking Request & Confirmation'}
+                        {lang === 'ko' ? '4. 예약 신청 및 완료 상태 확인' : '4. Submitting Booking Request & Confirmation'}
                       </h4>
                       <p className="text-stone-600 pl-3">
                         {lang === 'ko' 
-                          ? '• 1) 연락처/로그인, 2) 날짜/시간, 3) 시술 메뉴를 모두 채우고 개인정보 동의까지 체크하셨다면 하단의 "예약 신청하기" 단추가 활성화(노란색)됩니다.' 
-                          : '• Once you complete: 1) Contact Info/Login, 2) Date/Time, 3) Styling Service, and check the privacy agreement, the "Request Reservation" button turns gold.'}
+                          ? '• 1) 시술 메뉴, 2) 날짜/시간, 3) 연락처 및 개인정보 동의를 모두 완료하면 하단의 "예약 신청하기" 단추가 활성화(노란색)됩니다.' 
+                          : '• Once you complete: 1) Styling Service, 2) Date/Time, 3) Contact Info & Consent, the "Request Reservation" button turns gold.'}
                       </p>
                       <p className="text-stone-600 pl-3">
                         {lang === 'ko' 
-                          ? '• 버튼을 클릭하면 예약 신청이 접수되며, 매장에서 확인 후 승인하면 이메일로 "예약 확정" 상태가 전송됩니다. 마이페이지에서도 실시간 예약 현황을 조회하실 수 있습니다!' 
-                          : '• Click the button to request your booking. Once confirmed, you will receive a notification email. You can also view your live reservation status under My Account.'}
+                          ? '• 버튼을 클릭하면 접수 대기 상태로 예약이 신청되며, 원장님 확인 후 승인되면 이메일/알림톡으로 예약 확정 결과가 전송됩니다. 마이페이지에서도 실시간 예약 현황을 확인하실 수 있습니다!' 
+                          : '• Click the button to submit your request. Once confirmed, you will receive a notification email. You can also view live status under My Account.'}
                       </p>
                       <div className="flex gap-2 pt-2">
                         <button
