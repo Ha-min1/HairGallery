@@ -1007,17 +1007,17 @@ export default function Home() {
                     <div className="space-y-2 text-left">
                       <h4 className="font-bold text-stone-900 text-sm flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-gold-600"></span>
-                        {lang === 'ko' ? '헤어 시술 서비스 선택' : 'Hair Styling Service Selection'}
+                        {lang === 'ko' ? '시술 대분류 카테고리 선택' : 'Hair Styling Category Selection'}
                       </h4>
                       <p className="text-stone-600 pl-3">
                         {lang === 'ko' 
-                          ? '• 화면 좌측 상단의 "원하는 헤어 시술을 선택해 주세요" 상자에서 원하시는 시술(예: 시그니처 컷, 발레아쥬 입체 컬러 등)을 선택해 주세요.' 
-                          : '• Select your desired hair service option (e.g. Signature Cut & Blowout, Balayage Color) from the list in the top-left card.'}
+                          ? '• 아래 예약 폼의 "시술 대분류 선택" 상자에서 원하시는 시술 카테고리(커트, 염색, 펌, 클리닉, 스타일링, 샴푸, 업스타일)를 라디오 버튼으로 선택해 주세요.' 
+                          : '• Select your desired procedure category (Cut, Color, Perm, Treatment, Styling, Shampoo, Upstyle) using radio buttons in the form below.'}
                       </p>
                       <p className="text-stone-600 pl-3">
                         {lang === 'ko' 
-                          ? '• 각 시술별 대략적인 소요 시간과 스타일 상세 설명이 나와 있으니 참고하여 하나만 체크해 주시면 됩니다.' 
-                          : '• Expected duration and a detailed description are provided under each service option to help you make your choice.'}
+                          ? '• 세부 시술별 가변 가격표는 상단 [가격안내] 전용 페이지나 섹션에서 한눈에 확인하실 수 있습니다.' 
+                          : '• Detailed procedure price guide is available in the Price Guide section or page.'}
                       </p>
                     </div>
                   )}

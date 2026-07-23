@@ -226,37 +226,63 @@ export default function PriceList({ lang = 'ko', currentUser = null, isEmbedded 
 
   return (
     <div className={`w-full max-w-7xl mx-auto ${isEmbedded ? '' : 'px-4 sm:px-6 py-8 sm:py-12'}`}>
-      {/* Header Banner */}
-      <div className="bg-gradient-to-r from-stone-900 via-stone-850 to-stone-900 border border-stone-800 rounded-3xl p-6 sm:p-10 shadow-xl mb-8 relative overflow-hidden text-stone-100">
-        <div className="absolute -right-12 -top-12 w-64 h-64 bg-gold-500/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-gold-500/10 border border-gold-500/30 rounded-full text-gold-400 text-xs font-mono font-bold tracking-wider uppercase">
-              <Tag className="w-3.5 h-3.5" />
-              <span>THE HAIR GALLERY PRICE GUIDE</span>
+      {/* Header Banner (Different layout for standalone page vs embedded) */}
+      {!isEmbedded ? (
+        <div className="bg-gradient-to-r from-stone-900 via-stone-850 to-stone-900 border border-stone-800 rounded-3xl p-6 sm:p-10 shadow-xl mb-8 relative overflow-hidden text-stone-100">
+          <div className="absolute -right-12 -top-12 w-64 h-64 bg-gold-500/10 rounded-full blur-3xl pointer-events-none"></div>
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-gold-500/10 border border-gold-500/30 rounded-full text-gold-400 text-xs font-mono font-bold tracking-wider uppercase">
+                <Tag className="w-3.5 h-3.5" />
+                <span>THE HAIR GALLERY PRICE GUIDE</span>
+              </div>
+              <h1 className="text-2xl sm:text-4xl font-serif font-bold text-white tracking-tight">
+                {lang === 'ko' ? '헤어갤러리 시술 가격 안내' : 'Hair Styling Price Guide'}
+              </h1>
+              <p className="text-stone-400 text-xs sm:text-sm max-w-2xl leading-relaxed">
+                {lang === 'ko' 
+                  ? '더 헤어 갤러리의 정직하고 합리적인 시술별 가변 가격표입니다. 모발 상태, 길이, 디자인 특성에 따라 맞춤 시술이 적용됩니다.'
+                  : 'Transparent and variable pricing for all hair styling procedures. Final prices may adjust based on hair length and condition.'}
+              </p>
             </div>
-            <h1 className="text-2xl sm:text-4xl font-serif font-bold text-white tracking-tight">
-              {lang === 'ko' ? '헤어갤러리 시술 가격 안내' : 'Hair Styling Price Guide'}
-            </h1>
-            <p className="text-stone-400 text-xs sm:text-sm max-w-2xl leading-relaxed">
-              {lang === 'ko' 
-                ? '더 헤어 갤러리의 정직하고 합리적인 시술별 가변 가격표입니다. 모발 상태, 길이, 디자인 특성에 따라 맞춤 시술이 적용됩니다.'
-                : 'Transparent and variable pricing for all hair styling procedures. Final prices may adjust based on hair length and condition.'}
-            </p>
+
+            {/* Admin [+ 새 가격 항목 추가] Button */}
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={handleOpenAddModal}
+                className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-amber-500 to-gold-500 hover:from-amber-400 hover:to-gold-400 text-stone-950 font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-gold-500/20 hover:scale-105 transition-all cursor-pointer shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+                <span>{lang === 'ko' ? '+ 새 가격 항목 추가' : '+ Add New Price Item'}</span>
+              </button>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-stone-200">
+          <div>
+            <div className="inline-flex items-center gap-1.5 text-gold-700 font-mono text-[11px] font-bold tracking-wider uppercase mb-1">
+              <Tag className="w-3.5 h-3.5 text-gold-600" />
+              <span>PRICE GUIDE</span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-serif font-bold text-stone-900">
+              {lang === 'ko' ? '시술별 상세 가변 가격표' : 'Detailed Procedure Price List'}
+            </h2>
           </div>
 
-          {/* Admin [+ 새 가격 항목 추가] Button */}
           {isAdmin && (
             <button
+              type="button"
               onClick={handleOpenAddModal}
-              className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-amber-500 to-gold-500 hover:from-amber-400 hover:to-gold-400 text-stone-950 font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-gold-500/20 hover:scale-105 transition-all cursor-pointer shrink-0"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-stone-950 text-white hover:bg-stone-850 font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer shrink-0"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-4 h-4 text-gold-400" />
               <span>{lang === 'ko' ? '+ 새 가격 항목 추가' : '+ Add New Price Item'}</span>
             </button>
           )}
         </div>
-      </div>
+      )}
 
       {/* Success Notification Alert */}
       {successMsg && (
