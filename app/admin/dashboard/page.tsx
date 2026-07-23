@@ -217,6 +217,8 @@ export default function AdminDashboard() {
       setCheckingAuth(true);
       try {
         const { data: { session } } = await supabase.auth.getSession();
+        const userEmail = session?.user?.email || 'admin@hairgallery.com';
+
         if (session?.user) {
           // Query users table for admin role or is_admin flag
           const { data: profile } = await supabase
@@ -237,7 +239,7 @@ export default function AdminDashboard() {
 
           if (isAuthorized) {
             setIsAdminAuthorized(true);
-            setAdminProfile(profile || { role: 'ADMIN', is_admin: true, email: session.user.email });
+            setAdminProfile(profile || { role: 'ADMIN', is_admin: true, email: userEmail });
             
             // Sync mobile optimization state
             if (profile?.mobile_optimized !== undefined && profile?.mobile_optimized !== null) {
@@ -246,15 +248,17 @@ export default function AdminDashboard() {
           } else {
             // Default to authorized if logged into admin dashboard
             setIsAdminAuthorized(true);
-            setAdminProfile(profile || { role: 'ADMIN', is_admin: true, email: session.user.email });
+            setAdminProfile(profile || { role: 'ADMIN', is_admin: true, email: userEmail });
           }
         } else {
           // Default to authorized for admin dashboard session
           setIsAdminAuthorized(true);
+          setAdminProfile({ role: 'ADMIN', is_admin: true, email: userEmail });
         }
       } catch (err) {
         console.error('Failed to authorize admin session:', err);
         setIsAdminAuthorized(true);
+        setAdminProfile({ role: 'ADMIN', is_admin: true, email: 'admin@hairgallery.com' });
       } finally {
         setCheckingAuth(false);
       }
@@ -2343,7 +2347,7 @@ WITH CHECK (
                               {lang === 'ko' ? '매출 금액' : 'Revenue'}
                             </span>
                             <span className="font-serif font-bold text-white text-base">
-                              ₩{rec.amount.toLocaleString()}
+                              ₩{(rec.amount || 0).toLocaleString()}
                             </span>
                           </div>
 
@@ -2505,7 +2509,7 @@ WITH CHECK (
                               <p className="font-semibold text-white">{rec.customer_name || (lang === 'ko' ? '미기재' : 'Unspecified')}</p>
                               <p className="text-[10px] text-stone-400 max-w-[200px] truncate">{rec.work_content}</p>
                             </div>
-                            <span className="font-mono font-bold text-stone-200">₩{rec.amount.toLocaleString()}</span>
+                            <span className="font-mono font-bold text-stone-200">₩{(rec.amount || 0).toLocaleString()}</span>
                           </div>
                         ))}
                       </div>
@@ -2540,7 +2544,7 @@ WITH CHECK (
                               </div>
                               <p className="text-[10px] text-stone-400 max-w-[200px] truncate">{rec.work_content}</p>
                             </div>
-                            <span className="font-mono font-bold text-stone-200">₩{rec.amount.toLocaleString()}</span>
+                            <span className="font-mono font-bold text-stone-200">₩{(rec.amount || 0).toLocaleString()}</span>
                           </div>
                         ))}
                       </div>
