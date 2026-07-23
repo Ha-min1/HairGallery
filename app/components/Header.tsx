@@ -245,6 +245,15 @@ export default function Header({
       {/* ================= BOTTOM ROW (NAVBAR / CHIP BAR) ================= */}
       <div className="bg-stone-950/80 border-t border-stone-800/80 px-4 sm:px-6 py-2 overflow-x-auto scrollbar-none">
         <div className="max-w-7xl mx-auto flex items-center justify-start sm:justify-center gap-2 min-w-max">
+          {/* Install App Guide Modal Trigger Chip */}
+          <button
+            onClick={onOpenInstallModal}
+            className="px-3.5 py-1.5 rounded-full bg-emerald-950/50 hover:bg-emerald-900/60 border border-emerald-700/60 text-emerald-300 text-xs font-mono font-bold flex items-center gap-1.5 transition-all shrink-0 cursor-pointer shadow-xs animate-pulse"
+          >
+            <Download className="h-3.5 w-3.5 text-emerald-400" />
+            <span>{lang === 'ko' ? '📲 앱 추가 가이드' : '📲 Install App'}</span>
+          </button>
+
           {/* Admin Quick Access Chip (1-Touch) */}
           {isAdmin && (
             <Link
@@ -320,15 +329,6 @@ export default function Header({
           >
             <MessageSquarePlus className="h-3.5 w-3.5 text-blue-400" />
             <span>{lang === 'ko' ? '일반 문의 및 컴포넌트 지정 문의' : 'General & Component Inquiry'}</span>
-          </button>
-
-          {/* Install App Guide Modal Trigger Chip */}
-          <button
-            onClick={onOpenInstallModal}
-            className="px-3.5 py-1.5 rounded-full bg-emerald-950/50 hover:bg-emerald-900/60 border border-emerald-700/60 text-emerald-300 text-xs font-mono font-bold flex items-center gap-1.5 transition-all shrink-0 cursor-pointer shadow-xs animate-pulse"
-          >
-            <Download className="h-3.5 w-3.5 text-emerald-400" />
-            <span>{lang === 'ko' ? '📲 앱 추가 가이드' : '📲 Install App'}</span>
           </button>
         </div>
       </div>
