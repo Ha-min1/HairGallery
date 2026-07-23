@@ -46,7 +46,14 @@ export default function Header({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const notiRef = useRef<HTMLDivElement | null>(null);
 
-  const isAdmin = currentUser?.role === 'ADMIN' || currentUser?.is_admin === true;
+  const isAdmin = Boolean(
+    currentUser && (
+      currentUser.role === 'ADMIN' || 
+      currentUser.is_admin === true || 
+      currentUser.is_admin === 'true' || 
+      currentUser.is_admin === 1
+    )
+  );
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -79,14 +86,28 @@ export default function Header({
 
         {/* Right: Quick Action Controls */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Admin Link (If Admin) */}
+          {/* Admin Link (Desktop/Tablet) */}
           {isAdmin && (
             <Link 
               href="/admin/dashboard" 
-              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-gold-600/20 hover:bg-gold-600/30 text-gold-400 border border-gold-500/40 rounded-lg text-xs font-mono font-bold transition-all shadow-sm"
+              className="hidden md:flex items-center gap-2 px-3.5 py-1.5 bg-gradient-to-r from-amber-950/90 via-gold-950/95 to-amber-950/90 hover:from-amber-900/90 hover:to-gold-900/90 text-gold-300 border border-gold-500/70 rounded-xl text-xs font-mono font-bold transition-all shadow-md hover:shadow-gold-500/20 group cursor-pointer"
             >
-              <LayoutDashboard className="h-3.5 w-3.5" />
-              <span>{lang === 'ko' ? '관리자' : 'Admin'}</span>
+              <LayoutDashboard className="h-4 w-4 text-gold-400 group-hover:rotate-12 transition-transform shrink-0" />
+              <span>{lang === 'ko' ? '⚙️ 관리자 대시보드' : '⚙️ Admin Dashboard'}</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+            </Link>
+          )}
+
+          {/* Mobile Admin 1-Touch Direct Button (Mobile Header Top Right - Outside Hamburger) */}
+          {isAdmin && (
+            <Link 
+              href="/admin/dashboard" 
+              className="flex md:hidden items-center gap-1.5 px-2.5 py-1.5 bg-gradient-to-r from-amber-600/40 via-gold-600/40 to-amber-600/40 text-gold-300 border border-gold-400/80 rounded-xl text-[11px] font-mono font-bold hover:bg-gold-500/50 transition-all shadow-sm active:scale-95 shrink-0"
+              title="관리자 대시보드 1-터치 직행"
+            >
+              <LayoutDashboard className="h-3.5 w-3.5 text-gold-400 animate-pulse shrink-0" />
+              <span>{lang === 'ko' ? '⚙️ 대시보드' : '⚙️ Admin'}</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping shrink-0"></span>
             </Link>
           )}
 
@@ -232,6 +253,18 @@ export default function Header({
       {/* ================= BOTTOM ROW (NAVBAR / CHIP BAR) ================= */}
       <div className="bg-stone-950/80 border-t border-stone-800/80 px-4 sm:px-6 py-2 overflow-x-auto scrollbar-none">
         <div className="max-w-7xl mx-auto flex items-center justify-start sm:justify-center gap-2 min-w-max">
+          {/* Admin Quick Access Chip (1-Touch) */}
+          {isAdmin && (
+            <Link
+              href="/admin/dashboard"
+              className="px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-950 via-gold-950/90 to-amber-950 border border-gold-500/70 text-gold-300 hover:text-white text-xs font-mono font-bold flex items-center gap-1.5 transition-all shrink-0 cursor-pointer shadow-md ring-1 ring-gold-500/40 hover:scale-105"
+            >
+              <LayoutDashboard className="h-3.5 w-3.5 text-gold-400" />
+              <span>{lang === 'ko' ? '⚙️ 관리자 대시보드' : '⚙️ Admin Dashboard'}</span>
+              <span className="px-1.5 py-0.2 bg-gold-500/20 text-gold-300 text-[9px] rounded font-mono border border-gold-500/40 uppercase font-bold">Quick</span>
+            </Link>
+          )}
+
           {/* Board Chip */}
           <a
             href="#board"
