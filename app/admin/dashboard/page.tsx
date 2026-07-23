@@ -83,6 +83,7 @@ export default function AdminDashboard() {
 
   // Manual Reservation Modal states
   const [showResModal, setShowResModal] = useState<boolean>(false);
+  const [editingResId, setEditingResId] = useState<string | null>(null);
   const [registeredUsers, setRegisteredUsers] = useState<any[]>([]);
   const [servicesList, setServicesList] = useState<any[]>([]);
   const [resSelectedUserId, setResSelectedUserId] = useState<string>('');
@@ -951,62 +952,81 @@ export default function AdminDashboard() {
 
   const handleSaveReservation = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!resCustomerName || !resServiceId || !resDate || !resTime) return;
+    if (!resCustomerName || !resDate || !resTime) return;
 
     try {
-      // 1. Check double booking
-      const { data: duplicateCheck, error: checkError } = await supabase
-        .from('reservations')
-        .select('id')
-        .eq('date', resDate)
-        .eq('time', resTime)
-        .neq('status', 'Cancelled')
-        .maybeSingle();
-
-      if (checkError) throw checkError;
-      if (duplicateCheck) {
-        alert(lang === 'ko' ? '이미 해당 시간대에 다른 예약이 존재합니다.' : 'This time slot is already booked.');
-        return;
-      }
-
-      // 2. Insert new reservation
-      const { error } = await supabase
-        .from('reservations')
-        .insert([
-          {
+      if (editingResId) {
+        // Update existing reservation
+        const { error } = await supabase
+          .from('reservations')
+          .update({
             user_id: resSelectedUserId || null,
             customer_name: resCustomerName,
             customer_phone: resCustomerPhone || null,
-            service_id: resServiceId,
+            service_id: resServiceId || null,
             date: resDate,
             time: resTime,
             status: resStatus,
             price: resPrice ? Number(resPrice) : null
-          }
-        ]);
+          })
+          .eq('id', editingResId);
 
-      if (error) {
-        if (error.code === '23505') {
-          alert(lang === 'ko' ? '이미 해당 시간대에 다른 예약이 존재합니다.' : 'This time slot is already booked.');
-        } else {
-          throw error;
-        }
+        if (error) throw error;
       } else {
-        setShowResModal(false);
-        // Reset states
-        setResSelectedUserId('');
-        setResCustomerName('');
-        setResCustomerPhone('');
-        setResDate(new Date().toISOString().split('T')[0]);
-        setResTime('10:00');
-        setResStatus('Confirmed');
-        setResPrice('');
-        // Reload
-        await loadReservations();
+        // Create new reservation
+        const { data: duplicateCheck, error: checkError } = await supabase
+          .from('reservations')
+          .select('id')
+          .eq('date', resDate)
+          .eq('time', resTime)
+          .neq('status', 'Cancelled')
+          .maybeSingle();
+
+        if (checkError) throw checkError;
+        if (duplicateCheck) {
+          alert(lang === 'ko' ? '이미 해당 시간대에 다른 예약이 존재합니다.' : 'This time slot is already booked.');
+          return;
+        }
+
+        const { error } = await supabase
+          .from('reservations')
+          .insert([
+            {
+              user_id: resSelectedUserId || null,
+              customer_name: resCustomerName,
+              customer_phone: resCustomerPhone || null,
+              service_id: resServiceId || null,
+              date: resDate,
+              time: resTime,
+              status: resStatus,
+              price: resPrice ? Number(resPrice) : null
+            }
+          ]);
+
+        if (error) {
+          if (error.code === '23505') {
+            alert(lang === 'ko' ? '이미 해당 시간대에 다른 예약이 존재합니다.' : 'This time slot is already booked.');
+            return;
+          } else {
+            throw error;
+          }
+        }
       }
-    } catch (err) {
-      console.error('Failed to create reservation:', err);
-      alert('예약 등록 실패: ' + (err as any).message);
+
+      setShowResModal(false);
+      setEditingResId(null);
+      setResSelectedUserId('');
+      setResCustomerName('');
+      setResCustomerPhone('');
+      setResServiceId('');
+      setResDate(new Date().toISOString().split('T')[0]);
+      setResTime('10:00');
+      setResStatus('Confirmed');
+      setResPrice('');
+      await loadReservations();
+    } catch (err: any) {
+      console.error('Failed to save reservation:', err);
+      alert('예약 저장 실패: ' + (err as any).message);
     }
   };
 
@@ -1851,6 +1871,7 @@ WITH CHECK (
                                     <div key={res.id} className="flex items-center justify-between gap-3 p-3 rounded-lg bg-stone-900 border border-white/5 hover:border-white/10 transition-colors">
                                       <div 
                                         onClick={() => {
+                                          setEditingResId(res.id);
                                           setResSelectedUserId(res.userId || '');
                                           setResCustomerName(res.customerName || '');
                                           setResCustomerPhone(res.customerPhone || '');
@@ -2067,12 +2088,15 @@ WITH CHECK (
                   </select>
                   <button
                     onClick={() => {
+                      setEditingResId(null);
                       setResSelectedUserId('');
                       setResCustomerName('');
                       setResCustomerPhone('');
+                      setResServiceId('');
                       setResDate(new Date().toISOString().split('T')[0]);
                       setResTime('10:00');
                       setResStatus('Confirmed');
+                      setResPrice('');
                       setShowResModal(true);
                     }}
                     className="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-mono font-bold py-2.5 px-4 rounded-lg flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(109,40,217,0.3)] active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap"
