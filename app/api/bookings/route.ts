@@ -99,14 +99,37 @@ export async function POST(req: NextRequest) {
     let servicePrice = 0;
     let serviceName = 'Custom Styling';
     if (serviceId) {
-      const { data: serviceData } = await adminClient
-        .from('services')
-        .select('name, price')
-        .eq('id', serviceId)
-        .maybeSingle();
-      if (serviceData) {
-        serviceName = serviceData.name;
-        servicePrice = serviceData.price || 0;
+      const CATEGORY_NAME_MAP: Record<string, string> = {
+        'cat-cut': '커트 (Cut)',
+        'cat-color': '염색 (Color)',
+        'cat-perm': '펌 (Perm)',
+        'cat-treatment': '클리닉 (Treatment)',
+        'cat-styling': '스타일링 (Styling)',
+        'cat-shampoo': '샴푸 (Shampoo)',
+        'cat-upstyle': '업스타일 (Upstyle)',
+        '커트': '커트 (Cut)',
+        '염색': '염색 (Color)',
+        '펌': '펌 (Perm)',
+        '클리닉': '클리닉 (Treatment)',
+        '스타일링': '스타일링 (Styling)',
+        '샴푸': '샴푸 (Shampoo)',
+        '업스타일': '업스타일 (Upstyle)',
+      };
+
+      if (CATEGORY_NAME_MAP[serviceId]) {
+        serviceName = CATEGORY_NAME_MAP[serviceId];
+      } else {
+        const { data: serviceData } = await adminClient
+          .from('services')
+          .select('name, price')
+          .eq('id', serviceId)
+          .maybeSingle();
+        if (serviceData) {
+          serviceName = serviceData.name;
+          servicePrice = serviceData.price || 0;
+        } else {
+          serviceName = serviceId;
+        }
       }
     }
 

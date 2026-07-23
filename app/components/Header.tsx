@@ -16,7 +16,8 @@ import {
   X,
   Sparkles,
   ChevronRight,
-  Globe
+  Globe,
+  Tag
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -264,6 +265,15 @@ export default function Header({
               <span className="px-1.5 py-0.2 bg-gold-500/20 text-gold-300 text-[9px] rounded font-mono border border-gold-500/40 uppercase font-bold">Quick</span>
             </Link>
           )}
+
+          {/* Price Guide Chip */}
+          <Link
+            href="/price"
+            className="px-3.5 py-1.5 rounded-full bg-amber-950/40 hover:bg-amber-900/60 border border-gold-500/60 text-gold-300 hover:text-white text-xs font-mono font-bold flex items-center gap-1.5 transition-all shrink-0 cursor-pointer shadow-xs"
+          >
+            <Tag className="h-3.5 w-3.5 text-gold-400" />
+            <span>{lang === 'ko' ? '🏷️ 시술 가격안내' : '🏷️ Price Guide'}</span>
+          </Link>
 
           {/* Board Chip */}
           <a

@@ -2,7 +2,18 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
-import { Calendar as CalendarIcon, Scissors, CheckCircle, Info, LayoutDashboard, ChevronLeft, ChevronRight, User, Key, ShieldCheck, History, Clock, Bell, MessageSquarePlus, MapPin } from 'lucide-react';
+import { Calendar as CalendarIcon, Scissors, CheckCircle, Info, LayoutDashboard, ChevronLeft, ChevronRight, User, Key, ShieldCheck, History, Clock, Bell, MessageSquarePlus, MapPin, Tag, Palette, Sparkles, Heart, Wind, Droplets, Crown } from 'lucide-react';
+import PriceList from '@/app/components/PriceList';
+
+const RESERVATION_CATEGORIES = [
+  { id: 'cat-cut', nameKo: '커트 (Cut)', nameEn: 'Cut', descKo: '디자인컷, 학생컷, 앞머리컷 등', descEn: 'Design Cut, Student Cut, Bang Trim', icon: Scissors },
+  { id: 'cat-color', nameKo: '염색 (Color)', nameEn: 'Color', descKo: '전체염색, 뿌리염색, 발레아쥬, 탈색 등', descEn: 'Full Color, Root Touch-up, Balayage, Bleach', icon: Palette },
+  { id: 'cat-perm', nameKo: '펌 (Perm)', nameEn: 'Perm', descKo: '디자인펌, 열펌, 볼륨매직, 다운펌 등', descEn: 'Design Perm, Heat Perm, Volume Magic, Down Perm', icon: Sparkles },
+  { id: 'cat-treatment', nameKo: '클리닉 (Treatment)', nameEn: 'Treatment', descKo: '모발 영양 클리닉, 두피 헤어 스파 등', descEn: 'Hair Nutrition Treatment, Scalp Spa', icon: Heart },
+  { id: 'cat-styling', nameKo: '스타일링 (Styling)', nameEn: 'Styling', descKo: '블로우 드라이, 아이론 세팅, 데일리 드라이 등', descEn: 'Blowout, Thermal Iron Setting, Daily Styling', icon: Wind },
+  { id: 'cat-shampoo', nameKo: '샴푸 (Shampoo)', nameEn: 'Shampoo', descKo: '스페셜 샴푸, 두피 마사지 & 케어 등', descEn: 'Special Shampoo, Scalp Massage & Care', icon: Droplets },
+  { id: 'cat-upstyle', nameKo: '업스타일 (Upstyle)', nameEn: 'Upstyle', descKo: '혼주/웨딩 업스타일, 파티/행사 머리 등', descEn: 'Wedding Updo, Party & Event Styling', icon: Crown },
+];
 import { TRANSLATIONS, getLocalizedServices } from '@/lib/i18n';
 import { getSupabaseClient } from '@/lib/supabase';
 import ComponentInquiryModal from '@/app/components/ComponentInquiryModal';
@@ -884,6 +895,11 @@ export default function Home() {
 
         {/* Dynamic Hair Portfolio Gallery Component */}
         <HairPortfolioGallery lang={lang} currentUser={currentUser} />
+
+        {/* Dynamic Hair Gallery Price Guide Section */}
+        <section id="price-section" className="bg-stone-100/60 border-y border-stone-200/80 py-12 px-4 sm:px-6">
+          <PriceList lang={lang} currentUser={currentUser} isEmbedded={true} />
+        </section>
 
         <div className="max-w-5xl mx-auto py-12 px-4">
           {/* 도움말 위젯 (Help & Booking Guide Widget) */}
