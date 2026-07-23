@@ -30,6 +30,7 @@ interface HeaderProps {
   onLogout: () => void;
   onOpenInquiryModal: () => void;
   onOpenInstallModal: () => void;
+  onOpenPriceModal?: () => void;
 }
 
 export default function Header({
@@ -41,7 +42,8 @@ export default function Header({
   onOpenAuthModal,
   onLogout,
   onOpenInquiryModal,
-  onOpenInstallModal
+  onOpenInstallModal,
+  onOpenPriceModal
 }: HeaderProps) {
   const [isNotiOpen, setIsNotiOpen] = useState<boolean>(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
@@ -267,13 +269,24 @@ export default function Header({
           )}
 
           {/* Price Guide Chip */}
-          <Link
-            href="/price"
-            className="px-3.5 py-1.5 rounded-full bg-amber-950/40 hover:bg-amber-900/60 border border-gold-500/60 text-gold-300 hover:text-white text-xs font-mono font-bold flex items-center gap-1.5 transition-all shrink-0 cursor-pointer shadow-xs"
-          >
-            <Tag className="h-3.5 w-3.5 text-gold-400" />
-            <span>{lang === 'ko' ? '🏷️ 시술 가격안내' : '🏷️ Price Guide'}</span>
-          </Link>
+          {onOpenPriceModal ? (
+            <button
+              type="button"
+              onClick={onOpenPriceModal}
+              className="px-3.5 py-1.5 rounded-full bg-amber-950/40 hover:bg-amber-900/60 border border-gold-500/60 text-gold-300 hover:text-white text-xs font-mono font-bold flex items-center gap-1.5 transition-all shrink-0 cursor-pointer shadow-xs"
+            >
+              <Tag className="h-3.5 w-3.5 text-gold-400" />
+              <span>{lang === 'ko' ? '🏷️ 시술 가격안내' : '🏷️ Price Guide'}</span>
+            </button>
+          ) : (
+            <Link
+              href="/price"
+              className="px-3.5 py-1.5 rounded-full bg-amber-950/40 hover:bg-amber-900/60 border border-gold-500/60 text-gold-300 hover:text-white text-xs font-mono font-bold flex items-center gap-1.5 transition-all shrink-0 cursor-pointer shadow-xs"
+            >
+              <Tag className="h-3.5 w-3.5 text-gold-400" />
+              <span>{lang === 'ko' ? '🏷️ 시술 가격안내' : '🏷️ Price Guide'}</span>
+            </Link>
+          )}
 
           {/* Board Chip */}
           <a

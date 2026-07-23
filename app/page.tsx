@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
-import { Calendar as CalendarIcon, Scissors, CheckCircle, Info, LayoutDashboard, ChevronLeft, ChevronRight, User, Key, ShieldCheck, History, Clock, Bell, MessageSquarePlus, MapPin, Tag, Palette, Sparkles, Heart, Wind, Droplets, Crown } from 'lucide-react';
+import { Calendar as CalendarIcon, Scissors, CheckCircle, Info, LayoutDashboard, ChevronLeft, ChevronRight, User, Key, ShieldCheck, History, Clock, Bell, MessageSquarePlus, MapPin, Tag, Palette, Sparkles, Heart, Wind, Droplets, Crown, X } from 'lucide-react';
 import PriceList from '@/app/components/PriceList';
 
 const RESERVATION_CATEGORIES = [
@@ -75,6 +75,7 @@ export default function Home() {
   // Component Inquiry & Install App Guide states
   const [showInquiryModal, setShowInquiryModal] = useState<boolean>(false);
   const [showInstallModal, setShowInstallModal] = useState<boolean>(false);
+  const [showPriceModal, setShowPriceModal] = useState<boolean>(false);
   const [inquiryDefaultComp, setInquiryDefaultComp] = useState<string>('헤더 (Header & Navigation)');
 
   // Toggle help widget and persist to localStorage
@@ -798,6 +799,7 @@ export default function Home() {
         onLogout={handleLogout}
         onOpenInquiryModal={() => setShowInquiryModal(true)}
         onOpenInstallModal={() => setShowInstallModal(true)}
+        onOpenPriceModal={() => setShowPriceModal(true)}
       />
 
       {/* Top Prominent App Installation Banner */}
@@ -1160,13 +1162,14 @@ export default function Home() {
                         </p>
                       </div>
 
-                      <Link
-                        href="/price"
+                      <button
+                        type="button"
+                        onClick={() => setShowPriceModal(true)}
                         className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-50 hover:bg-amber-100 text-gold-700 border border-gold-400/60 rounded-xl text-xs font-bold transition-all shadow-2xs shrink-0 self-start sm:self-auto cursor-pointer"
                       >
                         <Tag className="w-3.5 h-3.5" />
                         <span>{lang === 'ko' ? '🏷️ 시술별 상세 가격표 보기' : '🏷️ View Detailed Price Guide'}</span>
-                      </Link>
+                      </button>
                     </div>
 
                     {/* 7 Procedure Categories Radio Cards */}
@@ -1668,6 +1671,35 @@ export default function Home() {
           </section>
         </div>
       </main>
+
+      {/* Price Guide Popup Modal */}
+      {showPriceModal && (
+        <div className="fixed inset-0 z-50 bg-stone-950/80 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-fadeIn">
+          <div className="bg-white rounded-3xl border border-stone-200 w-full max-w-5xl max-h-[90vh] overflow-y-auto shadow-2xl relative text-stone-900">
+            {/* Modal Sticky Close Header */}
+            <div className="sticky top-0 z-50 bg-stone-900 text-white px-6 py-4 flex justify-between items-center border-b border-stone-800">
+              <div className="flex items-center gap-2">
+                <Tag className="w-5 h-5 text-gold-400" />
+                <span className="font-serif font-bold text-sm sm:text-base">
+                  {lang === 'ko' ? '헤어갤러리 시술별 가변 가격안내 (Price Guide)' : 'Hair Gallery Price Guide'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPriceModal(false)}
+                className="p-1.5 text-stone-400 hover:text-white transition-colors cursor-pointer rounded-lg hover:bg-stone-800"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 sm:p-8">
+              <PriceList lang={lang} currentUser={currentUser} isEmbedded={true} />
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {/* Footer */}
       <footer className="bg-stone-950 text-stone-300 py-12 border-t border-stone-800">
