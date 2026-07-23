@@ -7,7 +7,6 @@ import {
   CheckCircle, 
   Clock, 
   Search, 
-  Filter, 
   Trash2, 
   RefreshCw, 
   Monitor, 
@@ -17,8 +16,9 @@ import {
   ChevronDown,
   ChevronUp,
   Send,
-  AlertCircle,
-  ShieldAlert
+  ShieldAlert,
+  Store,
+  Cpu
 } from 'lucide-react';
 import { getSupabaseClient } from '@/lib/supabase';
 
@@ -68,7 +68,7 @@ export default function AdminInquiryViewer({ lang = 'ko', token }: AdminInquiryV
       const data = await res.json();
 
       if (!res.ok || data.error) {
-        throw new Error(data.error || '컴포넌트 문의 목록을 불러오지 못했습니다.');
+        throw new Error(data.error || '문의 목록을 불러오지 못했습니다.');
       }
 
       setInquiries(data.inquiries || []);
@@ -93,6 +93,7 @@ export default function AdminInquiryViewer({ lang = 'ko', token }: AdminInquiryV
 
       const body: any = { id, status: newStatus };
       if (replyText !== undefined) {
+        body.reply_content = replyText;
         body.admin_reply = replyText;
       }
 
@@ -108,7 +109,19 @@ export default function AdminInquiryViewer({ lang = 'ko', token }: AdminInquiryV
       }
 
       // Update local state
-      setInquiries(prev => prev.map(item => item.id === id ? { ...item, status: newStatus, admin_reply: replyText !== undefined ? replyText : item.admin_reply } : item));
+      setInquiries(prev => prev.map(item => {
+        if (item.id === id) {
+          const finalReply = replyText !== undefined ? replyText : (item.reply_content || item.admin_reply);
+          return {
+            ...item,
+            status: newStatus,
+            reply_content: finalReply,
+            admin_reply: finalReply,
+            replied_at: finalReply ? new Date().toISOString() : item.replied_at
+          };
+        }
+        return item;
+      }));
     } catch (err: any) {
       alert(err.message || '상태 업데이트 중 오류가 발생했습니다.');
     } finally {
@@ -144,7 +157,10 @@ export default function AdminInquiryViewer({ lang = 'ko', token }: AdminInquiryV
 
   const filteredInquiries = inquiries.filter(item => {
     // Status filter
-    if (filterStatus !== 'ALL' && item.status !== filterStatus) return false;
+    if (filterStatus !== 'ALL') {
+      if (filterStatus === 'pending' && item.status !== 'pending' && item.status !== 'OPEN') return false;
+      if (filterStatus === 'replied' && item.status !== 'replied' && item.status !== 'RESOLVED') return false;
+    }
     // Category filter
     if (filterCategory !== 'ALL' && item.category !== filterCategory) return false;
     // Search query
@@ -160,17 +176,16 @@ export default function AdminInquiryViewer({ lang = 'ko', token }: AdminInquiryV
   });
 
   const totalCount = inquiries.length;
-  const openCount = inquiries.filter(i => i.status === 'OPEN').length;
-  const inProgressCount = inquiries.filter(i => i.status === 'IN_PROGRESS').length;
-  const resolvedCount = inquiries.filter(i => i.status === 'RESOLVED').length;
+  const pendingCount = inquiries.filter(i => i.status === 'pending' || i.status === 'OPEN').length;
+  const repliedCount = inquiries.filter(i => i.status === 'replied' || i.status === 'RESOLVED').length;
 
   return (
     <div className="space-y-6">
       {/* Header Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-stone-900 border border-stone-800 p-4 rounded-2xl flex items-center justify-between">
           <div>
-            <p className="text-xs font-mono text-stone-400 font-medium">{lang === 'ko' ? '전체 접수 건수' : 'Total Inquiries'}</p>
+            <p className="text-xs font-mono text-stone-400 font-medium">{lang === 'ko' ? '전체 문의 건수' : 'Total Inquiries'}</p>
             <h3 className="text-2xl font-bold text-stone-100 mt-1">{totalCount}</h3>
           </div>
           <div className="p-3 bg-stone-800/60 text-stone-300 rounded-xl">
@@ -180,28 +195,18 @@ export default function AdminInquiryViewer({ lang = 'ko', token }: AdminInquiryV
 
         <div className="bg-stone-900 border border-amber-900/30 p-4 rounded-2xl flex items-center justify-between">
           <div>
-            <p className="text-xs font-mono text-amber-400/90 font-medium">{lang === 'ko' ? '미처리 (대기)' : 'Open'}</p>
-            <h3 className="text-2xl font-bold text-amber-400 mt-1">{openCount}</h3>
+            <p className="text-xs font-mono text-amber-400/90 font-medium">{lang === 'ko' ? '답변 대기 중' : 'Pending'}</p>
+            <h3 className="text-2xl font-bold text-amber-400 mt-1">{pendingCount}</h3>
           </div>
           <div className="p-3 bg-amber-500/10 text-amber-400 rounded-xl">
             <Clock className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="bg-stone-900 border border-blue-900/30 p-4 rounded-2xl flex items-center justify-between">
-          <div>
-            <p className="text-xs font-mono text-blue-400/90 font-medium">{lang === 'ko' ? '처리 진행 중' : 'In Progress'}</p>
-            <h3 className="text-2xl font-bold text-blue-400 mt-1">{inProgressCount}</h3>
-          </div>
-          <div className="p-3 bg-blue-500/10 text-blue-400 rounded-xl">
-            <RefreshCw className="w-5 h-5" />
-          </div>
-        </div>
-
         <div className="bg-stone-900 border border-emerald-900/30 p-4 rounded-2xl flex items-center justify-between">
           <div>
-            <p className="text-xs font-mono text-emerald-400/90 font-medium">{lang === 'ko' ? '해결 완료' : 'Resolved'}</p>
-            <h3 className="text-2xl font-bold text-emerald-400 mt-1">{resolvedCount}</h3>
+            <p className="text-xs font-mono text-emerald-400/90 font-medium">{lang === 'ko' ? '답변 완료' : 'Replied'}</p>
+            <h3 className="text-2xl font-bold text-emerald-400 mt-1">{repliedCount}</h3>
           </div>
           <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl">
             <CheckCircle className="w-5 h-5" />
@@ -217,7 +222,7 @@ export default function AdminInquiryViewer({ lang = 'ko', token }: AdminInquiryV
             <Search className="w-4 h-4 absolute left-3.5 top-3 text-stone-500" />
             <input
               type="text"
-              placeholder={lang === 'ko' ? '컴포넌트명, 제목, 작성자 검색...' : 'Search inquiries...'}
+              placeholder={lang === 'ko' ? '컴포넌트/영역, 제목, 작성자 검색...' : 'Search inquiries...'}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-stone-950 border border-stone-800 rounded-xl pl-9 pr-3.5 py-2 text-stone-200 text-xs focus:outline-none focus:border-amber-500"
@@ -231,10 +236,9 @@ export default function AdminInquiryViewer({ lang = 'ko', token }: AdminInquiryV
               onChange={(e) => setFilterStatus(e.target.value)}
               className="bg-stone-950 border border-stone-800 rounded-xl px-3 py-2 text-stone-300 text-xs focus:outline-none focus:border-amber-500"
             >
-              <option value="ALL">{lang === 'ko' ? '모든 상태 (All Status)' : 'All Status'}</option>
-              <option value="OPEN">{lang === 'ko' ? '대기 중 (OPEN)' : 'Open'}</option>
-              <option value="IN_PROGRESS">{lang === 'ko' ? '진행 중 (IN_PROGRESS)' : 'In Progress'}</option>
-              <option value="RESOLVED">{lang === 'ko' ? '해결됨 (RESOLVED)' : 'Resolved'}</option>
+              <option value="ALL">{lang === 'ko' ? '모든 답변 상태' : 'All Status'}</option>
+              <option value="pending">{lang === 'ko' ? '🟡 답변 대기 (pending)' : 'Pending'}</option>
+              <option value="replied">{lang === 'ko' ? '🟢 답변 완료 (replied)' : 'Replied'}</option>
             </select>
 
             <select
@@ -243,9 +247,9 @@ export default function AdminInquiryViewer({ lang = 'ko', token }: AdminInquiryV
               className="bg-stone-950 border border-stone-800 rounded-xl px-3 py-2 text-stone-300 text-xs focus:outline-none focus:border-amber-500"
             >
               <option value="ALL">{lang === 'ko' ? '모든 카테고리' : 'All Categories'}</option>
+              <option value="store">🏪 매장/시술 문의</option>
+              <option value="component">🧩 부품/기술 문의</option>
               <option value="bug">🐞 버그/오류</option>
-              <option value="inquiry">💬 기능 문의</option>
-              <option value="ui">🎨 디자인/UI</option>
               <option value="other">📌 기타</option>
             </select>
 
@@ -270,27 +274,27 @@ export default function AdminInquiryViewer({ lang = 'ko', token }: AdminInquiryV
       ) : isLoading ? (
         <div className="bg-stone-900 border border-stone-800 p-12 rounded-2xl text-center text-stone-400 font-mono text-xs">
           <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-amber-400" />
-          {lang === 'ko' ? '컴포넌트 문의 및 디버깅 로그를 불러오는 중...' : 'Loading inquiries & debug logs...'}
+          {lang === 'ko' ? '문의 목록을 불러오는 중...' : 'Loading inquiries...'}
         </div>
       ) : filteredInquiries.length === 0 ? (
         <div className="bg-stone-900 border border-stone-800 p-12 rounded-2xl text-center text-stone-400 font-mono text-xs">
           <CheckCircle className="w-8 h-8 mx-auto mb-2 text-stone-600" />
-          {lang === 'ko' ? '조회된 컴포넌트 문의 내역이 없습니다.' : 'No component inquiries found.'}
+          {lang === 'ko' ? '조회된 문의 내역이 없습니다.' : 'No inquiries found.'}
         </div>
       ) : (
         <div className="space-y-3">
           {filteredInquiries.map((item) => {
             const isExpanded = expandedId === item.id;
             const debugObj = item.debug_info || {};
+            const isReplied = item.status === 'replied' || item.status === 'RESOLVED';
+            const currentReply = item.reply_content || item.admin_reply || '';
 
             return (
               <div
                 key={item.id}
                 className={`bg-stone-900 border transition-all rounded-2xl overflow-hidden ${
-                  item.status === 'OPEN'
+                  !isReplied
                     ? 'border-amber-900/40 hover:border-amber-700/60'
-                    : item.status === 'IN_PROGRESS'
-                    ? 'border-blue-900/40 hover:border-blue-700/60'
                     : 'border-stone-800/80 hover:border-stone-700'
                 }`}
               >
@@ -298,31 +302,30 @@ export default function AdminInquiryViewer({ lang = 'ko', token }: AdminInquiryV
                 <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="space-y-1.5 flex-1">
                     <div className="flex items-center gap-2 flex-wrap text-xs">
-                      {/* Target Component Tag */}
-                      <span className="px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 font-mono font-bold flex items-center gap-1">
-                        <Layout className="w-3.5 h-3.5" />
-                        {item.target_component}
+                      {/* Category Badge */}
+                      <span className="px-2.5 py-1 rounded-lg bg-stone-800 border border-stone-700 text-amber-300 font-mono font-bold flex items-center gap-1">
+                        {item.category === 'store' ? <Store className="w-3.5 h-3.5" /> : <Cpu className="w-3.5 h-3.5" />}
+                        {item.category === 'store' ? '매장 문의' : item.category === 'component' ? '부품/기술' : item.category === 'bug' ? '버그/오류' : '기타'}
                       </span>
 
-                      {/* Category Badge */}
-                      <span className="px-2.5 py-1 rounded-lg bg-stone-800 border border-stone-700 text-stone-300 font-mono">
-                        {item.category === 'bug' ? '🐞 버그/오류' : item.category === 'inquiry' ? '💬 기능 문의' : item.category === 'ui' ? '🎨 UI' : '📌 기타'}
+                      {/* Target Component Tag */}
+                      <span className="px-2.5 py-1 rounded-lg bg-stone-800/60 border border-stone-700/60 text-stone-300 font-mono flex items-center gap-1">
+                        <Layout className="w-3.5 h-3.5 text-stone-400" />
+                        {item.target_component}
                       </span>
 
                       {/* Status Badge */}
                       <span className={`px-2.5 py-1 rounded-lg font-mono font-bold ${
-                        item.status === 'OPEN'
+                        !isReplied
                           ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                          : item.status === 'IN_PROGRESS'
-                          ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
                           : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
                       }`}>
-                        {item.status === 'OPEN' ? '대기 중 (OPEN)' : item.status === 'IN_PROGRESS' ? '처리 중' : '해결 완료'}
+                        {!isReplied ? '🟡 답변 대기중' : '🟢 답변 완료'}
                       </span>
 
-                      {/* Role Tag */}
+                      {/* User ID / Role Tag */}
                       <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-stone-800 text-stone-400">
-                        Role: {item.user_role || 'USER'}
+                        {item.user_id ? '로그인 회원' : '비회원 (Guest)'}
                       </span>
                     </div>
 
@@ -333,6 +336,14 @@ export default function AdminInquiryViewer({ lang = 'ko', token }: AdminInquiryV
                     <p className="text-stone-300 text-xs leading-relaxed whitespace-pre-wrap">
                       {item.content}
                     </p>
+
+                    {/* Admin Reply Snippet Preview */}
+                    {currentReply && (
+                      <div className="mt-2 p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-300 text-xs">
+                        <span className="font-bold text-emerald-400 font-mono block mb-0.5">💬 관리자 답변:</span>
+                        <p className="text-stone-200">{currentReply}</p>
+                      </div>
+                    )}
 
                     <div className="text-[11px] text-stone-400 font-mono pt-1 flex items-center gap-4 flex-wrap">
                       <span className="flex items-center gap-1">
@@ -350,7 +361,7 @@ export default function AdminInquiryViewer({ lang = 'ko', token }: AdminInquiryV
                       className="px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-mono font-medium flex items-center gap-1.5 transition-colors"
                     >
                       <Monitor className="w-3.5 h-3.5 text-amber-400" />
-                      <span>{lang === 'ko' ? '디버깅 정보' : 'Debug Logs'}</span>
+                      <span>{lang === 'ko' ? '답변 작성 & 디버깅' : 'Reply & Debug'}</span>
                       {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                     </button>
 
@@ -367,6 +378,64 @@ export default function AdminInquiryViewer({ lang = 'ko', token }: AdminInquiryV
                 {/* Expanded Debug Logs & Admin Reply Section */}
                 {isExpanded && (
                   <div className="bg-stone-950 border-t border-stone-800 p-5 space-y-4 text-xs font-mono">
+                    {/* Status Toggle & Admin Reply Form */}
+                    <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 space-y-3">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <span className="text-stone-200 font-bold text-xs font-serif">
+                          {lang === 'ko' ? '관리자 답변 작성 및 상태 설정' : 'Admin Reply & Status'}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            disabled={updatingId === item.id}
+                            onClick={() => handleUpdateStatus(item.id, 'pending')}
+                            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                              !isReplied ? 'bg-amber-500 text-stone-950' : 'bg-stone-800 text-stone-400 hover:text-stone-200'
+                            }`}
+                          >
+                            답변대기 (pending)
+                          </button>
+                          <button
+                            disabled={updatingId === item.id}
+                            onClick={() => {
+                              const reply = replyTextMap[item.id] !== undefined ? replyTextMap[item.id] : currentReply;
+                              handleUpdateStatus(item.id, 'replied', reply);
+                            }}
+                            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                              isReplied ? 'bg-emerald-500 text-stone-950' : 'bg-stone-800 text-stone-400 hover:text-stone-200'
+                            }`}
+                          >
+                            답변완료 (replied)
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 pt-1">
+                        <textarea
+                          rows={3}
+                          placeholder={lang === 'ko' ? '고객에게 전달할 답변 또는 조치 사항을 작성해주세요. (로그인 유저는 마이페이지에서 확인 가능)' : 'Enter reply content for user...'}
+                          defaultValue={currentReply}
+                          onChange={(e) => setReplyTextMap({ ...replyTextMap, [item.id]: e.target.value })}
+                          className="w-full bg-stone-950 border border-stone-800 rounded-xl p-3 text-stone-200 text-xs focus:outline-none focus:border-amber-500 resize-none font-sans"
+                        />
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-stone-500">
+                            {item.replied_at ? `마지막 답변 시각: ${new Date(item.replied_at).toLocaleString()}` : '아직 답변이 작성되지 않았습니다.'}
+                          </span>
+                          <button
+                            disabled={updatingId === item.id}
+                            onClick={() => {
+                              const reply = replyTextMap[item.id] !== undefined ? replyTextMap[item.id] : currentReply;
+                              handleUpdateStatus(item.id, 'replied', reply);
+                            }}
+                            className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-bold rounded-xl transition-colors flex items-center gap-1.5 shadow-sm"
+                          >
+                            <Send className="w-3.5 h-3.5" />
+                            <span>{lang === 'ko' ? '답변 작성 완료 & 저장' : 'Save Reply'}</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Debug metadata panel */}
                     <div className="bg-black/60 border border-stone-800/80 rounded-xl p-4 space-y-2 text-stone-300">
                       <div className="flex items-center justify-between pb-2 border-b border-stone-800 text-amber-400 font-bold">
@@ -394,67 +463,6 @@ export default function AdminInquiryViewer({ lang = 'ko', token }: AdminInquiryV
                         </div>
                         <div className="md:col-span-2">
                           <span className="text-stone-200 font-semibold">User Agent:</span> {debugObj.user_agent || 'N/A'}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Status Toggle & Admin Reply Form */}
-                    <div className="bg-stone-900 border border-stone-800 rounded-xl p-4 space-y-3">
-                      <div className="flex items-center justify-between flex-wrap gap-2">
-                        <span className="text-stone-200 font-bold text-xs font-serif">
-                          {lang === 'ko' ? '관리자 상태 변경 및 답변 작성' : 'Admin Status & Notes'}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <button
-                            disabled={updatingId === item.id}
-                            onClick={() => handleUpdateStatus(item.id, 'OPEN')}
-                            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                              item.status === 'OPEN' ? 'bg-amber-500 text-stone-950' : 'bg-stone-800 text-stone-400 hover:text-stone-200'
-                            }`}
-                          >
-                            대기중 (OPEN)
-                          </button>
-                          <button
-                            disabled={updatingId === item.id}
-                            onClick={() => handleUpdateStatus(item.id, 'IN_PROGRESS')}
-                            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                              item.status === 'IN_PROGRESS' ? 'bg-blue-500 text-white' : 'bg-stone-800 text-stone-400 hover:text-stone-200'
-                            }`}
-                          >
-                            처리중 (IN_PROGRESS)
-                          </button>
-                          <button
-                            disabled={updatingId === item.id}
-                            onClick={() => handleUpdateStatus(item.id, 'RESOLVED')}
-                            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                              item.status === 'RESOLVED' ? 'bg-emerald-500 text-stone-950' : 'bg-stone-800 text-stone-400 hover:text-stone-200'
-                            }`}
-                          >
-                            해결완료 (RESOLVED)
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2 pt-1">
-                        <textarea
-                          rows={2}
-                          placeholder={lang === 'ko' ? '조치 사항이나 개발 메모, 답변을 입력하세요...' : 'Enter resolution note or reply...'}
-                          defaultValue={item.admin_reply || ''}
-                          onChange={(e) => setReplyTextMap({ ...replyTextMap, [item.id]: e.target.value })}
-                          className="w-full bg-stone-950 border border-stone-800 rounded-xl p-3 text-stone-200 text-xs focus:outline-none focus:border-amber-500 resize-none font-sans"
-                        />
-                        <div className="flex justify-end">
-                          <button
-                            disabled={updatingId === item.id}
-                            onClick={() => {
-                              const reply = replyTextMap[item.id] !== undefined ? replyTextMap[item.id] : (item.admin_reply || '');
-                              handleUpdateStatus(item.id, item.status, reply);
-                            }}
-                            className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-bold rounded-xl transition-colors flex items-center gap-1.5 shadow-sm"
-                          >
-                            <Send className="w-3.5 h-3.5" />
-                            <span>{lang === 'ko' ? '답변/메모 저장' : 'Save Reply'}</span>
-                          </button>
                         </div>
                       </div>
                     </div>

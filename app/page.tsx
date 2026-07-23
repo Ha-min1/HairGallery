@@ -6,6 +6,7 @@ import { Calendar as CalendarIcon, Scissors, CheckCircle, Info, LayoutDashboard,
 import { TRANSLATIONS, getLocalizedServices } from '@/lib/i18n';
 import { getSupabaseClient } from '@/lib/supabase';
 import ComponentInquiryModal from '@/app/components/ComponentInquiryModal';
+import BoardSection from '@/app/components/BoardSection';
 
 const TIME_SLOTS_24H = [
   '10:30', '11:30', '12:30', '13:30', '14:30',
@@ -897,6 +898,15 @@ export default function Home() {
               </div>
             )}
 
+            {/* Board Quick Link */}
+            <a 
+              href="#board" 
+              className="text-[10px] sm:text-xs font-mono font-bold tracking-wider text-stone-700 hover:text-stone-900 bg-white hover:bg-stone-50 border border-stone-200 px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1 shrink-0"
+            >
+              <Scissors className="h-3.5 w-3.5 text-amber-600" />
+              <span>{lang === 'ko' ? '게시판' : 'Board'}</span>
+            </a>
+
             {/* Store Location Quick Link */}
             <a 
               href="#store-location" 
@@ -1671,8 +1681,15 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Dedicated Store Location & Directions Section (Full Width Desktop Card at Very Bottom) */}
-        <div className="max-w-5xl mx-auto px-4 my-12 w-full">
+        {/* Main Board Section & Dedicated Store Location Section */}
+        <div className="max-w-5xl mx-auto px-4 my-12 w-full space-y-12">
+          {/* Main Board Section */}
+          <BoardSection 
+            currentUser={currentUser} 
+            onOpenLoginModal={() => setShowAuthModal(true)} 
+            lang={lang} 
+          />
+
           <section id="store-location" className="bg-gradient-to-b from-stone-900 to-stone-950 border border-stone-800 rounded-3xl p-6 sm:p-8 md:p-10 shadow-2xl space-y-6 text-stone-100 animate-fadeIn scroll-mt-24 w-full">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-stone-800/80 pb-6 text-left">
               <div className="space-y-1">
