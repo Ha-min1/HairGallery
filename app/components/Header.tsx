@@ -101,18 +101,7 @@ export default function Header({
             </Link>
           )}
 
-          {/* Mobile Admin 1-Touch Direct Button (Mobile Header Top Right - Outside Hamburger) */}
-          {isAdmin && (
-            <Link 
-              href="/admin/dashboard" 
-              className="flex md:hidden items-center gap-1.5 px-2.5 py-1.5 bg-gradient-to-r from-amber-600/40 via-gold-600/40 to-amber-600/40 text-gold-300 border border-gold-400/80 rounded-xl text-[11px] font-mono font-bold hover:bg-gold-500/50 transition-all shadow-sm active:scale-95 shrink-0"
-              title="관리자 대시보드 1-터치 직행"
-            >
-              <LayoutDashboard className="h-3.5 w-3.5 text-gold-400 animate-pulse shrink-0" />
-              <span>{lang === 'ko' ? '⚙️ 대시보드' : '⚙️ Admin'}</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping shrink-0"></span>
-            </Link>
-          )}
+
 
           {/* Notification Bell (If Logged In) */}
           {currentUser && (
