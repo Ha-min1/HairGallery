@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+export const runtime = 'edge';
+
 async function checkAdmin(req: NextRequest) {
   const authHeader = req.headers.get('Authorization');
   if (!authHeader) {
