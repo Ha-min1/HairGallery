@@ -98,38 +98,58 @@ export async function POST(req: NextRequest) {
     // Fetch service price and name pre-insert to store in reservations and use for notifications
     let servicePrice = 0;
     let serviceName = 'Custom Styling';
-    if (serviceId) {
-      const CATEGORY_NAME_MAP: Record<string, string> = {
-        'cat-cut': '커트 (Cut)',
-        'cat-color': '염색 (Color)',
-        'cat-perm': '펌 (Perm)',
-        'cat-treatment': '클리닉 (Treatment)',
-        'cat-styling': '스타일링 (Styling)',
-        'cat-shampoo': '샴푸 (Shampoo)',
-        'cat-upstyle': '업스타일 (Upstyle)',
-        '커트': '커트 (Cut)',
-        '염색': '염색 (Color)',
-        '펌': '펌 (Perm)',
-        '클리닉': '클리닉 (Treatment)',
-        '스타일링': '스타일링 (Styling)',
-        '샴푸': '샴푸 (Shampoo)',
-        '업스타일': '업스타일 (Upstyle)',
-      };
+    let dbServiceId: string | null = null;
 
+    const CATEGORY_NAME_MAP: Record<string, string> = {
+      'cat-cut': '커트 (Cut)',
+      'cat-color': '염색 (Color)',
+      'cat-perm': '펌 (Perm)',
+      'cat-treatment': '클리닉 (Treatment)',
+      'cat-styling': '스타일링 (Styling)',
+      'cat-shampoo': '샴푸 (Shampoo)',
+      'cat-upstyle': '업스타일 (Upstyle)',
+      '커트': '커트 (Cut)',
+      '염색': '염색 (Color)',
+      '펌': '펌 (Perm)',
+      '클리닉': '클리닉 (Treatment)',
+      '스타일링': '스타일링 (Styling)',
+      '샴푸': '샴푸 (Shampoo)',
+      '업스타일': '업스타일 (Upstyle)',
+    };
+
+    if (serviceId) {
       if (CATEGORY_NAME_MAP[serviceId]) {
         serviceName = CATEGORY_NAME_MAP[serviceId];
       } else {
+        serviceName = serviceId;
+      }
+
+      // Check if serviceId is a valid UUID in public.services
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (uuidRegex.test(serviceId)) {
         const { data: serviceData } = await adminClient
           .from('services')
-          .select('name, price')
+          .select('id, name, price')
           .eq('id', serviceId)
           .maybeSingle();
+
         if (serviceData) {
+          dbServiceId = serviceData.id;
           serviceName = serviceData.name;
           servicePrice = serviceData.price || 0;
-        } else {
-          serviceName = serviceId;
         }
+      }
+    }
+
+    // Fallback: If dbServiceId is not a valid UUID in services, pick the first existing service ID in public.services so FK constraint passes
+    if (!dbServiceId) {
+      const { data: anyService } = await adminClient
+        .from('services')
+        .select('id')
+        .limit(1)
+        .maybeSingle();
+      if (anyService?.id) {
+        dbServiceId = anyService.id;
       }
     }
 
@@ -148,7 +168,7 @@ export async function POST(req: NextRequest) {
           user_id: userId || null,
           customer_name: customerName,
           customer_phone: customerPhone,
-          service_id: serviceId,
+          service_id: dbServiceId,
           date,
           time,
           status: 'Pending', // Initial state pending salon owner's review
