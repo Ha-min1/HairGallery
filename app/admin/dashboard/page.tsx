@@ -45,6 +45,44 @@ const matchCleanedPhone = (phoneStr: string | null | undefined, queryStr: string
   return p.includes(q);
 };
 
+// Helper to normalize reservation date to YYYY-MM-DD
+const normDateStr = (rawDate: any): string => {
+  if (!rawDate) return '';
+  const str = String(rawDate).split('T')[0].trim().replace(/\//g, '-');
+  const parts = str.split('-');
+  if (parts.length === 3) {
+    const y = parts[0];
+    const m = parts[1].padStart(2, '0');
+    const d = parts[2].padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  return str;
+};
+
+// Helper to normalize reservation time to HH:mm
+const normTimeStr = (rawTime: any): string => {
+  if (!rawTime) return '';
+  const str = String(rawTime).trim();
+  const parts = str.split(':');
+  if (parts.length >= 2) {
+    return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
+  }
+  return str;
+};
+
+// Date formatter (supports YYYY/M/D like 2026/7/11)
+const formatDisplayDate = (dateStr: string) => {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    const year = parts[0];
+    const month = parseInt(parts[1], 10);
+    const day = parseInt(parts[2], 10);
+    return `${year}/${month}/${day}`;
+  }
+  return dateStr.replace(/-/g, '/');
+};
+
 
 // Standard 24h styling slots
 const TIME_SLOTS = [
@@ -1336,18 +1374,7 @@ export default function AdminDashboard() {
     }
   };
 
-  // Date formatter (supports YYYY/M/D like 2026/7/11)
-  const formatDisplayDate = (dateStr: string) => {
-    if (!dateStr) return '';
-    const parts = dateStr.split('-');
-    if (parts.length === 3) {
-      const year = parts[0];
-      const month = parseInt(parts[1], 10);
-      const day = parseInt(parts[2], 10);
-      return `${year}/${month}/${day}`;
-    }
-    return dateStr.replace(/-/g, '/');
-  };
+
 
   // Filter and sort reservations for the roster table (newest first)
   const filteredReservations = reservations
@@ -1411,30 +1438,7 @@ export default function AdminDashboard() {
     adminCalendarGrid.push(i);
   }
 
-  // Helper to normalize reservation date to YYYY-MM-DD
-  const normDateStr = (rawDate: any): string => {
-    if (!rawDate) return '';
-    const str = String(rawDate).split('T')[0].trim().replace(/\//g, '-');
-    const parts = str.split('-');
-    if (parts.length === 3) {
-      const y = parts[0];
-      const m = parts[1].padStart(2, '0');
-      const d = parts[2].padStart(2, '0');
-      return `${y}-${m}-${d}`;
-    }
-    return str;
-  };
 
-  // Helper to normalize reservation time to HH:mm
-  const normTimeStr = (rawTime: any): string => {
-    if (!rawTime) return '';
-    const str = String(rawTime).trim();
-    const parts = str.split(':');
-    if (parts.length >= 2) {
-      return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
-    }
-    return str;
-  };
 
   // Check if a specific date has any reservations (for showing dot indicator)
   const hasReservationsOnDate = (day: number) => {
