@@ -309,13 +309,14 @@ export default function PriceList({ lang = 'ko', currentUser = null, isEmbedded 
           <button
             type="button"
             onClick={() => setSelectedCategory('all')}
+            style={{ color: selectedCategory === 'all' ? '#FBBF24' : undefined }}
             className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all shrink-0 cursor-pointer ${
               selectedCategory === 'all'
-                ? 'bg-stone-950 text-gold-400 shadow-md border border-gold-500/50 ring-1 ring-gold-500/30'
+                ? 'bg-stone-950 text-gold-400 shadow-md border border-gold-500/50 ring-1 ring-gold-500/30 font-bold'
                 : 'bg-white text-stone-700 border border-stone-200 hover:bg-stone-100 hover:text-stone-950'
             }`}
           >
-            <span className={selectedCategory === 'all' ? 'text-gold-400 font-bold' : 'text-stone-700 font-semibold'}>
+            <span style={{ color: selectedCategory === 'all' ? '#FBBF24' : undefined }} className={selectedCategory === 'all' ? 'text-gold-400 font-bold' : 'text-stone-700 font-semibold'}>
               {lang === 'ko' ? '전체 보기' : 'All Categories'} ({items.length})
             </span>
           </button>
@@ -329,14 +330,15 @@ export default function PriceList({ lang = 'ko', currentUser = null, isEmbedded 
                 key={cat.id}
                 type="button"
                 onClick={() => setSelectedCategory(cat.id)}
+                style={{ color: isSelected ? '#FBBF24' : undefined }}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all shrink-0 cursor-pointer ${
                   isSelected
-                    ? 'bg-stone-950 text-gold-400 shadow-md border border-gold-500/50 ring-1 ring-gold-500/30'
+                    ? 'bg-stone-950 text-gold-400 shadow-md border border-gold-500/50 ring-1 ring-gold-500/30 font-bold'
                     : 'bg-white text-stone-700 border border-stone-200 hover:bg-stone-100 hover:text-stone-950'
                 }`}
               >
                 <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-gold-400' : 'text-stone-500'}`} />
-                <span className={isSelected ? 'text-gold-400 font-bold' : 'text-stone-700 font-semibold'}>
+                <span style={{ color: isSelected ? '#FBBF24' : undefined }} className={isSelected ? 'text-gold-400 font-bold' : 'text-stone-700 font-semibold'}>
                   {lang === 'ko' ? cat.labelKo : cat.labelEn}
                 </span>
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${isSelected ? 'bg-stone-800 text-gold-300 border border-gold-500/20' : 'bg-stone-100 text-stone-500'}`}>
