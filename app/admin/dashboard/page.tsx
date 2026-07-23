@@ -262,12 +262,7 @@ export default function AdminDashboard() {
         const data = await response.json();
         setReservations(data.reservations || []);
       } else {
-        // Standard mock fallback
-        setReservations([
-          { id: 'r-1', customerName: '김선영', customerPhone: '010-4321-8891', serviceName: '발레아쥬 컬러 터치', price: 13000, date: '2026-07-14', time: '10:00', status: 'Confirmed' },
-          { id: 'r-2', customerName: '박민준', customerPhone: '010-7621-1104', serviceName: '시그니처 컷 & 블로우아웃', price: 15000, date: '2026-07-14', time: '13:00', status: 'Pending' },
-          { id: 'r-3', customerName: '이지은', customerPhone: '010-9014-4432', serviceName: '두피 테라피 & 트리트먼트', price: 12000, date: '2026-07-15', time: '15:30', status: 'Confirmed' }
-        ]);
+        setReservations([]);
       }
     } catch (err) {
       console.error('Failed to load active reservations:', err);
@@ -1819,12 +1814,25 @@ WITH CHECK (
                                 {slotReservations.length > 0 ? (
                                   slotReservations.map((res) => (
                                     <div key={res.id} className="flex items-center justify-between gap-3 p-3 rounded-lg bg-stone-900 border border-white/5 hover:border-white/10 transition-colors">
-                                      <div className="text-left space-y-0.5">
+                                      <div 
+                                        onClick={() => {
+                                          setResSelectedUserId(res.userId || '');
+                                          setResCustomerName(res.customerName || '');
+                                          setResCustomerPhone(res.customerPhone || '');
+                                          setResDate(res.date || adminSelectedDate);
+                                          setResTime(res.time || '10:00');
+                                          setResStatus(res.status || 'Confirmed');
+                                          if (res.price) setResPrice(String(res.price));
+                                          setShowResModal(true);
+                                        }}
+                                        className="text-left space-y-0.5 cursor-pointer hover:opacity-80 transition-opacity"
+                                        title={lang === 'ko' ? '클릭하여 상세 정보 조회 / 수정' : 'Click to view / edit details'}
+                                      >
                                         <div className="flex items-center gap-2">
                                           <span className="font-mono text-[10px] font-bold text-indigo-300">
                                             {res.time}
                                           </span>
-                                          <span className="font-serif font-bold text-xs text-white">
+                                          <span className="font-serif font-bold text-xs text-white underline underline-offset-2 decoration-indigo-500/40">
                                             {res.customerName}
                                           </span>
                                           {res.customerPhone ? (
@@ -1834,7 +1842,7 @@ WITH CHECK (
                                           ) : null}
                                         </div>
                                         <p className="text-[10px] text-stone-300 font-light">
-                                          {res.serviceName} • ₩{res.price.toLocaleString()}
+                                          {res.serviceName} • ₩{(res.price || 0).toLocaleString()}
                                         </p>
                                       </div>
 
