@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
-import { Calendar as CalendarIcon, Scissors, CheckCircle, Info, LayoutDashboard, ChevronLeft, ChevronRight, User, Key, ShieldCheck, History, Clock, Bell, MessageSquarePlus, MapPin, Tag, Palette, Sparkles, Heart, Wind, Droplets, Crown, X } from 'lucide-react';
+import { Calendar as CalendarIcon, Scissors, CheckCircle, Info, LayoutDashboard, ChevronLeft, ChevronRight, User, UserCheck, Key, ShieldCheck, History, Clock, Bell, MessageSquarePlus, MapPin, Tag, Palette, Sparkles, Heart, Wind, Droplets, Crown, X } from 'lucide-react';
 import PriceList from '@/app/components/PriceList';
 
 const RESERVATION_CATEGORIES = [
@@ -1055,79 +1055,78 @@ export default function Home() {
             )}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            
-            {/* Left Column: Booking Form and Services */}
-            <div className="lg:col-span-7 space-y-8">
-              {isSuccess ? (
-                <div className="bg-white rounded-2xl border border-stone-200 shadow-xl p-8 text-center space-y-6">
-                  <CheckCircle className="h-12 w-12 text-emerald-600 mx-auto animate-pulse" />
-                  <div>
-                    <h2 className="font-serif text-xl font-semibold text-stone-900">{t.reservationSubmitted}</h2>
-                    <p className="text-xs text-stone-500 mt-2 leading-relaxed">
-                      {t.successDesc}
+          <div>
+            {isSuccess ? (
+              <div className="bg-white rounded-2xl border border-stone-200 shadow-xl p-8 text-center space-y-6">
+                <CheckCircle className="h-12 w-12 text-emerald-600 mx-auto animate-pulse" />
+                <div>
+                  <h2 className="font-serif text-xl font-semibold text-stone-900">{t.reservationSubmitted}</h2>
+                  <p className="text-xs text-stone-500 mt-2 leading-relaxed">
+                    {t.successDesc}
+                  </p>
+
+                  {/* Booking Pending & Rescheduling Alert Box */}
+                  <div className="mt-5 p-4.5 bg-amber-500/5 border border-amber-200/40 rounded-xl text-left text-[11px] leading-relaxed text-stone-700 space-y-1.5 font-sans">
+                    <span className="font-bold text-amber-900 flex items-center gap-1.5 text-xs mb-1">
+                      ⚠️ {lang === 'ko' ? '예약 대기 및 시간 조율 안내' : 'Booking Pending & Rescheduling Notice'}
+                    </span>
+                    <p className="font-semibold text-amber-800">
+                      {lang === 'ko' 
+                        ? '• 신청하신 예약은 현재 [접수 대기] 상태이며, 아직 최종 확정이 아닙니다.' 
+                        : '• Your requested booking is currently [Pending] and is not yet fully confirmed.'}
                     </p>
-
-                    {/* Booking Pending & Rescheduling Alert Box */}
-                    <div className="mt-5 p-4.5 bg-amber-500/5 border border-amber-200/40 rounded-xl text-left text-[11px] leading-relaxed text-stone-700 space-y-1.5 font-sans">
-                      <span className="font-bold text-amber-900 flex items-center gap-1.5 text-xs mb-1">
-                        ⚠️ {lang === 'ko' ? '예약 대기 및 시간 조율 안내' : 'Booking Pending & Rescheduling Notice'}
-                      </span>
-                      <p className="font-semibold text-amber-800">
-                        {lang === 'ko' 
-                          ? '• 신청하신 예약은 현재 [접수 대기] 상태이며, 아직 최종 확정이 아닙니다.' 
-                          : '• Your requested booking is currently [Pending] and is not yet fully confirmed.'}
-                      </p>
-                      <p>
-                        {lang === 'ko' 
-                          ? '• 원장님이 확인 후, 남겨주신 전화번호로 직접 연락(전화 또는 카카오톡)을 드려 최종 시술 시간 조율이 필요할 수 있습니다.' 
-                          : '• After review, the stylist will contact you directly via phone or KakaoTalk to coordinate and finalize the exact slot.'}
-                      </p>
-                      <p>
-                        {lang === 'ko' 
-                          ? '• 최종 조율 및 확인을 마친 후 예약이 [확정]되면 알림톡 및 안내 메일이 발송됩니다.' 
-                          : '• Once coordinated, your booking status will change to [Confirmed] and you will receive notifications.'}
-                      </p>
-                    </div>
-
-                    {/* Email Spam Filter Alert Warning Box */}
-                    <div className="mt-3.5 p-4.5 bg-stone-50 border border-stone-200 rounded-xl text-left text-[11px] leading-relaxed text-stone-650 space-y-1 font-sans">
-                      <span className="font-bold text-stone-900 block text-xs mb-1.5">
-                        📧 {lang === 'ko' ? '예약 확정 이메일 수신 안내' : 'Booking Confirmation Email Notice'}
-                      </span>
-                      <p>
-                        {lang === 'ko' 
-                          ? '• 가입 시 사용하신 이메일 주소로 예약 확정 시 안내 메일이 발송됩니다.' 
-                          : '• A confirmation email will be sent to your registered address once the booking is confirmed.'}
-                      </p>
-                      <p>
-                        {lang === 'ko' 
-                          ? '• 메일 서버 보안상 스팸메일함에 전달될 수 있으니 스팸함을 꼭 확인 부탁드립니다.' 
-                          : '• The email may land in your Spam/Junk folder depending on server policies. Please check it.'}
-                      </p>
-                      <p className="font-semibold text-amber-700 bg-amber-500/5 px-2 py-0.5 rounded border border-amber-500/10 inline-block mt-0.5">
-                        {lang === 'ko' 
-                          ? '• 예약 발송 이메일: thehairgalleryreservation@gmail.com' 
-                          : '• Sender Address: thehairgalleryreservation@gmail.com'}
-                      </p>
-                    </div>
+                    <p>
+                      {lang === 'ko' 
+                        ? '• 원장님이 확인 후, 남겨주신 전화번호로 직접 연락(전화 또는 카카오톡)을 드려 최종 시술 시간 조율이 필요할 수 있습니다.' 
+                        : '• After review, the stylist will contact you directly via phone or KakaoTalk to coordinate and finalize the exact slot.'}
+                    </p>
+                    <p>
+                      {lang === 'ko' 
+                        ? '• 최종 조율 및 확인을 마친 후 예약이 [확정]되면 알림톡 및 안내 메일이 발송됩니다.' 
+                        : '• Once coordinated, your booking status will change to [Confirmed] and you will receive notifications.'}
+                    </p>
                   </div>
-                  <button
-                    onClick={() => setIsSuccess(false)}
-                    className="w-full py-2.5 bg-stone-950 text-white text-xs font-semibold rounded-lg hover:bg-stone-800 transition-colors uppercase tracking-wider cursor-pointer"
-                  >
-                    {t.bookAnother}
-                  </button>
+
+                  {/* Email Spam Filter Alert Warning Box */}
+                  <div className="mt-3.5 p-4.5 bg-stone-50 border border-stone-200 rounded-xl text-left text-[11px] leading-relaxed text-stone-650 space-y-1 font-sans">
+                    <span className="font-bold text-stone-900 block text-xs mb-1.5">
+                      📧 {lang === 'ko' ? '예약 확정 이메일 수신 안내' : 'Booking Confirmation Email Notice'}
+                    </span>
+                    <p>
+                      {lang === 'ko' 
+                        ? '• 가입 시 사용하신 이메일 주소로 예약 확정 시 안내 메일이 발송됩니다.' 
+                        : '• A confirmation email will be sent to your registered address once the booking is confirmed.'}
+                    </p>
+                    <p>
+                      {lang === 'ko' 
+                        ? '• 메일 서버 보안상 스팸메일함에 전달될 수 있으니 스팸함을 꼭 확인 부탁드립니다.' 
+                        : '• The email may land in your Spam/Junk folder depending on server policies. Please check it.'}
+                    </p>
+                    <p className="font-semibold text-amber-700 bg-amber-500/5 px-2 py-0.5 rounded border border-amber-500/10 inline-block mt-0.5">
+                      {lang === 'ko' 
+                        ? '• 예약 발송 이메일: thehairgalleryreservation@gmail.com' 
+                        : '• Sender Address: thehairgalleryreservation@gmail.com'}
+                    </p>
+                  </div>
                 </div>
-              ) : (
-                <form onSubmit={handleBookingSubmit} className="space-y-6">
-                                                      {/* Single 7 Procedure Categories Selection Form Widget */}
+                <button
+                  onClick={() => setIsSuccess(false)}
+                  className="w-full py-2.5 bg-stone-950 text-white text-xs font-semibold rounded-lg hover:bg-stone-800 transition-colors uppercase tracking-wider cursor-pointer"
+                >
+                  {t.bookAnother}
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleBookingSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* Left Column: Step 1 Procedure Category Selection Widget */}
+                <div className="lg:col-span-6 space-y-6">
+                  {/* Single 7 Procedure Categories Selection Form Widget */}
                   <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm space-y-5">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-100 pb-3">
                       <div>
                         <h2 className="font-serif text-base sm:text-lg font-bold text-stone-900 flex items-center gap-2">
                           <Scissors className="h-5 w-5 text-gold-600" />
-                          {lang === 'ko' ? '시술 선택 (Service Category)' : 'Select Procedure Category'}
+                          {lang === 'ko' ? '1. 시술 선택 (Service Category)' : '1. Select Procedure Category'}
                         </h2>
                         <p className="text-xs text-stone-500 mt-0.5">
                           {lang === 'ko' 
@@ -1201,110 +1200,15 @@ export default function Home() {
                       </Link>
                     </div>
                   </div>
+                </div>
 
-                  {/* Customer Info Box (Includes Privacy Consent for direct input) */}
-                  <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm space-y-4">
-                    <h3 className="font-serif text-sm font-semibold text-stone-900">{t.contactDetails}</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-[10px] uppercase font-mono text-stone-400">{t.fullName}</label>
-                        <input
-                          type="text"
-                          required
-                          value={customerName}
-                          onChange={e => setCustomerName(e.target.value)}
-                          placeholder={lang === 'ko' ? '예: 김철수' : 'e.g. John Doe'}
-                          className="w-full px-3 py-2 border border-stone-200 rounded-lg text-xs outline-none bg-stone-50 focus:border-stone-400 transition-colors"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] uppercase font-mono text-stone-400">{t.contactNumber}</label>
-                        <input
-                          type="tel"
-                          required
-                          value={customerPhone}
-                          onChange={e => setCustomerPhone(formatPhoneNumber(e.target.value))}
-                          placeholder={lang === 'ko' ? '010-1234-5678' : '+82-10-1234-5678'}
-                          className="w-full px-3 py-2 border border-stone-200 rounded-lg text-xs outline-none bg-stone-50 focus:border-stone-400 transition-colors"
-                        />
-                      </div>
-                      {!currentUser && (
-                        <div className="space-y-1 sm:col-span-2">
-                          <label className="text-[10px] uppercase font-mono text-stone-400">
-                            {lang === 'ko' ? '비회원 예약 조회용 비밀번호 (4자 이상)' : 'Query Password (4+ characters)'}
-                          </label>
-                          <input
-                            type="password"
-                            required
-                            value={nonMemberPassword}
-                            onChange={e => setNonMemberPassword(e.target.value)}
-                            placeholder={lang === 'ko' ? '비밀번호 입력' : 'Enter password'}
-                            className="w-full px-3 py-2 border border-stone-200 rounded-lg text-xs outline-none bg-stone-50 focus:border-stone-400 transition-colors"
-                          />
-                          <p className="text-[9px] text-stone-500 font-sans mt-1">
-                            {lang === 'ko' 
-                              ? '※ 비회원 예약 조회 및 취소 시 사용됩니다. 안전한 비밀번호를 입력해주세요 (4자 이상).' 
-                              : '※ Used for non-member query and cancellation. Enter a secure password (4+ characters).'}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Consent Checkbox */}
-                    <div className="pt-2 space-y-3">
-                      <label className="flex items-center gap-2 cursor-pointer justify-start">
-                        <input 
-                          type="checkbox"
-                          required
-                          checked={bookingConsent}
-                          onChange={e => setBookingConsent(e.target.checked)}
-                          className="h-4.5 w-4.5 rounded border-stone-300 text-stone-900 focus:ring-stone-900 cursor-pointer"
-                        />
-                        <span className="text-xs font-semibold text-stone-950 text-left">
-                          {t.privacyConsent}
-                        </span>
-                      </label>
-
-                      <details className="border border-stone-200 rounded-lg bg-stone-50 text-[10px] outline-none">
-                        <summary className="font-semibold text-stone-700 py-2 px-3 select-none cursor-pointer outline-none hover:bg-stone-100 rounded-t-lg transition-colors flex items-center justify-between text-left">
-                          <span>{t.privacyDetailsTitle}</span>
-                        </summary>
-                        <div className="p-3 border-t border-stone-200 text-stone-600 whitespace-pre-line leading-relaxed bg-white rounded-b-lg text-left">
-                          {t.privacyDetailsContent}
-                        </div>
-                      </details>
-                    </div>
-
-                    {errorMessage && (
-                      <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-lg flex items-start gap-2">
-                        <Info className="h-4 w-4 shrink-0 mt-0.5" />
-                        <span>{errorMessage}</span>
-                      </div>
-                    )}
-
-                    <button
-                      type="submit"
-                      disabled={!selectedDate || !selectedTime || !selectedServiceId || !bookingConsent}
-                      className={`w-full py-3.5 text-stone-900 text-xs font-semibold uppercase tracking-wider rounded-lg shadow-md transition-transform active:scale-[0.98] ${
-                        selectedDate && selectedTime && selectedServiceId && bookingConsent
-                          ? 'bg-gold-500 hover:bg-gold-600 cursor-pointer'
-                          : 'bg-stone-200 text-stone-400 cursor-not-allowed shadow-none'
-                      }`}
-                    >
-                      {t.bookSession}
-                    </button>
-                  </div>
-                </form>
-              )}
-            </div>
-
-            {/* Right Column: Visual Calendar Flow */}
-            <div className="lg:col-span-5 space-y-6">
+                {/* Right Column: Step 2 Date & Time Selection, and Step 3 Customer Info Widget Below It */}
+                <div className="lg:col-span-6 space-y-6">
               {/* Calendar Container */}
               <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm space-y-6">
                 <h2 className="font-serif text-base font-semibold text-stone-900 flex items-center gap-2">
                   <CalendarIcon className="h-4.5 w-4.5 text-gold-600" />
-                  {t.appointmentDate}
+                  <span>{lang === 'ko' ? '2. 예약 날짜 및 시간 선택' : '2. Appointment Date & Time'}</span>
                 </h2>
 
                 <div className="space-y-4">
@@ -1495,6 +1399,102 @@ export default function Home() {
                 </div>
               )}
 
+              {/* Step 3: Customer Info Box (Placed DIRECTLY BELOW Date & Time Slots) */}
+              <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm space-y-4">
+                <h3 className="font-serif text-sm font-semibold text-stone-900 flex items-center gap-2">
+                  <UserCheck className="h-4.5 w-4.5 text-gold-600" />
+                  <span>{lang === 'ko' ? '3. 예약자 연락처 정보 및 동의' : '3. Booker Contact Info & Consent'}</span>
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase font-mono text-stone-400">{t.fullName}</label>
+                    <input
+                      type="text"
+                      required
+                      value={customerName}
+                      onChange={e => setCustomerName(e.target.value)}
+                      placeholder={lang === 'ko' ? '예: 김철수' : 'e.g. John Doe'}
+                      className="w-full px-3 py-2 border border-stone-200 rounded-lg text-xs outline-none bg-stone-50 focus:border-stone-400 transition-colors"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase font-mono text-stone-400">{t.contactNumber}</label>
+                    <input
+                      type="tel"
+                      required
+                      value={customerPhone}
+                      onChange={e => setCustomerPhone(formatPhoneNumber(e.target.value))}
+                      placeholder={lang === 'ko' ? '010-1234-5678' : '+82-10-1234-5678'}
+                      className="w-full px-3 py-2 border border-stone-200 rounded-lg text-xs outline-none bg-stone-50 focus:border-stone-400 transition-colors"
+                    />
+                  </div>
+                  {!currentUser && (
+                    <div className="space-y-1 sm:col-span-2">
+                      <label className="text-[10px] uppercase font-mono text-stone-400">
+                        {lang === 'ko' ? '비회원 예약 조회용 비밀번호 (4자 이상)' : 'Query Password (4+ characters)'}
+                      </label>
+                      <input
+                        type="password"
+                        required
+                        value={nonMemberPassword}
+                        onChange={e => setNonMemberPassword(e.target.value)}
+                        placeholder={lang === 'ko' ? '비밀번호 입력' : 'Enter password'}
+                        className="w-full px-3 py-2 border border-stone-200 rounded-lg text-xs outline-none bg-stone-50 focus:border-stone-400 transition-colors"
+                      />
+                      <p className="text-[9px] text-stone-500 font-sans mt-1">
+                        {lang === 'ko' 
+                          ? '※ 비회원 예약 조회 및 취소 시 사용됩니다. 안전한 비밀번호를 입력해주세요 (4자 이상).' 
+                          : '※ Used for non-member query and cancellation. Enter a secure password (4+ characters).'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Consent Checkbox */}
+                <div className="pt-2 space-y-3">
+                  <label className="flex items-center gap-2 cursor-pointer justify-start">
+                    <input 
+                      type="checkbox"
+                      required
+                      checked={bookingConsent}
+                      onChange={e => setBookingConsent(e.target.checked)}
+                      className="h-4.5 w-4.5 rounded border-stone-300 text-stone-900 focus:ring-stone-900 cursor-pointer"
+                    />
+                    <span className="text-xs font-semibold text-stone-950 text-left">
+                      {t.privacyConsent}
+                    </span>
+                  </label>
+
+                  <details className="border border-stone-200 rounded-lg bg-stone-50 text-[10px] outline-none">
+                    <summary className="font-semibold text-stone-700 py-2 px-3 select-none cursor-pointer outline-none hover:bg-stone-100 rounded-t-lg transition-colors flex items-center justify-between text-left">
+                      <span>{t.privacyDetailsTitle}</span>
+                    </summary>
+                    <div className="p-3 border-t border-stone-200 text-stone-600 whitespace-pre-line leading-relaxed bg-white rounded-b-lg text-left">
+                      {t.privacyDetailsContent}
+                    </div>
+                  </details>
+                </div>
+
+                {errorMessage && (
+                  <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-lg flex items-start gap-2">
+                    <Info className="h-4 w-4 shrink-0 mt-0.5" />
+                    <span>{errorMessage}</span>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={!selectedDate || !selectedTime || !selectedServiceId || !bookingConsent}
+                  className={`w-full py-3.5 text-stone-900 text-xs font-semibold uppercase tracking-wider rounded-lg shadow-md transition-transform active:scale-[0.98] ${
+                    selectedDate && selectedTime && selectedServiceId && bookingConsent
+                      ? 'bg-gold-500 hover:bg-gold-600 cursor-pointer'
+                      : 'bg-stone-200 text-stone-400 cursor-not-allowed shadow-none'
+                  }`}
+                >
+                  {t.bookSession}
+                </button>
+              </div>
+
               {/* Personal Privacy Timeline Widget (Profile Audit Log) */}
               <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm space-y-4">
                 <h3 className="font-serif text-sm font-semibold text-stone-900 flex items-center gap-2">
@@ -1545,8 +1545,10 @@ export default function Home() {
                 )}
               </div>
             </div>
-          </div>
-        </div>
+          </form>
+        )}
+      </div>
+    </div>
 
         {/* Main Board Section & Dedicated Store Location Section */}
         <div className="max-w-5xl mx-auto px-4 my-12 w-full space-y-12">
