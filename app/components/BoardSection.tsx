@@ -18,8 +18,8 @@ import {
   FileText,
   Upload,
   ChevronRight,
-  AlertCircle,
-  LogIn
+  LogIn,
+  SlidersHorizontal
 } from 'lucide-react';
 import { getSupabaseClient } from '@/lib/supabase';
 
@@ -31,8 +31,10 @@ interface BoardSectionProps {
 
 const STATIC_ASSET_SAMPLES = [
   { label: '헤더 헤어갤러리 로고 (Logo)', url: '/hair_gallery_logo.png' },
-  { label: '헤어 스타일링 예시 1', url: '/image/hair_style_1.jpg' },
-  { label: '헤어 스타일링 예시 2', url: '/image/hair_style_2.jpg' }
+  { label: '헤어 스타일링 예시 1', url: '/assets/images/hair/hair_01.jpg' },
+  { label: '헤어 스타일링 예시 2', url: '/assets/images/hair/hair_02.jpg' },
+  { label: '헤어 스타일링 예시 3', url: '/assets/images/hair/hair_03.jpg' },
+  { label: '헤어 스타일링 예시 4', url: '/assets/images/hair/hair_04.jpg' }
 ];
 
 export default function BoardSection({
@@ -207,7 +209,7 @@ export default function BoardSection({
 
       const data = await res.json();
       if (!res.ok || data.error) {
-        throw new Error(data.error || '게시글 저장 실패');
+        throw new Error(data.error || '게시글 저장에 실패했습니다.');
       }
 
       setIsWriteModalOpen(false);
@@ -224,6 +226,8 @@ export default function BoardSection({
 
     try {
       const token = await getAuthToken();
+      if (!token) throw new Error('로그인이 필요합니다.');
+
       const res = await fetch(`/api/posts?id=${postId}`, {
         method: 'DELETE',
         headers: {
@@ -233,20 +237,18 @@ export default function BoardSection({
 
       const data = await res.json();
       if (!res.ok || data.error) {
-        throw new Error(data.error || '삭제 실패');
+        throw new Error(data.error || '게시글 삭제에 실패했습니다.');
       }
 
       if (selectedPost?.id === postId) {
         setSelectedPost(null);
       }
-
       fetchPosts();
     } catch (err: any) {
       alert(err.message || '삭제 중 오류가 발생했습니다.');
     }
   };
 
-  // Filter posts by search
   const filteredPosts = posts.filter(post => {
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
@@ -256,103 +258,105 @@ export default function BoardSection({
   });
 
   return (
-    <section id="board" className="bg-stone-900 border border-stone-800 rounded-3xl p-6 sm:p-8 md:p-10 shadow-2xl space-y-6 text-stone-100 animate-fadeIn scroll-mt-24 w-full relative overflow-hidden">
-      {/* Background Decorative Accent */}
-      <div className="absolute top-0 right-0 translate-x-1/3 -translate-y-1/3 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-
-      {/* Section Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-stone-800 pb-6 relative z-10">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-amber-500/10 border border-amber-500/20 text-amber-400">
-              Community & Style Gallery
+    <section 
+      id="board" 
+      className="bg-stone-900/90 border border-stone-800/80 rounded-3xl p-6 sm:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.15)] space-y-8 text-stone-100 animate-fadeIn scroll-mt-24 w-full relative overflow-hidden backdrop-blur-sm"
+      style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}
+    >
+      {/* Modern Minimalist Section Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-stone-800/80 pb-6 relative z-10">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="px-3 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-widest bg-stone-800 border border-stone-700/60 text-gold-400">
+              Community & Journal
             </span>
-            <span className="text-[10px] font-mono text-stone-400">Member Exclusive</span>
+            <span className="text-[10px] font-mono text-stone-400 tracking-wider">Clean & Sleek Edition</span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-serif font-bold text-stone-100 tracking-tight flex items-center gap-2">
-            <span>헤어 갤러리 메인 게시판</span>
-            <Sparkles className="w-5 h-5 text-amber-400" />
+          <h2 className="text-2xl sm:text-3xl font-serif font-normal text-white tracking-tight flex items-center gap-2.5">
+            <span>헤어 갤러리 저널 & 커뮤니티</span>
+            <Sparkles className="w-5 h-5 text-gold-400 stroke-[1.5]" />
           </h2>
-          <p className="text-xs text-stone-400 font-sans mt-1">
-            시술 후기, 최신 트렌드 헤어 스타일링 및 매장 소식을 공유하는 공간입니다.
+          <p className="text-xs text-stone-400 font-sans tracking-wide leading-relaxed max-w-xl">
+            고객님들의 스타일 후기와 더 헤어 갤러리의 최신 디자이너 소식, 스타일링 노하우를 담은 정갈한 공간입니다.
           </p>
         </div>
 
-        {/* Header Action / Write Button */}
+        {/* Action Button */}
         {currentUser ? (
           <button
             onClick={() => openWriteModal()}
-            className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold rounded-xl text-xs transition-all shadow-md shadow-amber-500/10 flex items-center gap-2 shrink-0 cursor-pointer"
+            className="px-5 py-2.5 bg-gold-500 hover:bg-gold-400 text-stone-950 font-bold rounded-xl text-xs transition-all shadow-sm flex items-center gap-2 shrink-0 cursor-pointer tracking-wide"
           >
-            <Plus className="w-4 h-4" />
-            <span>새 글 작성하기</span>
+            <Plus className="w-4 h-4 stroke-[2.5]" />
+            <span>새 저널 작성</span>
           </button>
         ) : (
           <button
             onClick={onOpenLoginModal}
-            className="px-5 py-2.5 bg-stone-800 hover:bg-stone-700 border border-stone-700 text-stone-200 font-bold rounded-xl text-xs transition-all flex items-center gap-2 shrink-0 cursor-pointer"
+            className="px-5 py-2.5 bg-stone-800 hover:bg-stone-750 border border-stone-700 text-stone-200 font-semibold rounded-xl text-xs transition-all flex items-center gap-2 shrink-0 cursor-pointer tracking-wide"
           >
-            <LogIn className="w-4 h-4 text-amber-400" />
-            <span>로그인하여 글 작성</span>
+            <LogIn className="w-4 h-4 text-gold-400" />
+            <span>로그인하여 참관하기</span>
           </button>
         )}
       </div>
 
-      {/* Non-Authenticated Users Lock Banner (Prompt Spec Requirement) */}
+      {/* Non-Authenticated Users Lock Banner */}
       {!currentUser ? (
-        <div className="bg-stone-950/80 border border-stone-800 rounded-2xl p-8 text-center space-y-4 my-6 shadow-inner relative z-10">
-          <div className="w-14 h-14 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-full flex items-center justify-center mx-auto">
-            <Lock className="w-7 h-7" />
+        <div className="bg-stone-950/70 border border-stone-800/80 rounded-2xl p-8 sm:p-10 text-center space-y-4 my-4 shadow-sm relative z-10">
+          <div className="w-12 h-12 bg-stone-900 border border-stone-750 text-gold-400 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+            <Lock className="w-6 h-6 stroke-[1.75]" />
           </div>
-          <div className="space-y-1 max-w-md mx-auto">
-            <h3 className="text-base font-bold text-stone-200">
-              게시판은 로그인 후 이용하실 수 있습니다.
+          <div className="space-y-1.5 max-w-md mx-auto">
+            <h3 className="text-base font-serif font-medium text-stone-200 tracking-tight">
+              회원 전용 게시판입니다
             </h3>
-            <p className="text-xs text-stone-400 leading-relaxed font-sans">
-              로그인하시면 시술 후기와 헤어 스타일링 노하우를 확인하고 자유롭게 게시글을 작성하실 수 있습니다.
+            <p className="text-xs text-stone-400 leading-relaxed font-sans tracking-wide">
+              로그인 후 시술 후기, 헤어 케어 팁을 감상하거나 본인만의 스타일 경험을 자유롭게 나눠보세요.
             </p>
           </div>
           <button
             onClick={onOpenLoginModal}
-            className="px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold rounded-xl text-xs transition-all shadow-lg shadow-amber-500/10 inline-flex items-center gap-2 cursor-pointer"
+            className="px-6 py-2.5 bg-gold-500 hover:bg-gold-400 text-stone-950 font-bold rounded-xl text-xs transition-all shadow-md inline-flex items-center gap-2 cursor-pointer tracking-wide"
           >
             <LogIn className="w-4 h-4" />
-            <span>로그인 하러 가기</span>
+            <span>간편 소셜 로그인</span>
           </button>
         </div>
       ) : (
         /* Authenticated Board Interface */
         <div className="space-y-6 relative z-10">
-          {/* Search & Filter Bar */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-stone-950/60 p-3 rounded-2xl border border-stone-800">
+          {/* Search & Statistics Toolbar */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-stone-950/80 p-3.5 rounded-2xl border border-stone-800/80 shadow-xs">
             <div className="relative w-full sm:w-80">
               <Search className="w-4 h-4 absolute left-3.5 top-2.5 text-stone-500" />
               <input
                 type="text"
-                placeholder="게시글 제목, 내용, 작성자 검색..."
+                placeholder="제목, 내용, 작성자로 검색..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-stone-900 border border-stone-800 rounded-xl pl-9 pr-3.5 py-2 text-stone-200 text-xs focus:outline-none focus:border-amber-500 transition-colors"
+                className="w-full bg-stone-900/90 border border-stone-800 rounded-xl pl-9 pr-3.5 py-2 text-stone-200 text-xs focus:outline-none focus:border-gold-500/60 transition-colors tracking-wide"
               />
             </div>
-            <div className="text-[11px] text-stone-400 font-mono px-2">
-              총 <span className="text-amber-400 font-bold">{filteredPosts.length}</span>개의 게시글
+            <div className="text-[11px] text-stone-400 font-mono px-2 flex items-center gap-2">
+              <SlidersHorizontal className="w-3.5 h-3.5 text-gold-400" />
+              <span>전체 게시물: <strong className="text-gold-400 font-bold">{filteredPosts.length}</strong>개</span>
             </div>
           </div>
 
-          {/* Board Posts Grid / List */}
+          {/* Posts Grid */}
           {isLoading ? (
-            <div className="bg-stone-950/40 border border-stone-800 p-16 rounded-2xl text-center space-y-3">
-              <div className="w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto" />
-              <p className="text-xs font-mono text-stone-400">게시글 목록을 불러오는 중...</p>
+            <div className="bg-stone-950/50 border border-stone-800/60 p-16 rounded-2xl text-center space-y-3">
+              <div className="w-6 h-6 border-2 border-gold-500 border-t-transparent rounded-full animate-spin mx-auto" />
+              <p className="text-xs font-mono text-stone-400 tracking-wider">게시글 목록을 정갈하게 불러오는 중...</p>
             </div>
           ) : filteredPosts.length === 0 ? (
-            <div className="bg-stone-950/40 border border-stone-800 p-16 rounded-2xl text-center space-y-2">
+            <div className="bg-stone-950/50 border border-stone-800/60 p-16 rounded-2xl text-center space-y-2">
               <FileText className="w-8 h-8 text-stone-600 mx-auto" />
-              <p className="text-xs text-stone-400">등록된 게시글이 없습니다. 첫 게시글을 작성해 보세요!</p>
+              <p className="text-xs text-stone-400 tracking-wide">등록된 게시글이 없습니다. 첫 이야기를 남겨보세요!</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
               {filteredPosts.map((post) => {
                 const isPinned = Boolean(post.is_pinned);
                 const isOwner = post.author_id === currentUser.id;
@@ -361,58 +365,62 @@ export default function BoardSection({
                   <div
                     key={post.id}
                     onClick={() => setSelectedPost(post)}
-                    className={`group bg-stone-950/70 border rounded-2xl p-5 transition-all cursor-pointer flex flex-col justify-between space-y-4 hover:shadow-xl relative overflow-hidden ${
+                    className={`group bg-stone-950/80 border rounded-2xl p-5 transition-all cursor-pointer flex flex-col justify-between space-y-4 hover:shadow-lg relative overflow-hidden ${
                       isPinned
-                        ? 'border-amber-500/40 hover:border-amber-400 bg-amber-500/[0.03]'
-                        : 'border-stone-800 hover:border-stone-700 hover:bg-stone-900/80'
+                        ? 'border-gold-500/30 bg-stone-950/90 shadow-sm'
+                        : 'border-stone-800/80 hover:border-stone-700 hover:bg-stone-900/90'
                     }`}
                   >
-                    {/* Top Row: Pin Badge & Date */}
+                    {/* Top Row: Clean Pinned Chip Badge & Date */}
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 flex-wrap">
-                        {isPinned && (
-                          <span className="px-2.5 py-1 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[10px] font-mono font-bold flex items-center gap-1">
-                            <Pin className="w-3 h-3 text-amber-400 fill-amber-400" />
-                            <span>상단 고정 {post.pin_order ? `(${post.pin_order}순위)` : ''}</span>
+                        {isPinned ? (
+                          <span className="px-2.5 py-0.5 rounded-md bg-gold-500/10 border border-gold-500/30 text-gold-400 text-[10px] font-mono font-bold flex items-center gap-1.5 tracking-wider">
+                            <span>📌 PINNED</span>
+                            {post.pin_order && <span className="text-stone-400 font-normal">#{post.pin_order}</span>}
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-md bg-stone-900 border border-stone-800 text-stone-400 text-[10px] font-mono tracking-wider">
+                            JOURNAL
                           </span>
                         )}
                         {post.image_url && (
-                          <span className="px-2 py-0.5 rounded bg-stone-800 border border-stone-700 text-stone-300 text-[10px] font-mono flex items-center gap-1">
-                            <ImageIcon className="w-3 h-3 text-amber-400" />
+                          <span className="px-2 py-0.5 rounded bg-stone-900 border border-stone-800 text-stone-300 text-[10px] font-mono flex items-center gap-1">
+                            <ImageIcon className="w-3 h-3 text-gold-400" />
                             <span>사진</span>
                           </span>
                         )}
                       </div>
-                      <span className="text-[10px] text-stone-400 font-mono">
+                      <span className="text-[10px] text-stone-400 font-mono tracking-wide">
                         {new Date(post.created_at).toLocaleDateString()}
                       </span>
                     </div>
 
                     {/* Content Excerpt & Image Thumbnail */}
                     <div className="space-y-2 flex-1">
-                      <h3 className="text-sm font-bold text-stone-100 group-hover:text-amber-400 transition-colors line-clamp-1">
+                      <h3 className="text-sm font-serif font-medium text-white group-hover:text-gold-400 transition-colors line-clamp-1 tracking-tight">
                         {post.title}
                       </h3>
 
                       {post.image_url && (
-                        <div className="w-full h-36 rounded-xl overflow-hidden bg-stone-900 border border-stone-800 my-2">
+                        <div className="w-full h-40 rounded-xl overflow-hidden bg-stone-900 border border-stone-800 my-2">
                           <img
                             src={post.image_url}
                             alt={post.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-300"
                           />
                         </div>
                       )}
 
-                      <p className="text-xs text-stone-400 leading-relaxed line-clamp-2 font-sans">
+                      <p className="text-xs text-stone-400 leading-relaxed line-clamp-2 font-sans tracking-wide">
                         {post.content}
                       </p>
                     </div>
 
                     {/* Footer Row: Author & Actions */}
-                    <div className="flex items-center justify-between pt-3 border-t border-stone-850/80 text-[11px] font-mono text-stone-400">
+                    <div className="flex items-center justify-between pt-3 border-t border-stone-800/80 text-[11px] font-mono text-stone-400">
                       <span className="flex items-center gap-1.5">
-                        <User className="w-3.5 h-3.5 text-amber-500/80" />
+                        <User className="w-3.5 h-3.5 text-gold-400" />
                         <span>{post.author_name || '회원'}</span>
                       </span>
 
@@ -429,8 +437,8 @@ export default function BoardSection({
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         )}
-                        <span className="text-amber-400 group-hover:translate-x-0.5 transition-transform flex items-center font-bold">
-                          보기 <ChevronRight className="w-3 h-3" />
+                        <span className="text-gold-400 group-hover:translate-x-0.5 transition-transform flex items-center font-bold text-[10px]">
+                          상세보기 <ChevronRight className="w-3 h-3" />
                         </span>
                       </div>
                     </div>
@@ -444,16 +452,16 @@ export default function BoardSection({
 
       {/* Post Detail Modal */}
       {selectedPost && (
-        <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
           <div className="bg-stone-900 border border-stone-800 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden text-stone-100 flex flex-col max-h-[85vh]">
             <div className="bg-stone-950 px-6 py-4 border-b border-stone-800 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {selectedPost.is_pinned && (
-                  <span className="p-1 bg-amber-500/20 text-amber-400 rounded-lg">
-                    <Pin className="w-4 h-4 fill-amber-400" />
+                  <span className="px-2 py-0.5 bg-gold-500/20 text-gold-400 border border-gold-500/40 rounded text-[10px] font-mono font-bold">
+                    📌 PINNED
                   </span>
                 )}
-                <h3 className="font-bold text-sm text-stone-100 line-clamp-1">{selectedPost.title}</h3>
+                <h3 className="font-serif font-medium text-sm text-white line-clamp-1">{selectedPost.title}</h3>
               </div>
               <button
                 onClick={() => setSelectedPost(null)}
@@ -464,9 +472,9 @@ export default function BoardSection({
             </div>
 
             <div className="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
-              <div className="flex items-center justify-between text-stone-400 font-mono text-[11px] pb-3 border-b border-stone-800">
+              <div className="flex items-center justify-between text-stone-400 font-mono text-[11px] pb-3 border-b border-stone-800/80">
                 <span className="flex items-center gap-1.5">
-                  <User className="w-3.5 h-3.5 text-amber-400" />
+                  <User className="w-3.5 h-3.5 text-gold-400" />
                   작성자: {selectedPost.author_name || '회원'}
                 </span>
                 <span>{new Date(selectedPost.created_at).toLocaleString()}</span>
@@ -478,12 +486,12 @@ export default function BoardSection({
                 </div>
               )}
 
-              <p className="text-stone-200 text-xs leading-relaxed whitespace-pre-wrap font-sans py-2">
+              <p className="text-stone-200 text-xs leading-relaxed whitespace-pre-wrap font-sans tracking-wide py-2">
                 {selectedPost.content}
               </p>
             </div>
 
-            <div className="bg-stone-950 px-6 py-3 border-t border-stone-800 flex items-center justify-between">
+            <div className="bg-stone-950 px-6 py-3.5 border-t border-stone-800 flex items-center justify-between">
               <div>
                 {(selectedPost.author_id === currentUser?.id || isAdmin) && (
                   <div className="flex items-center gap-2">
@@ -495,7 +503,7 @@ export default function BoardSection({
                       }}
                       className="px-3 py-1.5 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded-lg text-xs font-mono font-medium flex items-center gap-1"
                     >
-                      <Edit3 className="w-3.5 h-3.5 text-amber-400" />
+                      <Edit3 className="w-3.5 h-3.5 text-gold-400" />
                       <span>수정</span>
                     </button>
                     <button
@@ -521,13 +529,12 @@ export default function BoardSection({
 
       {/* Post Write / Edit Modal */}
       {isWriteModalOpen && (
-        <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
           <div className="bg-stone-900 border border-stone-800 rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden text-stone-100 flex flex-col max-h-[90vh]">
-            {/* Modal Header */}
             <div className="bg-stone-950 px-6 py-4 border-b border-stone-800 flex items-center justify-between">
-              <h3 className="font-serif text-base font-bold text-amber-400 flex items-center gap-2">
+              <h3 className="font-serif text-base font-medium text-gold-400 flex items-center gap-2">
                 <Edit3 className="w-4 h-4" />
-                <span>{editingPost ? '게시글 수정' : '새 게시글 작성'}</span>
+                <span>{editingPost ? '저널 글 수정' : '새 저널 작성'}</span>
               </h3>
               <button
                 onClick={() => setIsWriteModalOpen(false)}
@@ -537,12 +544,10 @@ export default function BoardSection({
               </button>
             </div>
 
-            {/* Modal Form */}
             <form onSubmit={handleFormSubmit} className="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
-              {/* Title */}
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-stone-300 uppercase font-mono">
-                  게시글 제목 *
+                <label className="text-[11px] font-bold text-stone-300 uppercase font-mono tracking-wider">
+                  제목 *
                 </label>
                 <input
                   type="text"
@@ -550,52 +555,49 @@ export default function BoardSection({
                   placeholder="제목을 입력해 주세요"
                   value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
-                  className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3.5 py-2.5 text-stone-200 text-xs focus:outline-none focus:border-amber-500"
+                  className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3.5 py-2.5 text-stone-200 text-xs focus:outline-none focus:border-gold-500/60 tracking-wide"
                 />
               </div>
 
-              {/* Content */}
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-stone-300 uppercase font-mono">
-                  게시글 내용 *
+                <label className="text-[11px] font-bold text-stone-300 uppercase font-mono tracking-wider">
+                  내용 *
                 </label>
                 <textarea
                   required
                   rows={5}
-                  placeholder="후기나 내용, 안내 사항을 상세히 기술해주세요."
+                  placeholder="시술 후기, 궁금한 사항, 헤어 스타일 추천 이야기를 상세히 작성해 주세요."
                   value={formContent}
                   onChange={(e) => setFormContent(e.target.value)}
-                  className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3.5 py-2.5 text-stone-200 text-xs focus:outline-none focus:border-amber-500 resize-none"
+                  className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3.5 py-2.5 text-stone-200 text-xs focus:outline-none focus:border-gold-500/60 resize-none tracking-wide leading-relaxed"
                 />
               </div>
 
-              {/* ADMIN ONLY CONTROLS: Image Upload & Pin Options (Prompt Requirement) */}
               {isAdmin ? (
-                <div className="bg-stone-950/80 border border-amber-500/20 rounded-xl p-4 space-y-3">
-                  <div className="flex items-center gap-1.5 text-amber-400 font-bold text-[11px] font-mono border-b border-stone-800 pb-2">
+                <div className="bg-stone-950/80 border border-gold-500/20 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center gap-1.5 text-gold-400 font-bold text-[11px] font-mono border-b border-stone-800 pb-2">
                     <ShieldCheck className="w-4 h-4" />
-                    <span>관리자 전용 설정 (사진 첨부 및 상단 고정)</span>
+                    <span>관리자 옵션 (사진 첨부 & 상단 고정)</span>
                   </div>
 
-                  {/* Image Attachment (Admin Only) */}
                   <div className="space-y-2">
                     <label className="text-[11px] font-bold text-stone-300 flex items-center gap-1">
-                      <ImageIcon className="w-3.5 h-3.5 text-amber-400" />
-                      <span>이미지 / 사진 첨부 (Storage 파일 업로드 또는 URL / static asset 경로)</span>
+                      <ImageIcon className="w-3.5 h-3.5 text-gold-400" />
+                      <span>이미지 첨부</span>
                     </label>
 
                     <div className="flex gap-2">
                       <input
                         type="text"
-                        placeholder="Supabase Storage URL 또는 static 경로 (예: /image/hair_style_1.jpg)"
+                        placeholder="이미지 경로 (예: /assets/images/hair/hair_01.jpg)"
                         value={formImageUrl}
                         onChange={(e) => setFormImageUrl(e.target.value)}
-                        className="flex-1 bg-stone-900 border border-stone-800 rounded-xl px-3 py-2 text-stone-200 text-xs focus:outline-none focus:border-amber-500"
+                        className="flex-1 bg-stone-900 border border-stone-800 rounded-xl px-3 py-2 text-stone-200 text-xs focus:outline-none focus:border-gold-500/60 font-mono"
                       />
 
-                      <label className="px-3 py-2 bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold rounded-xl text-xs cursor-pointer flex items-center gap-1 shrink-0 transition-colors">
+                      <label className="px-3 py-2 bg-gold-500 hover:bg-gold-400 text-stone-950 font-bold rounded-xl text-xs cursor-pointer flex items-center gap-1 shrink-0 transition-colors">
                         <Upload className="w-3.5 h-3.5" />
-                        <span>{isUploading ? '업로드 중...' : '파일 선택'}</span>
+                        <span>{isUploading ? '업로드...' : '파일 선택'}</span>
                         <input
                           type="file"
                           accept="image/*"
@@ -606,9 +608,8 @@ export default function BoardSection({
                       </label>
                     </div>
 
-                    {/* Static Asset Preset Dropdown */}
                     <div className="flex items-center gap-2 pt-1">
-                      <span className="text-[10px] text-stone-400 font-mono">기본 스태틱 자산 선택:</span>
+                      <span className="text-[10px] text-stone-400 font-mono">샘플 이미지:</span>
                       <select
                         onChange={(e) => setFormImageUrl(e.target.value)}
                         className="bg-stone-900 border border-stone-800 text-stone-300 rounded-lg px-2 py-1 text-[11px]"
@@ -621,39 +622,37 @@ export default function BoardSection({
                     </div>
                   </div>
 
-                  {/* Pin Options (Admin Only) */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                     <label className="flex items-center gap-2 bg-stone-900 p-2.5 rounded-xl border border-stone-800 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={formIsPinned}
                         onChange={(e) => setFormIsPinned(e.target.checked)}
-                        className="w-4 h-4 accent-amber-500 rounded"
+                        className="w-4 h-4 accent-gold-500 rounded"
                       />
-                      <span className="text-xs font-bold text-amber-300 flex items-center gap-1">
+                      <span className="text-xs font-bold text-gold-300 flex items-center gap-1">
                         <Pin className="w-3.5 h-3.5" />
-                        <span>상단 고정 (Pin Post)</span>
+                        <span>PINNED (상단 고정)</span>
                       </span>
                     </label>
 
                     <div className="space-y-1">
                       <input
                         type="number"
-                        placeholder="핀 순서 (pin_order, 낮은 숫자가 우선)"
+                        placeholder="고정 순서 (pin_order)"
                         value={formPinOrder}
                         onChange={(e) => setFormPinOrder(e.target.value)}
-                        className="w-full bg-stone-900 border border-stone-800 rounded-xl px-3 py-2 text-stone-200 text-xs focus:outline-none focus:border-amber-500"
+                        className="w-full bg-stone-900 border border-stone-800 rounded-xl px-3 py-2 text-stone-200 text-xs focus:outline-none focus:border-gold-500/60"
                       />
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="p-3 bg-stone-950 border border-stone-800 rounded-xl text-[11px] text-stone-400 font-mono">
-                  💡 사진 첨부 및 상단 고정 기능은 관리자 계정에서만 가능합니다.
+                <div className="p-3 bg-stone-950 border border-stone-800/80 rounded-xl text-[11px] text-stone-400 font-mono">
+                  💡 사진 첨부 및 상단 고정은 관리자 전용 기능입니다.
                 </div>
               )}
 
-              {/* Submit Buttons */}
               <div className="pt-3 flex items-center justify-end gap-3">
                 <button
                   type="button"
@@ -665,9 +664,9 @@ export default function BoardSection({
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold transition-all shadow-md shadow-amber-500/10 disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-stone-950 font-bold transition-all shadow-md disabled:opacity-50"
                 >
-                  {isSubmitting ? '저장 중...' : editingPost ? '게시글 수정 완료' : '게시글 등록하기'}
+                  {isSubmitting ? '저장 중...' : editingPost ? '수정 완료' : '게시글 등록'}
                 </button>
               </div>
             </form>

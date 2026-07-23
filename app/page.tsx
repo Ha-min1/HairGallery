@@ -7,6 +7,9 @@ import { TRANSLATIONS, getLocalizedServices } from '@/lib/i18n';
 import { getSupabaseClient } from '@/lib/supabase';
 import ComponentInquiryModal from '@/app/components/ComponentInquiryModal';
 import BoardSection from '@/app/components/BoardSection';
+import Header from '@/app/components/Header';
+import HairPortfolioGallery from '@/app/components/HairPortfolioGallery';
+import InstallAppGuide from '@/app/components/InstallAppGuide';
 
 const TIME_SLOTS_24H = [
   '10:30', '11:30', '12:30', '13:30', '14:30',
@@ -44,8 +47,9 @@ export default function Home() {
   const [showHelpWidget, setShowHelpWidget] = useState<boolean>(true);
   const [helpActiveStep, setHelpActiveStep] = useState<number>(0);
 
-  // Component Inquiry states
+  // Component Inquiry & Install App Guide states
   const [showInquiryModal, setShowInquiryModal] = useState<boolean>(false);
+  const [showInstallModal, setShowInstallModal] = useState<boolean>(false);
   const [inquiryDefaultComp, setInquiryDefaultComp] = useState<string>('헤더 (Header & Navigation)');
 
   // Toggle help widget and persist to localStorage
@@ -758,186 +762,18 @@ export default function Home() {
           </button>
         </div>
       )}
-      {/* Sticky Header */}
-      <header className="sticky top-0 z-50 bg-white border-b border-stone-200 shadow-md">
-        <div className="max-w-5xl mx-auto px-4 h-20 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3 sm:gap-4 group">
-            <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-lg transition-transform group-hover:scale-105 overflow-hidden shadow-sm">
-              <img src="/hair_gallery_logo.png" alt="Logo" className="w-full h-full object-cover" />
-            </div>
-            <span className="font-serif text-sm sm:text-lg font-bold tracking-tight text-stone-900">THE HAIR GALLERY</span>
-          </Link>
-
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Show Admin Dashboard Link only if currentUser.role === 'ADMIN' */}
-            {currentUser && currentUser.role === 'ADMIN' && (
-              <Link 
-                href="/admin/dashboard" 
-                className="text-[10px] sm:text-xs font-mono font-bold tracking-wider text-white bg-gold-600 hover:bg-gold-700 uppercase flex items-center gap-1 border border-gold-700 px-2.5 py-1.5 rounded-lg transition-colors shadow-sm"
-              >
-                <LayoutDashboard className="h-3.5 w-3.5" />
-                <span>{t.goToAdmin}</span>
-              </Link>
-            )}
-
-            {/* Notification Bell for Logged-in Users */}
-            {currentUser && (
-              <div className="relative" ref={notiRef}>
-                <button
-                  onClick={() => setIsNotiOpen(!isNotiOpen)}
-                  className="relative p-2 text-stone-700 hover:text-stone-950 hover:bg-stone-100 rounded-full transition-colors cursor-pointer focus:outline-none flex items-center justify-center"
-                  aria-label="Notifications"
-                >
-                  <Bell className="h-5 w-5" />
-                  {notificationCount > 0 && (
-                    <>
-                      <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
-                      </span>
-                      <span className="absolute -top-1 -right-1 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-red-600 text-[9px] font-bold text-white border border-white">
-                        {notificationCount}
-                      </span>
-                    </>
-                  )}
-                </button>
-
-                {/* Dropdown Menu */}
-                {isNotiOpen && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white border border-stone-200 rounded-xl shadow-xl z-50 overflow-hidden animate-fadeIn text-stone-900">
-                    <div className="px-4 py-3 bg-stone-50 border-b border-stone-100 flex justify-between items-center">
-                      <span className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
-                        <Bell className="h-4 w-4 text-gold-600" />
-                        {lang === 'ko' ? '알림' : 'Notifications'}
-                      </span>
-                      {notificationCount > 0 && (
-                        <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-bold">
-                          {notificationCount}
-                        </span>
-                      )}
-                    </div>
-                    <div className="max-h-64 overflow-y-auto divide-y divide-stone-100">
-                      {notificationCount === 0 ? (
-                        <div className="p-6 text-center text-xs text-stone-400 font-light">
-                          {isAdmin 
-                            ? (lang === 'ko' ? '새로 들어온 예약 신청이 없습니다.' : 'No new booking requests.')
-                            : (lang === 'ko' ? '확정된 예약 알림이 없습니다.' : 'No confirmed reservation alerts.')}
-                        </div>
-                      ) : (
-                        notificationReservations.map((resv) => {
-                          const dateObj = new Date(resv.date);
-                          const formattedDate = dateObj.toLocaleDateString(
-                            lang === 'ko' ? 'ko-KR' : 'en-US',
-                            { month: 'short', day: 'numeric', weekday: 'short' }
-                          );
-                          const customerName = resv.customer_name || resv.customerName || '';
-                          const serviceName = resv.services?.name || resv.serviceName || 'Custom Styling';
-                          
-                          return (
-                            <div key={resv.id} className="p-4 hover:bg-stone-50 transition-colors text-xs space-y-1 text-left">
-                              <div className="flex justify-between items-center">
-                                <span className={`font-bold font-mono text-[10px] px-2 py-0.5 rounded border ${
-                                  isAdmin 
-                                    ? 'text-amber-700 bg-amber-50 border-amber-200' 
-                                    : 'text-emerald-600 bg-emerald-50 border-emerald-100'
-                                }`}>
-                                  {isAdmin 
-                                    ? (lang === 'ko' ? '신규 예약' : 'New Request')
-                                    : (lang === 'ko' ? '예약 확정' : 'Confirmed')}
-                                </span>
-                                <span className="text-[10px] text-stone-450 font-mono">
-                                  {formattedDate} {resv.time}
-                                </span>
-                              </div>
-                              <p className="text-stone-700 font-medium mt-1">
-                                {serviceName} ({customerName})
-                              </p>
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Show MyPage/Client Dashboard Link */}
-            <Link 
-              href="/mypage" 
-              className="text-[10px] sm:text-xs font-mono font-bold tracking-wider text-stone-700 hover:text-stone-950 flex items-center gap-1 border border-stone-200 hover:border-stone-300 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer bg-white"
-            >
-              <History className="h-3.5 w-3.5 text-stone-600" />
-              <span>{t.clientDashboard}</span>
-            </Link>
-
-            {/* Simulated Auth Menu */}
-            {currentUser ? (
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] sm:text-xs bg-stone-100 text-stone-700 px-2 py-1.5 rounded-lg font-mono flex items-center gap-1 border border-stone-200">
-                  <User className="h-3 w-3" />
-                  <span className="max-w-[70px] sm:max-w-[100px] truncate font-semibold">{currentUser.name}</span>
-                </span>
-                <button 
-                  onClick={handleLogout}
-                  className="text-[10px] font-mono font-bold text-rose-600 hover:text-rose-800 border border-rose-200 hover:border-rose-300 px-2 py-1.5 rounded-lg transition-colors cursor-pointer"
-                >
-                  {t.logout}
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1.5">
-                <button 
-                  onClick={() => {
-                    setShowAuthModal(true);
-                  }}
-                  className="text-[10px] sm:text-xs font-mono font-bold tracking-wider text-stone-100 bg-stone-900 hover:bg-stone-850 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
-                >
-                  {lang === 'ko' ? '로그인 / 회원가입' : 'Login / Sign Up'}
-                </button>
-              </div>
-            )}
-
-            {/* Board Quick Link */}
-            <a 
-              href="#board" 
-              className="text-[10px] sm:text-xs font-mono font-bold tracking-wider text-stone-700 hover:text-stone-900 bg-white hover:bg-stone-50 border border-stone-200 px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1 shrink-0"
-            >
-              <Scissors className="h-3.5 w-3.5 text-amber-600" />
-              <span>{lang === 'ko' ? '게시판' : 'Board'}</span>
-            </a>
-
-            {/* Store Location Quick Link */}
-            <a 
-              href="#store-location" 
-              className="text-[10px] sm:text-xs font-mono font-bold tracking-wider text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1 shrink-0"
-            >
-              <MapPin className="h-3.5 w-3.5 text-amber-600" />
-              <span className="hidden sm:inline">{lang === 'ko' ? '오시는 길' : 'Location'}</span>
-            </a>
-
-            {/* Language Selector */}
-            <div className="flex items-center gap-0.5 border border-stone-200 p-0.5 rounded-lg bg-stone-50 text-[9px] sm:text-[10px] font-mono font-bold">
-              <button
-                onClick={() => setLang('ko')}
-                className={`px-2 py-1 rounded transition-all cursor-pointer ${
-                  lang === 'ko' ? 'bg-stone-900 text-white shadow-sm' : 'text-stone-400 hover:text-stone-900'
-                }`}
-              >
-                KO
-              </button>
-              <button
-                onClick={() => setLang('en')}
-                className={`px-2 py-1 rounded transition-all cursor-pointer ${
-                  lang === 'en' ? 'bg-stone-900 text-white shadow-sm' : 'text-stone-400 hover:text-stone-900'
-                }`}
-              >
-                EN
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* Responsive 2-Tier Header */}
+      <Header
+        lang={lang}
+        setLang={setLang}
+        currentUser={currentUser}
+        notificationCount={notificationCount}
+        notificationReservations={notificationReservations}
+        onOpenAuthModal={() => setShowAuthModal(true)}
+        onLogout={handleLogout}
+        onOpenInquiryModal={() => setShowInquiryModal(true)}
+        onOpenInstallModal={() => setShowInstallModal(true)}
+      />
 
       {/* Main Content */}
       <main className="flex-1">
@@ -1041,6 +877,9 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        {/* Dynamic Hair Portfolio Gallery Component */}
+        <HairPortfolioGallery lang={lang} />
 
         <div className="max-w-5xl mx-auto py-12 px-4">
           {/* 도움말 위젯 (Help & Booking Guide Widget) */}
@@ -1833,7 +1672,7 @@ export default function Home() {
                 className="inline-flex items-center gap-1.5 text-[11px] font-mono text-amber-400 hover:text-amber-300 underline transition-colors cursor-pointer"
               >
                 <MessageSquarePlus className="w-3.5 h-3.5" />
-                <span>{lang === 'ko' ? '💬 특정 컴포넌트 문의 및 디버그 신고' : '💬 Component Inquiry & Debug Report'}</span>
+                <span>{lang === 'ko' ? '💬 일반 문의 및 컴포넌트 지정 문의' : '💬 General & Component Inquiry'}</span>
               </button>
             </div>
           </div>
@@ -1852,10 +1691,10 @@ export default function Home() {
           setShowInquiryModal(true);
         }}
         className="fixed bottom-6 right-6 z-40 bg-amber-500 hover:bg-amber-400 text-stone-950 px-4 py-2.5 rounded-full shadow-2xl font-mono text-xs font-bold flex items-center gap-2 transition-all hover:scale-105 active:scale-95 border border-amber-300/40 cursor-pointer"
-        title="컴포넌트 지정 문의 / 버그 신고"
+        title="일반 문의 및 컴포넌트 지정 문의"
       >
         <MessageSquarePlus className="w-4 h-4" />
-        <span className="hidden sm:inline">{lang === 'ko' ? '컴포넌트 문의' : 'Component Inquiry'}</span>
+        <span className="hidden sm:inline">{lang === 'ko' ? '일반 문의 및 컴포넌트 지정 문의' : 'General & Component Inquiry'}</span>
       </button>
 
       {/* Component Inquiry Modal */}
@@ -1864,6 +1703,13 @@ export default function Home() {
         onClose={() => setShowInquiryModal(false)}
         defaultTargetComponent={inquiryDefaultComp}
         currentUser={currentUser}
+        lang={lang}
+      />
+
+      {/* Install App Guide Modal */}
+      <InstallAppGuide
+        isOpen={showInstallModal}
+        onClose={() => setShowInstallModal(false)}
         lang={lang}
       />
 
