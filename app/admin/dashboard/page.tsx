@@ -1456,27 +1456,28 @@ export default function AdminDashboard() {
 
   // Sales settlement calculations
   // 1. Daily Sales
+  const targetDailyNorm = normDateStr(selectedDailyDate);
   const dailySalesSum = workRecords
-    .filter(rec => rec.date === selectedDailyDate)
-    .reduce((sum, rec) => sum + rec.amount, 0);
+    .filter(rec => normDateStr(rec.date) === targetDailyNorm)
+    .reduce((sum, rec) => sum + (Number(rec.amount) || 0), 0);
 
-  const dailySalesRecords = workRecords.filter(rec => rec.date === selectedDailyDate);
+  const dailySalesRecords = workRecords.filter(rec => normDateStr(rec.date) === targetDailyNorm);
 
   // 2. Monthly Sales
   const selectedMonthlyPrefix = `${selectedMonthlyYear}-${String(selectedMonthlyMonth).padStart(2, '0')}`;
   const monthlySalesSum = workRecords
-    .filter(rec => rec.date.startsWith(selectedMonthlyPrefix))
-    .reduce((sum, rec) => sum + rec.amount, 0);
+    .filter(rec => normDateStr(rec.date).startsWith(selectedMonthlyPrefix))
+    .reduce((sum, rec) => sum + (Number(rec.amount) || 0), 0);
 
-  const monthlySalesRecords = workRecords.filter(rec => rec.date.startsWith(selectedMonthlyPrefix));
+  const monthlySalesRecords = workRecords.filter(rec => normDateStr(rec.date).startsWith(selectedMonthlyPrefix));
 
   // 3. Yearly Sales
   const selectedYearlyPrefix = `${selectedYearlyYear}-`;
   const yearlySalesSum = workRecords
-    .filter(rec => rec.date.startsWith(selectedYearlyPrefix))
-    .reduce((sum, rec) => sum + rec.amount, 0);
+    .filter(rec => normDateStr(rec.date).startsWith(selectedYearlyPrefix))
+    .reduce((sum, rec) => sum + (Number(rec.amount) || 0), 0);
 
-  const yearlySalesRecords = workRecords.filter(rec => rec.date.startsWith(selectedYearlyPrefix));
+  const yearlySalesRecords = workRecords.filter(rec => normDateStr(rec.date).startsWith(selectedYearlyPrefix));
 
   const t = TRANSLATIONS[lang];
 
