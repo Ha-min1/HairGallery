@@ -284,19 +284,17 @@ export default function AdminDashboard() {
               setMobileOptimized(profile.mobile_optimized);
             }
           } else {
-            // Default to authorized if logged into admin dashboard
-            setIsAdminAuthorized(true);
-            setAdminProfile(profile || { role: 'ADMIN', is_admin: true, email: userEmail });
+            setIsAdminAuthorized(false);
+            setAdminProfile(null);
           }
         } else {
-          // Default to authorized for admin dashboard session
-          setIsAdminAuthorized(true);
-          setAdminProfile({ role: 'ADMIN', is_admin: true, email: userEmail });
+          setIsAdminAuthorized(false);
+          setAdminProfile(null);
         }
       } catch (err) {
         console.error('Failed to authorize admin session:', err);
-        setIsAdminAuthorized(true);
-        setAdminProfile({ role: 'ADMIN', is_admin: true, email: 'admin@hairgallery.com' });
+        setIsAdminAuthorized(false);
+        setAdminProfile(null);
       } finally {
         setCheckingAuth(false);
       }

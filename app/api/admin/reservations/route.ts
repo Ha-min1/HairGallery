@@ -1,8 +1,59 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+async function checkAdmin(req: NextRequest) {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    return { error: 'Unauthorized: No token provided', status: 401 };
+  }
+
+  const token = authHeader.replace('Bearer ', '');
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return { error: 'Server configuration error: Missing environment variables', status: 500 };
+  }
+
+  const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: { persistSession: false }
+  });
+
+  const { data: { user }, error: authError } = await anonClient.auth.getUser(token);
+  if (authError || !user) {
+    return { error: 'Unauthorized: Invalid token', status: 401 };
+  }
+
+  const { data: profile } = await anonClient
+    .from('users')
+    .select('role, is_admin')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  const isAdmin = Boolean(
+    profile?.role === 'ADMIN' ||
+    (profile?.role && String(profile.role).toUpperCase() === 'ADMIN') ||
+    profile?.is_admin === true ||
+    profile?.is_admin === 'true' ||
+    user.user_metadata?.role === 'ADMIN' ||
+    user.user_metadata?.is_admin === true ||
+    user.email === 'admin@hairgallery.com'
+  );
+
+  if (!isAdmin) {
+    return { error: 'Forbidden: Admin privilege required', status: 403 };
+  }
+
+  return { user, error: null };
+}
+
 export async function GET(req: NextRequest) {
   try {
+    const authCheck = await checkAdmin(req);
+    if (authCheck.error) {
+      return NextResponse.json({ error: authCheck.error }, { status: authCheck.status || 401 });
+    }
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
@@ -96,6 +147,11 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const authCheck = await checkAdmin(req);
+    if (authCheck.error) {
+      return NextResponse.json({ error: authCheck.error }, { status: authCheck.status || 401 });
+    }
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
