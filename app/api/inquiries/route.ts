@@ -1,35 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import fs from 'fs';
-import path from 'path';
 
-export const runtime = 'nodejs';
-
-const LOCAL_STORAGE_PATH = path.join(process.cwd(), 'scratch', 'component_inquiries_db.json');
-
-function getLocalInquiries(): any[] {
-  try {
-    if (fs.existsSync(LOCAL_STORAGE_PATH)) {
-      const data = fs.readFileSync(LOCAL_STORAGE_PATH, 'utf8');
-      return JSON.parse(data) || [];
-    }
-  } catch (e) {
-    console.error('Error reading local inquiries store:', e);
-  }
-  return [];
-}
-
-function saveLocalInquiries(items: any[]) {
-  try {
-    const dir = path.dirname(LOCAL_STORAGE_PATH);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    fs.writeFileSync(LOCAL_STORAGE_PATH, JSON.stringify(items, null, 2), 'utf8');
-  } catch (e) {
-    console.error('Error writing local inquiries store:', e);
-  }
-}
+export const runtime = 'edge';
 
 export async function POST(req: NextRequest) {
   try {
@@ -87,19 +59,10 @@ export async function POST(req: NextRequest) {
         .single();
 
       if (!error && data) {
-        // Also sync local storage
-        const currentLocal = getLocalInquiries();
-        saveLocalInquiries([data, ...currentLocal]);
         return NextResponse.json({ success: true, inquiry: data });
-      } else {
-        console.warn('Supabase insert notice, using local store:', error?.message);
       }
+      console.warn('Supabase insert notice:', error?.message);
     }
-
-    // Save to local store fallback
-    const currentLocal = getLocalInquiries();
-    const updated = [newInquiry, ...currentLocal];
-    saveLocalInquiries(updated);
 
     return NextResponse.json({ success: true, inquiry: newInquiry });
   } catch (err: any) {

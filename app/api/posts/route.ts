@@ -1,36 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import fs from 'fs';
-import path from 'path';
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
-
-const LOCAL_STORAGE_PATH = path.join(process.cwd(), 'scratch', 'posts_db.json');
-
-function getLocalPosts(): any[] {
-  try {
-    if (fs.existsSync(LOCAL_STORAGE_PATH)) {
-      const data = fs.readFileSync(LOCAL_STORAGE_PATH, 'utf8');
-      return JSON.parse(data) || [];
-    }
-  } catch (e) {
-    console.error('Error reading local posts store:', e);
-  }
-  return [];
-}
-
-function saveLocalPosts(items: any[]) {
-  try {
-    const dir = path.dirname(LOCAL_STORAGE_PATH);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    fs.writeFileSync(LOCAL_STORAGE_PATH, JSON.stringify(items, null, 2), 'utf8');
-  } catch (e) {
-    console.error('Error writing local posts store:', e);
-  }
-}
+export const runtime = 'edge';
 
 async function verifyAuth(req: NextRequest) {
   const authHeader = req.headers.get('Authorization');
@@ -99,7 +70,6 @@ export async function GET(req: NextRequest) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-    let dbPosts: any[] = [];
     if (supabaseUrl && supabaseServiceKey) {
       const supabase = createClient(supabaseUrl, supabaseServiceKey, { auth: { persistSession: false } });
       const { data, error } = await supabase
@@ -110,20 +80,13 @@ export async function GET(req: NextRequest) {
         `);
 
       if (!error && data) {
-        dbPosts = data;
+        const sorted = sortPosts(data);
+        return NextResponse.json({ success: true, posts: sorted });
       }
+      console.warn('Supabase fetch posts notice:', error?.message);
     }
 
-    // Merge DB & Local Store
-    const localPosts = getLocalPosts();
-    const map = new Map<string, any>();
-    dbPosts.forEach(p => map.set(p.id, p));
-    localPosts.forEach(p => {
-      if (!map.has(p.id)) map.set(p.id, p);
-    });
-
-    const sorted = sortPosts(Array.from(map.values()));
-    return NextResponse.json({ success: true, posts: sorted });
+    return NextResponse.json({ success: true, posts: [] });
   } catch (err: any) {
     console.error('Error fetching posts:', err);
     return NextResponse.json({ error: err.message || '게시글 목록을 불러오는 중 오류가 발생했습니다.' }, { status: 500 });
@@ -157,8 +120,6 @@ export async function POST(req: NextRequest) {
       title: title.trim(),
       content: content.trim(),
       author_id: user.id,
-      author_name: user.name,
-      author_email: user.email,
       image_url: user.isAdmin ? (image_url || null) : null,
       is_pinned: user.isAdmin ? Boolean(is_pinned) : false,
       pin_order: user.isAdmin && pin_order !== null && pin_order !== undefined && pin_order !== '' ? Number(pin_order) : null,
@@ -173,30 +134,18 @@ export async function POST(req: NextRequest) {
       const supabase = createClient(supabaseUrl, supabaseServiceKey, { auth: { persistSession: false } });
       const { data, error } = await supabase
         .from('posts')
-        .insert([{
-          id: newPost.id,
-          title: newPost.title,
-          content: newPost.content,
-          author_id: newPost.author_id,
-          image_url: newPost.image_url,
-          is_pinned: newPost.is_pinned,
-          pin_order: newPost.pin_order,
-          created_at: newPost.created_at,
-          updated_at: newPost.updated_at
-        }])
+        .insert([newPost])
         .select()
         .single();
 
       if (!error && data) {
-        const local = getLocalPosts();
-        saveLocalPosts([data, ...local]);
         return NextResponse.json({ success: true, post: data });
+      }
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
       }
     }
 
-    // Local fallback
-    const local = getLocalPosts();
-    saveLocalPosts([newPost, ...local]);
     return NextResponse.json({ success: true, post: newPost });
   } catch (err: any) {
     console.error('Error creating post:', err);
@@ -218,18 +167,11 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: '게시글 ID가 필요합니다.' }, { status: 400 });
     }
 
-    // Check existing post
-    const localPosts = getLocalPosts();
-    let targetPost = localPosts.find(p => p.id === id);
-
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, { auth: { persistSession: false } });
 
-    if (supabaseUrl && supabaseServiceKey) {
-      const supabase = createClient(supabaseUrl, supabaseServiceKey, { auth: { persistSession: false } });
-      const { data } = await supabase.from('posts').select('*').eq('id', id).maybeSingle();
-      if (data) targetPost = data;
-    }
+    const { data: targetPost } = await supabase.from('posts').select('*').eq('id', id).maybeSingle();
 
     if (!targetPost) {
       return NextResponse.json({ error: '게시글을 찾을 수 없습니다.' }, { status: 404 });
@@ -263,13 +205,10 @@ export async function PATCH(req: NextRequest) {
       if (pin_order !== undefined) updatePayload.pin_order = pin_order !== null && pin_order !== '' ? Number(pin_order) : null;
     }
 
-    if (supabaseUrl && supabaseServiceKey) {
-      const supabase = createClient(supabaseUrl, supabaseServiceKey, { auth: { persistSession: false } });
-      await supabase.from('posts').update(updatePayload).eq('id', id);
+    const { error } = await supabase.from('posts').update(updatePayload).eq('id', id);
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
-
-    const updatedLocal = localPosts.map(p => p.id === id ? { ...p, ...updatePayload } : p);
-    saveLocalPosts(updatedLocal);
 
     return NextResponse.json({ success: true, updated: updatePayload });
   } catch (err: any) {
@@ -292,17 +231,11 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: '게시글 ID가 필요합니다.' }, { status: 400 });
     }
 
-    const localPosts = getLocalPosts();
-    let targetPost = localPosts.find(p => p.id === id);
-
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, { auth: { persistSession: false } });
 
-    if (supabaseUrl && supabaseServiceKey) {
-      const supabase = createClient(supabaseUrl, supabaseServiceKey, { auth: { persistSession: false } });
-      const { data } = await supabase.from('posts').select('*').eq('id', id).maybeSingle();
-      if (data) targetPost = data;
-    }
+    const { data: targetPost } = await supabase.from('posts').select('*').eq('id', id).maybeSingle();
 
     if (!targetPost) {
       return NextResponse.json({ error: '게시글을 찾을 수 없거나 이미 삭제되었습니다.' }, { status: 404 });
@@ -313,13 +246,10 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: '삭제 권한이 없습니다.' }, { status: 403 });
     }
 
-    if (supabaseUrl && supabaseServiceKey) {
-      const supabase = createClient(supabaseUrl, supabaseServiceKey, { auth: { persistSession: false } });
-      await supabase.from('posts').delete().eq('id', id);
+    const { error } = await supabase.from('posts').delete().eq('id', id);
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
-
-    const updatedLocal = localPosts.filter(p => p.id !== id);
-    saveLocalPosts(updatedLocal);
 
     return NextResponse.json({ success: true, deletedId: id });
   } catch (err: any) {

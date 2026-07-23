@@ -1,36 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import fs from 'fs';
-import path from 'path';
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
-
-const LOCAL_STORAGE_PATH = path.join(process.cwd(), 'scratch', 'component_inquiries_db.json');
-
-function getLocalInquiries(): any[] {
-  try {
-    if (fs.existsSync(LOCAL_STORAGE_PATH)) {
-      const data = fs.readFileSync(LOCAL_STORAGE_PATH, 'utf8');
-      return JSON.parse(data) || [];
-    }
-  } catch (e) {
-    console.error('Error reading local inquiries store:', e);
-  }
-  return [];
-}
-
-function saveLocalInquiries(items: any[]) {
-  try {
-    const dir = path.dirname(LOCAL_STORAGE_PATH);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    fs.writeFileSync(LOCAL_STORAGE_PATH, JSON.stringify(items, null, 2), 'utf8');
-  } catch (e) {
-    console.error('Error writing local inquiries store:', e);
-  }
-}
+export const runtime = 'edge';
 
 async function verifyAdmin(req: NextRequest) {
   const authHeader = req.headers.get('Authorization');
@@ -74,7 +45,6 @@ export async function GET(req: NextRequest) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    let supabaseInquiries: any[] = [];
     if (supabaseUrl && supabaseServiceKey) {
       const supabase = createClient(supabaseUrl, supabaseServiceKey, { auth: { persistSession: false } });
       const { data, error } = await supabase
@@ -83,23 +53,12 @@ export async function GET(req: NextRequest) {
         .order('created_at', { ascending: false });
 
       if (!error && data) {
-        supabaseInquiries = data;
+        return NextResponse.json({ inquiries: data });
       }
+      console.warn('Supabase admin inquiries fetch notice:', error?.message);
     }
 
-    // Merge with local store to ensure no lost inquiries
-    const localInquiries = getLocalInquiries();
-    const map = new Map<string, any>();
-    supabaseInquiries.forEach(item => map.set(item.id, item));
-    localInquiries.forEach(item => {
-      if (!map.has(item.id)) map.set(item.id, item);
-    });
-
-    const merged = Array.from(map.values()).sort(
-      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
-
-    return NextResponse.json({ inquiries: merged });
+    return NextResponse.json({ inquiries: [] });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Error fetching inquiries' }, { status: 500 });
   }
@@ -137,21 +96,15 @@ export async function PATCH(req: NextRequest) {
 
     if (supabaseUrl && supabaseServiceKey) {
       const supabase = createClient(supabaseUrl, supabaseServiceKey, { auth: { persistSession: false } });
-      await supabase
+      const { error } = await supabase
         .from('component_inquiries')
         .update(updatePayload)
         .eq('id', id);
-    }
 
-    // Update local store
-    const localItems = getLocalInquiries();
-    const updatedLocal = localItems.map(item => {
-      if (item.id === id) {
-        return { ...item, ...updatePayload };
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
       }
-      return item;
-    });
-    saveLocalInquiries(updatedLocal);
+    }
 
     return NextResponse.json({ success: true, updated: updatePayload });
   } catch (err: any) {
@@ -178,16 +131,15 @@ export async function DELETE(req: NextRequest) {
 
     if (supabaseUrl && supabaseServiceKey) {
       const supabase = createClient(supabaseUrl, supabaseServiceKey, { auth: { persistSession: false } });
-      await supabase
+      const { error } = await supabase
         .from('component_inquiries')
         .delete()
         .eq('id', id);
-    }
 
-    // Update local store
-    const localItems = getLocalInquiries();
-    const updatedLocal = localItems.filter(item => item.id !== id);
-    saveLocalInquiries(updatedLocal);
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+    }
 
     return NextResponse.json({ success: true, deletedId: id });
   } catch (err: any) {

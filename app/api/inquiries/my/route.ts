@@ -1,24 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import fs from 'fs';
-import path from 'path';
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
-
-const LOCAL_STORAGE_PATH = path.join(process.cwd(), 'scratch', 'component_inquiries_db.json');
-
-function getLocalInquiries(): any[] {
-  try {
-    if (fs.existsSync(LOCAL_STORAGE_PATH)) {
-      const data = fs.readFileSync(LOCAL_STORAGE_PATH, 'utf8');
-      return JSON.parse(data) || [];
-    }
-  } catch (e) {
-    console.error('Error reading local inquiries store:', e);
-  }
-  return [];
-}
+export const runtime = 'edge';
 
 export async function GET(req: NextRequest) {
   try {
@@ -39,7 +22,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: '유효하지 않은 인증 세션입니다.' }, { status: 401 });
     }
 
-    // Attempt Supabase fetch
     if (supabaseUrl && supabaseServiceKey) {
       const supabaseService = createClient(supabaseUrl, supabaseServiceKey, { auth: { persistSession: false } });
       const { data, error } = await supabaseService
@@ -49,26 +31,12 @@ export async function GET(req: NextRequest) {
         .order('created_at', { ascending: false });
 
       if (!error && data) {
-        // Merge with local store items for this user_id if any exist locally
-        const localItems = getLocalInquiries().filter(item => item.user_id === user.id);
-        const map = new Map<string, any>();
-        data.forEach(item => map.set(item.id, item));
-        localItems.forEach(item => {
-          if (!map.has(item.id)) map.set(item.id, item);
-        });
-
-        const merged = Array.from(map.values()).sort(
-          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
-        return NextResponse.json({ success: true, inquiries: merged });
+        return NextResponse.json({ success: true, inquiries: data });
       }
+      console.warn('Supabase inquiries my fetch notice:', error?.message);
     }
 
-    // Local fallback
-    const userInquiries = getLocalInquiries().filter(item => item.user_id === user.id);
-    userInquiries.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-    return NextResponse.json({ success: true, inquiries: userInquiries });
+    return NextResponse.json({ success: true, inquiries: [] });
   } catch (err: any) {
     console.error('Error fetching user inquiries:', err);
     return NextResponse.json(

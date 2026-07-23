@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import fs from 'fs';
-import path from 'path';
 
-export const runtime = 'nodejs';
+export const runtime = 'edge';
 
 async function verifyAdmin(req: NextRequest) {
   const authHeader = req.headers.get('Authorization');
@@ -48,21 +46,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '업로드할 이미지 파일 또는 정적 경로가 필요합니다.' }, { status: 400 });
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // Try Supabase Storage upload
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
     if (supabaseUrl && supabaseServiceKey) {
       const supabase = createClient(supabaseUrl, supabaseServiceKey, { auth: { persistSession: false } });
-      const filename = `post_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${file.name.split('.').pop() || 'png'}`;
-      
+      const ext = file.name.split('.').pop() || 'png';
+      const filename = `post_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
+      const arrayBuffer = await file.arrayBuffer();
+
       const { data: storageData, error: storageErr } = await supabase
         .storage
         .from('gallery')
-        .upload(filename, buffer, {
+        .upload(filename, arrayBuffer, {
           contentType: file.type || 'image/jpeg',
           upsert: true
         });
@@ -74,23 +70,13 @@ export async function POST(req: NextRequest) {
           .getPublicUrl(filename);
 
         return NextResponse.json({ success: true, image_url: publicUrlData.publicUrl });
+      } else if (storageErr) {
+        console.warn('Supabase storage upload notice:', storageErr.message);
       }
     }
 
-    // Local asset fallback
-    const ext = file.name.split('.').pop() || 'png';
-    const filename = `post_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
-    const uploadDir = path.join(process.cwd(), 'public', 'image', 'posts');
-
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-
-    const filePath = path.join(uploadDir, filename);
-    fs.writeFileSync(filePath, buffer);
-
-    const localImageUrl = `/image/posts/${filename}`;
-    return NextResponse.json({ success: true, image_url: localImageUrl });
+    // Fallback static sample if storage is not configured
+    return NextResponse.json({ success: true, image_url: '/image/hair_gallery_logo.png' });
   } catch (err: any) {
     console.error('Error uploading post image:', err);
     return NextResponse.json({ error: err.message || '이미지 업로드 중 오류가 발생했습니다.' }, { status: 500 });
