@@ -94,10 +94,14 @@ RETURNS BOOLEAN AS $$
 BEGIN
   RETURN EXISTS (
     SELECT 1 FROM public.users
-    WHERE id = auth.uid() AND role = 'ADMIN'
+    WHERE id = auth.uid()
+      AND (
+        UPPER(role::text) = 'ADMIN'
+        OR is_admin = true
+      )
   );
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Users can read their own row, admins can read any row
 CREATE POLICY "Select users policy" ON users FOR SELECT USING (

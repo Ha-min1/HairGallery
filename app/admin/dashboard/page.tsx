@@ -257,15 +257,50 @@ export default function AdminDashboard() {
       
       const response = await fetch('/api/admin/reservations', {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-      }); // Secured dashboard route
+      });
+      
       if (response.ok) {
         const data = await response.json();
         setReservations(data.reservations || []);
+        return;
+      }
+
+      // Fallback: Direct Supabase client query without user_id filter for Admin
+      const { data: directData, error: directErr } = await supabase
+        .from('reservations')
+        .select(`
+          id,
+          customer_name,
+          customer_phone,
+          date,
+          time,
+          status,
+          price,
+          services (
+            name,
+            price
+          )
+        `)
+        .order('date', { ascending: false });
+
+      if (!directErr && directData) {
+        const formatted = directData.map((item: any) => ({
+          id: item.id,
+          customerName: item.customer_name,
+          customerPhone: item.customer_phone,
+          serviceName: item.services?.name || 'Custom Styling',
+          price: item.price !== null && item.price !== undefined ? item.price : (item.services?.price || 0),
+          date: item.date ? String(item.date).split('T')[0].trim() : '',
+          time: item.time || '10:00',
+          status: item.status,
+        }));
+        setReservations(formatted);
       } else {
         setReservations([]);
       }
     } catch (err) {
       console.error('Failed to load active reservations:', err);
+      setReservations([]);
     } finally {
       setIsLoading(false);
     }
