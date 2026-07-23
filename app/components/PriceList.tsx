@@ -276,14 +276,17 @@ export default function PriceList({ lang = 'ko', currentUser = null, isEmbedded 
         {/* Category Tabs */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
           <button
+            type="button"
             onClick={() => setSelectedCategory('all')}
-            className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold transition-all shrink-0 cursor-pointer ${
+            className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all shrink-0 cursor-pointer ${
               selectedCategory === 'all'
-                ? 'bg-stone-900 text-gold-400 shadow-md border border-stone-700'
-                : 'bg-white text-stone-600 border border-stone-200 hover:bg-stone-100'
+                ? 'bg-stone-950 text-gold-400 shadow-md border border-gold-500/50 ring-1 ring-gold-500/30'
+                : 'bg-white text-stone-700 border border-stone-200 hover:bg-stone-100 hover:text-stone-950'
             }`}
           >
-            {lang === 'ko' ? '전체 보기' : 'All Categories'} ({items.length})
+            <span className={selectedCategory === 'all' ? 'text-gold-400 font-bold' : 'text-stone-700 font-semibold'}>
+              {lang === 'ko' ? '전체 보기' : 'All Categories'} ({items.length})
+            </span>
           </button>
 
           {CATEGORIES.map(cat => {
@@ -293,16 +296,19 @@ export default function PriceList({ lang = 'ko', currentUser = null, isEmbedded 
             return (
               <button
                 key={cat.id}
+                type="button"
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold transition-all shrink-0 cursor-pointer ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all shrink-0 cursor-pointer ${
                   isSelected
-                    ? 'bg-stone-900 text-gold-400 shadow-md border border-stone-700'
-                    : 'bg-white text-stone-600 border border-stone-200 hover:bg-stone-100'
+                    ? 'bg-stone-950 text-gold-400 shadow-md border border-gold-500/50 ring-1 ring-gold-500/30'
+                    : 'bg-white text-stone-700 border border-stone-200 hover:bg-stone-100 hover:text-stone-950'
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-gold-400' : 'text-stone-400'}`} />
-                <span>{lang === 'ko' ? cat.labelKo : cat.labelEn}</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isSelected ? 'bg-stone-800 text-gold-300' : 'bg-stone-100 text-stone-500'}`}>
+                <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-gold-400' : 'text-stone-500'}`} />
+                <span className={isSelected ? 'text-gold-400 font-bold' : 'text-stone-700 font-semibold'}>
+                  {lang === 'ko' ? cat.labelKo : cat.labelEn}
+                </span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${isSelected ? 'bg-stone-800 text-gold-300 border border-gold-500/20' : 'bg-stone-100 text-stone-500'}`}>
                   {count}
                 </span>
               </button>
