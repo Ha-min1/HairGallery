@@ -10,6 +10,7 @@ import BoardSection from '@/app/components/BoardSection';
 import Header from '@/app/components/Header';
 import HairPortfolioGallery from '@/app/components/HairPortfolioGallery';
 import InstallAppGuide from '@/app/components/InstallAppGuide';
+import InstallAppBanner from '@/app/components/InstallAppBanner';
 
 const TIME_SLOTS_24H = [
   '10:30', '11:30', '12:30', '13:30', '14:30',
@@ -775,6 +776,9 @@ export default function Home() {
         onOpenInstallModal={() => setShowInstallModal(true)}
       />
 
+      {/* Top Prominent App Installation Banner */}
+      <InstallAppBanner lang={lang} />
+
       {/* Main Content */}
       <main className="flex-1">
         {/* Editorial Hero Block */}
@@ -879,7 +883,7 @@ export default function Home() {
         </section>
 
         {/* Dynamic Hair Portfolio Gallery Component */}
-        <HairPortfolioGallery lang={lang} />
+        <HairPortfolioGallery lang={lang} currentUser={currentUser} />
 
         <div className="max-w-5xl mx-auto py-12 px-4">
           {/* 도움말 위젯 (Help & Booking Guide Widget) */}
