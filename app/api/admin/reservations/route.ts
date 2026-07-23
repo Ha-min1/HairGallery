@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
       auth: { persistSession: false }
     });
 
-    // Fetch all reservations, joined with services to retrieve name and price
+    // Fetch all reservations using LEFT JOIN with services to prevent dropping rows
     let data: any[] | null = null;
     const { data: firstTryData, error } = await adminClient
       .from('reservations')
@@ -66,7 +66,8 @@ export async function GET(req: NextRequest) {
         time,
         status,
         price,
-        services (
+        service_id,
+        services!left (
           name,
           price
         )
@@ -75,32 +76,18 @@ export async function GET(req: NextRequest) {
       .order('time', { ascending: false });
 
     if (error) {
-      // Fallback if price column doesn't exist yet in the database
-      if (error.message.includes('column "price" does not exist') || error.code === 'PGRST204' || error.code === '42703') {
-        const fallbackResult = await adminClient
-          .from('reservations')
-          .select(`
-            id,
-            customer_name,
-            customer_phone,
-            date,
-            time,
-            status,
-            services (
-              name,
-              price
-            )
-          `)
-          .order('date', { ascending: false })
-          .order('time', { ascending: false });
+      console.warn('First try query with services join failed, attempting plain reservations query:', error.message);
+      // Fallback query: Read reservations table directly without joining services
+      const fallbackResult = await adminClient
+        .from('reservations')
+        .select('*')
+        .order('date', { ascending: false })
+        .order('time', { ascending: false });
 
-        if (fallbackResult.error) {
-          return NextResponse.json({ error: fallbackResult.error.message }, { status: 500 });
-        }
-        data = fallbackResult.data;
-      } else {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+      if (fallbackResult.error) {
+        return NextResponse.json({ error: fallbackResult.error.message }, { status: 500 });
       }
+      data = fallbackResult.data;
     } else {
       data = firstTryData;
     }

@@ -266,8 +266,9 @@ export default function AdminDashboard() {
         return;
       }
 
-      // Fallback: Direct Supabase client query without user_id filter for Admin
-      const { data: directData, error: directErr } = await supabase
+      // Fallback: Direct Supabase client query using LEFT JOIN or plain query without user_id filter
+      let directData: any[] | null = null;
+      const { data: joinData, error: joinErr } = await supabase
         .from('reservations')
         .select(`
           id,
@@ -277,14 +278,24 @@ export default function AdminDashboard() {
           time,
           status,
           price,
-          services (
+          services!left (
             name,
             price
           )
         `)
         .order('date', { ascending: false });
 
-      if (!directErr && directData) {
+      if (joinErr || !joinData) {
+        const { data: plainData } = await supabase
+          .from('reservations')
+          .select('*')
+          .order('date', { ascending: false });
+        directData = plainData;
+      } else {
+        directData = joinData;
+      }
+
+      if (directData && directData.length > 0) {
         const formatted = directData.map((item: any) => ({
           id: item.id,
           customerName: item.customer_name,
@@ -1321,14 +1332,20 @@ export default function AdminDashboard() {
     return dateStr.replace(/-/g, '/');
   };
 
-  // Filter reservations
-  const filteredReservations = reservations.filter(res => {
-    const nameMatch = res.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) || false;
-    const phoneMatch = (res.customerPhone?.toLowerCase().includes(searchQuery.toLowerCase()) || false) || matchCleanedPhone(res.customerPhone, searchQuery);
-    const matchesSearch = nameMatch || phoneMatch;
-    const matchesStatus = filterStatus === 'All' || res.status === filterStatus;
-    return matchesSearch && matchesStatus;
-  });
+  // Filter and sort reservations for the roster table (newest first)
+  const filteredReservations = reservations
+    .filter(res => {
+      const nameMatch = res.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) || false;
+      const phoneMatch = (res.customerPhone?.toLowerCase().includes(searchQuery.toLowerCase()) || false) || matchCleanedPhone(res.customerPhone, searchQuery);
+      const matchesSearch = nameMatch || phoneMatch;
+      const matchesStatus = filterStatus === 'All' || res.status === filterStatus;
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => {
+      const dateA = normDateStr(a.date) + ' ' + (a.time || '');
+      const dateB = normDateStr(b.date) + ' ' + (b.time || '');
+      return dateB.localeCompare(dateA);
+    });
 
   // Admin Calendar Helper calculations
   const getDaysInMonth = (year: number, month: number) => {
@@ -1380,7 +1397,15 @@ export default function AdminDashboard() {
   // Helper to normalize reservation date to YYYY-MM-DD
   const normDateStr = (rawDate: any): string => {
     if (!rawDate) return '';
-    return String(rawDate).split('T')[0].trim();
+    const str = String(rawDate).split('T')[0].trim().replace(/\//g, '-');
+    const parts = str.split('-');
+    if (parts.length === 3) {
+      const y = parts[0];
+      const m = parts[1].padStart(2, '0');
+      const d = parts[2].padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+    return str;
   };
 
   // Helper to normalize reservation time to HH:mm
