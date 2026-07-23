@@ -77,7 +77,13 @@ async function verifyAdminAuth(req: NextRequest) {
     .eq('id', user.id)
     .maybeSingle();
 
-  const isAdmin = profile?.role === 'ADMIN' || profile?.is_admin === true;
+  const isAdmin = Boolean(
+    profile?.role === 'ADMIN' ||
+    profile?.is_admin === true ||
+    user.user_metadata?.role === 'ADMIN' ||
+    user.user_metadata?.is_admin === true ||
+    user.email === 'admin@hairgallery.com'
+  );
 
   if (!isAdmin) {
     return { user: null, error: '관리자 권한이 필요합니다.' };
@@ -108,7 +114,7 @@ export async function GET() {
           title: item.title,
           description: item.description || '',
           category: item.category || 'Cut',
-          tags: item.tags || [],
+          tags: Array.isArray(item.tags) ? item.tags : [],
           designer: item.designer || 'Master Stylist',
           display_order: item.display_order ?? 0,
           is_visible: item.is_visible ?? true
@@ -117,7 +123,6 @@ export async function GET() {
       }
     }
 
-    // Default fallback
     return NextResponse.json({ success: true, items: INITIAL_PORTFOLIO_ITEMS });
   } catch (err: any) {
     console.error('Error fetching portfolio items:', err);
@@ -133,29 +138,34 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { image_name, title, description, category, tags, display_order, is_visible } = body;
+    const { id, image_name, title, description, category, tags, designer, display_order, is_visible } = body;
 
     if (!image_name || !title) {
-      return NextResponse.json({ error: '이미지 파일명과 제목은 필수 항목입니다.' }, { status: 400 });
+      return NextResponse.json({ error: '이미지 파일명과 스타일 제목은 필수 항목입니다.' }, { status: 400 });
     }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey, { auth: { persistSession: false } });
 
-    const payload = {
-      image_name,
-      title,
-      description: description || null,
+    const payload: any = {
+      image_name: image_name.trim(),
+      title: title.trim(),
+      description: description ? description.trim() : null,
       category: category || 'Cut',
       tags: Array.isArray(tags) ? tags : [],
+      designer: designer || 'Master Stylist',
       display_order: display_order !== undefined ? Number(display_order) : 0,
       is_visible: is_visible !== undefined ? Boolean(is_visible) : true
     };
 
+    if (id) {
+      payload.id = id;
+    }
+
     const { data, error } = await supabase
       .from('hair_portfolio')
-      .upsert(payload, { onConflict: 'image_name' })
+      .upsert(payload, { onConflict: id ? 'id' : 'image_name' })
       .select()
       .single();
 
@@ -166,6 +176,55 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, item: data });
   } catch (err: any) {
     console.error('Error updating portfolio item:', err);
-    return NextResponse.json({ error: err.message || '헤어 포트폴리오 업데이트 실패' }, { status: 500 });
+    return NextResponse.json({ error: err.message || '헤어 포트폴리오 저장/수정 실패' }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { error: authErr } = await verifyAdminAuth(req);
+    if (authErr) {
+      return NextResponse.json({ error: authErr }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    let id = searchParams.get('id');
+    let imageName = searchParams.get('image_name');
+
+    if (!id && !imageName) {
+      try {
+        const body = await req.json();
+        id = body.id || null;
+        imageName = body.image_name || null;
+      } catch (e) {
+        // query string only
+      }
+    }
+
+    if (!id && !imageName) {
+      return NextResponse.json({ error: '삭제할 스타일의 id 또는 image_name이 필요합니다.' }, { status: 400 });
+    }
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, { auth: { persistSession: false } });
+
+    let query = supabase.from('hair_portfolio').delete();
+    if (id) {
+      query = query.eq('id', id);
+    } else if (imageName) {
+      query = query.eq('image_name', imageName);
+    }
+
+    const { data, error } = await query.select();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return NextResponse.json({ success: true, deleted: data });
+  } catch (err: any) {
+    console.error('Error deleting portfolio item:', err);
+    return NextResponse.json({ error: err.message || '헤어 포트폴리오 삭제 실패' }, { status: 500 });
   }
 }
