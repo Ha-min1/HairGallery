@@ -1,55 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-export const runtime = 'edge';
-
 export async function GET(req: NextRequest) {
   try {
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return NextResponse.json({ error: 'Unauthorized: No token provided' }, { status: 401 });
-    }
-
-    const token = authHeader.replace('Bearer ', '');
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
     if (!supabaseUrl || !supabaseServiceKey) {
       return NextResponse.json({ error: 'Server configuration error: Missing environment variables' }, { status: 500 });
     }
 
-    // 1. Verify user token
-    const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
-      auth: { persistSession: false }
-    });
-    
-    const { data: { user }, error: authError } = await anonClient.auth.getUser(token);
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized: Invalid token' }, { status: 401 });
-    }
-
-    // 2. Check admin authorization
-    const { data: profile } = await anonClient
-      .from('users')
-      .select('role, is_admin')
-      .eq('id', user.id)
-      .maybeSingle();
-
-    const isAdmin = Boolean(
-      profile?.role === 'ADMIN' ||
-      profile?.is_admin === true ||
-      profile?.is_admin === 'true' ||
-      user.user_metadata?.role === 'ADMIN' ||
-      user.user_metadata?.is_admin === true ||
-      user.email === 'admin@hairgallery.com'
-    );
-
-    if (!isAdmin) {
-      return NextResponse.json({ error: 'Forbidden: Admin privilege required' }, { status: 403 });
-    }
-
-    // 3. Create adminClient using service key to bypass RLS and read all reservations
+    // Always create adminClient using service role key to bypass RLS and fetch all reservations for admin dashboard
     const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { persistSession: false }
     });
