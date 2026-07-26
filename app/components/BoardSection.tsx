@@ -453,15 +453,15 @@ export default function BoardSection({
       {/* Post Detail Modal */}
       {selectedPost && (
         <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-stone-900 border border-stone-800 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden text-stone-100 flex flex-col max-h-[85vh]">
-            <div className="bg-stone-950 px-6 py-4 border-b border-stone-800 flex items-center justify-between">
+          <div className="bg-stone-900 border border-stone-800 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden text-stone-100 flex flex-col max-h-[88vh]">
+            <div className="bg-stone-950 px-6 py-4 border-b border-stone-800 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
                 {selectedPost.is_pinned && (
                   <span className="px-2 py-0.5 bg-gold-500/20 text-gold-400 border border-gold-500/40 rounded text-[10px] font-mono font-bold">
                     📌 PINNED
                   </span>
                 )}
-                <h3 className="font-serif font-medium text-sm text-white line-clamp-1">{selectedPost.title}</h3>
+                <h3 className="font-serif font-medium text-sm sm:text-base text-white line-clamp-1">{selectedPost.title}</h3>
               </div>
               <button
                 onClick={() => setSelectedPost(null)}
@@ -471,7 +471,7 @@ export default function BoardSection({
               </button>
             </div>
 
-            <div className="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
+            <div className="p-6 space-y-4 overflow-y-auto flex-1 min-h-0 text-xs">
               <div className="flex items-center justify-between text-stone-400 font-mono text-[11px] pb-3 border-b border-stone-800/80">
                 <span className="flex items-center gap-1.5">
                   <User className="w-3.5 h-3.5 text-gold-400" />
@@ -486,12 +486,12 @@ export default function BoardSection({
                 </div>
               )}
 
-              <p className="text-stone-200 text-xs leading-relaxed whitespace-pre-wrap font-sans tracking-wide py-2">
+              <p className="text-stone-200 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap font-sans tracking-wide py-2">
                 {selectedPost.content}
               </p>
             </div>
 
-            <div className="bg-stone-950 px-6 py-3.5 border-t border-stone-800 flex items-center justify-between">
+            <div className="bg-stone-950 px-6 py-3.5 border-t border-stone-800 flex items-center justify-between shrink-0">
               <div>
                 {(selectedPost.author_id === currentUser?.id || isAdmin) && (
                   <div className="flex items-center gap-2">
@@ -501,14 +501,14 @@ export default function BoardSection({
                         setSelectedPost(null);
                         openWriteModal(target);
                       }}
-                      className="px-3 py-1.5 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded-lg text-xs font-mono font-medium flex items-center gap-1"
+                      className="px-3.5 py-1.5 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded-lg text-xs font-mono font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <Edit3 className="w-3.5 h-3.5 text-gold-400" />
                       <span>수정</span>
                     </button>
                     <button
                       onClick={() => handleDeletePost(selectedPost.id)}
-                      className="px-3 py-1.5 bg-stone-800 hover:bg-rose-950 hover:text-rose-400 text-stone-400 rounded-lg text-xs font-mono font-medium flex items-center gap-1"
+                      className="px-3.5 py-1.5 bg-stone-800 hover:bg-rose-950 hover:text-rose-400 text-stone-400 rounded-lg text-xs font-mono font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       <span>삭제</span>
@@ -518,7 +518,7 @@ export default function BoardSection({
               </div>
               <button
                 onClick={() => setSelectedPost(null)}
-                className="px-4 py-2 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded-xl text-xs font-bold"
+                className="px-4 py-2 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded-xl text-xs font-bold transition-colors cursor-pointer"
               >
                 닫기
               </button>
@@ -529,144 +529,158 @@ export default function BoardSection({
 
       {/* Post Write / Edit Modal */}
       {isWriteModalOpen && (
-        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-stone-900 border border-stone-800 rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden text-stone-100 flex flex-col max-h-[90vh]">
-            <div className="bg-stone-950 px-6 py-4 border-b border-stone-800 flex items-center justify-between">
-              <h3 className="font-serif text-base font-medium text-gold-400 flex items-center gap-2">
-                <Edit3 className="w-4 h-4" />
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-fadeIn">
+          <div className="bg-stone-900 border border-stone-800 rounded-2xl shadow-2xl w-full max-w-2xl sm:max-w-3xl overflow-hidden text-stone-100 flex flex-col max-h-[92vh] sm:max-h-[88vh]">
+            <div className="bg-stone-950 px-6 py-4 border-b border-stone-800 flex items-center justify-between shrink-0">
+              <h3 className="font-serif text-base sm:text-lg font-medium text-gold-400 flex items-center gap-2">
+                <Edit3 className="w-4 h-4 sm:w-5 sm:h-5 text-gold-400" />
                 <span>{editingPost ? '저널 글 수정' : '새 저널 작성'}</span>
               </h3>
               <button
+                type="button"
                 onClick={() => setIsWriteModalOpen(false)}
-                className="p-1 rounded-lg text-stone-400 hover:text-white hover:bg-stone-800"
+                className="p-1 rounded-lg text-stone-400 hover:text-white hover:bg-stone-800 transition-colors"
+                aria-label="닫기"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleFormSubmit} className="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-stone-300 uppercase font-mono tracking-wider">
-                  제목 *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="제목을 입력해 주세요"
-                  value={formTitle}
-                  onChange={(e) => setFormTitle(e.target.value)}
-                  className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3.5 py-2.5 text-stone-200 text-xs focus:outline-none focus:border-gold-500/60 tracking-wide"
-                />
-              </div>
+            <form onSubmit={handleFormSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              <div className="p-6 space-y-4 sm:space-y-5 overflow-y-auto flex-1 min-h-0 text-xs sm:text-sm">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] sm:text-xs font-bold text-stone-300 uppercase font-mono tracking-wider">
+                    제목 *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="제목을 입력해 주세요"
+                    value={formTitle}
+                    onChange={(e) => setFormTitle(e.target.value)}
+                    className="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-stone-200 text-xs sm:text-sm focus:outline-none focus:border-gold-500/60 transition-colors tracking-wide"
+                  />
+                </div>
 
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-stone-300 uppercase font-mono tracking-wider">
-                  내용 *
-                </label>
-                <textarea
-                  required
-                  rows={5}
-                  placeholder="시술 후기, 궁금한 사항, 헤어 스타일 추천 이야기를 상세히 작성해 주세요."
-                  value={formContent}
-                  onChange={(e) => setFormContent(e.target.value)}
-                  className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3.5 py-2.5 text-stone-200 text-xs focus:outline-none focus:border-gold-500/60 resize-none tracking-wide leading-relaxed"
-                />
-              </div>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] sm:text-xs font-bold text-stone-300 uppercase font-mono tracking-wider">
+                    내용 *
+                  </label>
+                  <textarea
+                    required
+                    rows={6}
+                    placeholder="시술 후기, 궁금한 사항, 헤어 스타일 추천 이야기를 상세히 작성해 주세요."
+                    value={formContent}
+                    onChange={(e) => setFormContent(e.target.value)}
+                    className="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-stone-200 text-xs sm:text-sm focus:outline-none focus:border-gold-500/60 resize-y min-h-[140px] max-h-[300px] tracking-wide leading-relaxed"
+                  />
+                </div>
 
-              {isAdmin ? (
-                <div className="bg-stone-950/80 border border-gold-500/20 rounded-xl p-4 space-y-3">
-                  <div className="flex items-center gap-1.5 text-gold-400 font-bold text-[11px] font-mono border-b border-stone-800 pb-2">
-                    <ShieldCheck className="w-4 h-4" />
-                    <span>관리자 옵션 (사진 첨부 & 상단 고정)</span>
-                  </div>
+                {isAdmin ? (
+                  <div className="bg-stone-950/80 border border-gold-500/20 rounded-xl p-4 space-y-3">
+                    <div className="flex items-center gap-1.5 text-gold-400 font-bold text-[11px] sm:text-xs font-mono border-b border-stone-800 pb-2">
+                      <ShieldCheck className="w-4 h-4" />
+                      <span>관리자 옵션 (사진 첨부 & 상단 고정)</span>
+                    </div>
 
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-bold text-stone-300 flex items-center gap-1">
-                      <ImageIcon className="w-3.5 h-3.5 text-gold-400" />
-                      <span>이미지 첨부</span>
-                    </label>
-
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="이미지 경로 (예: /assets/images/hair/hair_01.jpg)"
-                        value={formImageUrl}
-                        onChange={(e) => setFormImageUrl(e.target.value)}
-                        className="flex-1 bg-stone-900 border border-stone-800 rounded-xl px-3 py-2 text-stone-200 text-xs focus:outline-none focus:border-gold-500/60 font-mono"
-                      />
-
-                      <label className="px-3 py-2 bg-gold-500 hover:bg-gold-400 text-stone-950 font-bold rounded-xl text-xs cursor-pointer flex items-center gap-1 shrink-0 transition-colors">
-                        <Upload className="w-3.5 h-3.5" />
-                        <span>{isUploading ? '업로드...' : '파일 선택'}</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageFileUpload}
-                          disabled={isUploading}
-                          className="hidden"
-                        />
+                    <div className="space-y-2">
+                      <label className="text-[11px] sm:text-xs font-bold text-stone-300 flex items-center gap-1">
+                        <ImageIcon className="w-3.5 h-3.5 text-gold-400" />
+                        <span>이미지 첨부</span>
                       </label>
+
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <input
+                          type="text"
+                          placeholder="이미지 경로 (예: /assets/images/hair/hair_01.jpg)"
+                          value={formImageUrl}
+                          onChange={(e) => setFormImageUrl(e.target.value)}
+                          className="flex-1 bg-stone-900 border border-stone-800 rounded-xl px-3.5 py-2.5 text-stone-200 text-xs focus:outline-none focus:border-gold-500/60 font-mono"
+                        />
+
+                        <label className="px-4 py-2.5 bg-gold-500 hover:bg-gold-400 text-stone-950 font-bold rounded-xl text-xs cursor-pointer flex items-center justify-center gap-1.5 shrink-0 transition-colors">
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>{isUploading ? '업로드...' : '파일 선택'}</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageFileUpload}
+                            disabled={isUploading}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-1">
+                        <span className="text-[10px] text-stone-400 font-mono">샘플 이미지:</span>
+                        <select
+                          onChange={(e) => setFormImageUrl(e.target.value)}
+                          className="bg-stone-900 border border-stone-800 text-stone-300 rounded-lg px-2 py-1 text-[11px]"
+                        >
+                          <option value="">직접 입력 / 업로드 선택</option>
+                          {STATIC_ASSET_SAMPLES.map(sample => (
+                            <option key={sample.url} value={sample.url}>{sample.label}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-2 pt-1">
-                      <span className="text-[10px] text-stone-400 font-mono">샘플 이미지:</span>
-                      <select
-                        onChange={(e) => setFormImageUrl(e.target.value)}
-                        className="bg-stone-900 border border-stone-800 text-stone-300 rounded-lg px-2 py-1 text-[11px]"
-                      >
-                        <option value="">직접 입력 / 업로드 선택</option>
-                        {STATIC_ASSET_SAMPLES.map(sample => (
-                          <option key={sample.url} value={sample.url}>{sample.label}</option>
-                        ))}
-                      </select>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                      <label className="flex items-center gap-2 bg-stone-900 p-2.5 rounded-xl border border-stone-800 cursor-pointer hover:bg-stone-850 transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={formIsPinned}
+                          onChange={(e) => setFormIsPinned(e.target.checked)}
+                          className="w-4 h-4 accent-gold-500 rounded"
+                        />
+                        <span className="text-xs font-bold text-gold-300 flex items-center gap-1">
+                          <Pin className="w-3.5 h-3.5" />
+                          <span>PINNED (상단 고정)</span>
+                        </span>
+                      </label>
+
+                      <div className="space-y-1">
+                        <input
+                          type="number"
+                          placeholder="고정 순서 (pin_order)"
+                          value={formPinOrder}
+                          onChange={(e) => setFormPinOrder(e.target.value)}
+                          className="w-full bg-stone-900 border border-stone-800 rounded-xl px-3 py-2 text-stone-200 text-xs focus:outline-none focus:border-gold-500/60"
+                        />
+                      </div>
                     </div>
                   </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                    <label className="flex items-center gap-2 bg-stone-900 p-2.5 rounded-xl border border-stone-800 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={formIsPinned}
-                        onChange={(e) => setFormIsPinned(e.target.checked)}
-                        className="w-4 h-4 accent-gold-500 rounded"
-                      />
-                      <span className="text-xs font-bold text-gold-300 flex items-center gap-1">
-                        <Pin className="w-3.5 h-3.5" />
-                        <span>PINNED (상단 고정)</span>
-                      </span>
-                    </label>
-
-                    <div className="space-y-1">
-                      <input
-                        type="number"
-                        placeholder="고정 순서 (pin_order)"
-                        value={formPinOrder}
-                        onChange={(e) => setFormPinOrder(e.target.value)}
-                        className="w-full bg-stone-900 border border-stone-800 rounded-xl px-3 py-2 text-stone-200 text-xs focus:outline-none focus:border-gold-500/60"
-                      />
-                    </div>
+                ) : (
+                  <div className="p-3 bg-stone-950 border border-stone-800/80 rounded-xl text-[11px] text-stone-400 font-mono">
+                    💡 사진 첨부 및 상단 고정은 관리자 전용 기능입니다.
                   </div>
-                </div>
-              ) : (
-                <div className="p-3 bg-stone-950 border border-stone-800/80 rounded-xl text-[11px] text-stone-400 font-mono">
-                  💡 사진 첨부 및 상단 고정은 관리자 전용 기능입니다.
-                </div>
-              )}
+                )}
+              </div>
 
-              <div className="pt-3 flex items-center justify-end gap-3">
+              {/* Pinned Modal Footer */}
+              <div className="bg-stone-950 px-6 py-4 border-t border-stone-800 flex items-center justify-end gap-3 shrink-0">
                 <button
                   type="button"
                   onClick={() => setIsWriteModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl border border-stone-800 text-stone-400 hover:bg-stone-800 font-semibold"
+                  className="px-5 py-2.5 rounded-xl border border-stone-800 text-stone-300 hover:bg-stone-800 font-semibold transition-colors text-xs sm:text-sm cursor-pointer"
                 >
                   취소
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-5 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-stone-950 font-bold transition-all shadow-md disabled:opacity-50"
+                  className="px-6 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-stone-950 font-bold transition-all shadow-md disabled:opacity-50 text-xs sm:text-sm flex items-center gap-2 cursor-pointer"
                 >
-                  {isSubmitting ? '저장 중...' : editingPost ? '수정 완료' : '게시글 등록'}
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-stone-950 border-t-transparent rounded-full animate-spin" />
+                      <span>저장 중...</span>
+                    </>
+                  ) : editingPost ? (
+                    <span>수정 완료</span>
+                  ) : (
+                    <span>게시글 등록</span>
+                  )}
                 </button>
               </div>
             </form>
