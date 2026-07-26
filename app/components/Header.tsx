@@ -203,12 +203,21 @@ export default function Header({
               </button>
             </div>
           ) : (
-            <button 
-              onClick={onOpenAuthModal}
-              className="text-xs font-mono font-semibold text-stone-900 bg-gold-500 hover:bg-gold-400 px-3.5 py-1.5 sm:py-2 rounded-lg transition-all shadow-md shadow-gold-500/10 cursor-pointer"
-            >
-              {lang === 'ko' ? '로그인' : 'Login'}
-            </button>
+            <div className="flex items-center gap-1.5">
+              <Link 
+                href="/mypage" 
+                className="hidden sm:flex items-center gap-1.5 text-xs font-mono bg-stone-800/90 hover:bg-stone-700 text-gold-300 hover:text-gold-200 px-3 py-1.5 sm:py-2 rounded-lg border border-gold-500/40 transition-colors cursor-pointer shadow-sm"
+              >
+                <User className="h-3.5 w-3.5 text-gold-400" />
+                <span className="font-medium">{lang === 'ko' ? '마이페이지 (예약조회)' : 'My Page (Booking)'}</span>
+              </Link>
+              <button 
+                onClick={onOpenAuthModal}
+                className="text-xs font-mono font-semibold text-stone-900 bg-gold-500 hover:bg-gold-400 px-3.5 py-1.5 sm:py-2 rounded-lg transition-all shadow-md shadow-gold-500/10 cursor-pointer"
+              >
+                {lang === 'ko' ? '로그인' : 'Login'}
+              </button>
+            </div>
           )}
 
           {/* Language Selector (KR / EN) */}
@@ -245,6 +254,15 @@ export default function Header({
       {/* ================= BOTTOM ROW (NAVBAR / CHIP BAR) ================= */}
       <div className="bg-stone-950/80 border-t border-stone-800/80 px-4 sm:px-6 py-2 overflow-x-auto scrollbar-none">
         <div className="max-w-7xl mx-auto flex items-center justify-start sm:justify-center gap-2 min-w-max">
+          {/* MyPage / Booking Lookup Chip (For both non-members & members) */}
+          <Link
+            href="/mypage"
+            className="px-3.5 py-1.5 rounded-full bg-amber-950/60 hover:bg-amber-900/80 border border-gold-500/70 text-gold-300 hover:text-white text-xs font-mono font-bold flex items-center gap-1.5 transition-all shrink-0 cursor-pointer shadow-xs ring-1 ring-gold-500/30"
+          >
+            <User className="h-3.5 w-3.5 text-gold-400" />
+            <span>{lang === 'ko' ? '📋 마이페이지 (예약조회)' : '📋 My Page (Booking)'}</span>
+          </Link>
+
           {/* Install App Guide Modal Trigger Chip */}
           <button
             onClick={onOpenInstallModal}
@@ -351,16 +369,26 @@ export default function Header({
               </Link>
             </div>
           ) : (
-            <button
-              onClick={() => {
-                setIsMobileMenuOpen(false);
-                onOpenAuthModal();
-              }}
-              className="w-full py-2.5 bg-gold-500 text-stone-950 font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-md"
-            >
-              <User className="h-4 w-4" />
-              <span>로그인 / 회원가입 하러 가기</span>
-            </button>
+            <div className="space-y-2">
+              <Link
+                href="/mypage"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="w-full py-2.5 bg-stone-900 hover:bg-stone-850 text-gold-300 border border-gold-500/50 font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-sm"
+              >
+                <User className="h-4 w-4 text-gold-400" />
+                <span>📋 마이페이지 (비회원 예약조회)</span>
+              </Link>
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  onOpenAuthModal();
+                }}
+                className="w-full py-2.5 bg-gold-500 text-stone-950 font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-md"
+              >
+                <User className="h-4 w-4" />
+                <span>로그인 / 회원가입 하러 가기</span>
+              </button>
+            </div>
           )}
 
           <Link

@@ -1108,6 +1108,23 @@ export default function Home() {
                         : '• Sender Address: thehairgalleryreservation@gmail.com'}
                     </p>
                   </div>
+
+                  {/* Non-member Booking Query Location Guidance Box */}
+                  <div className="mt-3.5 p-4.5 bg-blue-50/70 border border-blue-200/80 rounded-xl text-left text-[11px] leading-relaxed text-stone-700 space-y-1 font-sans">
+                    <span className="font-bold text-blue-900 flex items-center gap-1.5 text-xs mb-1">
+                      📋 {lang === 'ko' ? '비회원 예약 현황 조회 위치 안내' : 'Non-member Booking Lookup Location'}
+                    </span>
+                    <p>
+                      {lang === 'ko' 
+                        ? '• 비회원으로 예약하신 분은 화면 상단 배너 및 메뉴의 [마이페이지(예약조회)]를 클릭하여 언제든지 예약 신청 및 확정 현황을 조회하고 취소하실 수 있습니다.' 
+                        : '• Non-members can check or cancel booking status anytime by clicking [My Page] in the top header.'}
+                    </p>
+                    <p className="font-semibold text-blue-800">
+                      {lang === 'ko' 
+                        ? '• 조회 필요 정보: 예약 시 입력하신 성함 + 전화번호 + 비회원 비밀번호' 
+                        : '• Required info: Name + Phone Number + Password used during booking'}
+                    </p>
+                  </div>
                 </div>
                 <button
                   onClick={() => setIsSuccess(false)}
@@ -1441,11 +1458,16 @@ export default function Home() {
                         placeholder={lang === 'ko' ? '비밀번호 입력' : 'Enter password'}
                         className="w-full px-3 py-2 border border-stone-200 rounded-lg text-xs outline-none bg-stone-50 focus:border-stone-400 transition-colors"
                       />
-                      <p className="text-[9px] text-stone-500 font-sans mt-1">
-                        {lang === 'ko' 
-                          ? '※ 비회원 예약 조회 및 취소 시 사용됩니다. 안전한 비밀번호를 입력해주세요 (4자 이상).' 
-                          : '※ Used for non-member query and cancellation. Enter a secure password (4+ characters).'}
-                      </p>
+                      <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-lg text-[10px] text-amber-900 leading-relaxed font-sans mt-1.5 space-y-0.5">
+                        <p className="font-bold flex items-center gap-1 text-amber-950">
+                          📌 {lang === 'ko' ? '비회원 예약 조회 및 위치 안내' : 'Non-member Booking Lookup Info'}
+                        </p>
+                        <p>
+                          {lang === 'ko' 
+                            ? '※ 비회원 예약 조회 및 취소 시 사용됩니다. 예약 완료 후 상단 배너/메뉴의 [마이페이지(예약조회)]에서 입력하신 성함, 전화번호, 비밀번호(4자 이상)로 예약 현황을 언제든지 조회 및 취소하실 수 있습니다.' 
+                            : '※ Used for non-member query and cancellation. After booking, check your status anytime via [My Page] on top header using your name, phone & password.'}
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>
