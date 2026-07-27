@@ -59,6 +59,44 @@ export async function POST(req: NextRequest) {
         .single();
 
       if (!error && data) {
+        // Trigger Telegram Real-time Notification
+        try {
+          const { checkTelegramSetting, sendTelegramGeneralInquiryAlert, sendTelegramComponentInquiryAlert } = await import('@/lib/telegram');
+          const isGeneralInquiry = 
+            target_component === '일반 매장 문의' || 
+            target_component === 'general' || 
+            target_component === '일반 문의' || 
+            category === 'general' || 
+            category === 'store';
+
+          const userContact = newInquiry.user_email || debug_info?.user_phone || body.phone || null;
+
+          if (isGeneralInquiry) {
+            const isEnabled = await checkTelegramSetting('telegram_alert_general_inquiry');
+            if (isEnabled) {
+              await sendTelegramGeneralInquiryAlert({
+                userName: newInquiry.user_name,
+                userContact,
+                title: newInquiry.title,
+                content: newInquiry.content
+              });
+            }
+          } else {
+            const isEnabled = await checkTelegramSetting('telegram_alert_component_inquiry');
+            if (isEnabled) {
+              await sendTelegramComponentInquiryAlert({
+                targetComponent: newInquiry.target_component,
+                userName: newInquiry.user_name,
+                userContact,
+                title: newInquiry.title,
+                content: newInquiry.content
+              });
+            }
+          }
+        } catch (tgErr) {
+          console.error('[Inquiry Telegram Alert Error]', tgErr);
+        }
+
         return NextResponse.json({ success: true, inquiry: data });
       }
       console.warn('Supabase insert notice:', error?.message);

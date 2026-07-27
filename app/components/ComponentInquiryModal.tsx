@@ -113,10 +113,10 @@ export default function ComponentInquiryModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
-      <div className="bg-stone-900 border border-stone-800 rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden text-stone-100 flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-fadeIn overflow-y-auto">
+      <div className="bg-stone-900 border border-stone-800 rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden text-stone-100 flex flex-col max-h-[85vh] sm:max-h-[90vh] my-auto shrink-0">
         {/* Header */}
-        <div className="bg-stone-950 px-6 py-4 border-b border-stone-800 flex items-center justify-between">
+        <div className="bg-stone-950 px-5 sm:px-6 py-4 border-b border-stone-800 flex items-center justify-between shrink-0 sticky top-0 z-10">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-400">
               <MessageSquarePlus className="w-5 h-5" />
@@ -139,7 +139,7 @@ export default function ComponentInquiryModal({
         </div>
 
         {/* User Login Notice Banner (Spec Requirement) */}
-        <div className="bg-amber-500/10 border-b border-amber-500/20 px-5 py-2.5 flex items-center gap-2 text-xs text-amber-300">
+        <div className="bg-amber-500/10 border-b border-amber-500/20 px-5 py-2.5 flex items-center gap-2 text-xs text-amber-300 shrink-0">
           <Info className="w-4 h-4 text-amber-400 shrink-0" />
           <span className="font-medium">
             {lang === 'ko' 
@@ -166,119 +166,121 @@ export default function ComponentInquiryModal({
             </p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
-            {/* Category Selector */}
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-stone-300 flex items-center gap-1.5 uppercase font-mono">
-                <Store className="w-3.5 h-3.5 text-amber-400" />
-                <span>{lang === 'ko' ? '문의 유형 (Category)' : 'Category'}</span>
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {[
-                  { key: 'store', label: lang === 'ko' ? '🏪 매장/시술 문의' : 'Store', icon: Store },
-                  { key: 'component', label: lang === 'ko' ? '🧩 부품/기술' : 'Tech', icon: Cpu },
-                  { key: 'bug', label: lang === 'ko' ? '🐞 버그/오류' : 'Bug', icon: Bug },
-                  { key: 'other', label: lang === 'ko' ? '📌 기타 문의' : 'Other', icon: Layout }
-                ].map((item) => (
-                  <button
-                    key={item.key}
-                    type="button"
-                    onClick={() => setCategory(item.key)}
-                    className={`py-2 px-2.5 rounded-xl border text-[11px] font-medium transition-all flex items-center justify-center gap-1.5 ${
-                      category === item.key
-                        ? 'bg-amber-500/20 border-amber-500 text-amber-300 font-bold shadow-sm'
-                        : 'bg-stone-950 border-stone-800 text-stone-400 hover:border-stone-700'
-                    }`}
-                  >
-                    <span>{item.label}</span>
-                  </button>
-                ))}
+          <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+            <div className="p-5 sm:p-6 space-y-4 overflow-y-auto flex-1 min-h-0 text-xs">
+              {/* Category Selector */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-stone-300 flex items-center gap-1.5 uppercase font-mono">
+                  <Store className="w-3.5 h-3.5 text-amber-400" />
+                  <span>{lang === 'ko' ? '문의 유형 (Category)' : 'Category'}</span>
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[
+                    { key: 'store', label: lang === 'ko' ? '🏪 매장/시술 문의' : 'Store', icon: Store },
+                    { key: 'component', label: lang === 'ko' ? '🧩 부품/기술' : 'Tech', icon: Cpu },
+                    { key: 'bug', label: lang === 'ko' ? '🐞 버그/오류' : 'Bug', icon: Bug },
+                    { key: 'other', label: lang === 'ko' ? '📌 기타 문의' : 'Other', icon: Layout }
+                  ].map((item) => (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() => setCategory(item.key)}
+                      className={`py-2 px-2.5 rounded-xl border text-[11px] font-medium transition-all flex items-center justify-center gap-1.5 ${
+                        category === item.key
+                          ? 'bg-amber-500/20 border-amber-500 text-amber-300 font-bold shadow-sm'
+                          : 'bg-stone-950 border-stone-800 text-stone-400 hover:border-stone-700'
+                      }`}
+                    >
+                      <span>{item.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Target Component / Area Selector */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-stone-300 flex items-center gap-1.5 uppercase font-mono">
+                  <Layout className="w-3.5 h-3.5 text-amber-400" />
+                  <span>{lang === 'ko' ? '문의 대상 영역 / 컴포넌트' : 'Target Component'}</span>
+                </label>
+                <select
+                  value={targetComponent}
+                  onChange={(e) => setTargetComponent(e.target.value)}
+                  className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3.5 py-2.5 text-stone-200 text-xs focus:outline-none focus:border-amber-500 transition-colors"
+                >
+                  {DEFAULT_COMPONENTS.map((comp) => (
+                    <option key={comp} value={comp}>
+                      {comp}
+                    </option>
+                  ))}
+                </select>
+                {targetComponent.includes('기타 / 특정 영역') && (
+                  <input
+                    type="text"
+                    placeholder={lang === 'ko' ? '특정 영역이나 컴포넌트명을 직접 입력하세요' : 'Enter target area or component name'}
+                    value={customComponent}
+                    onChange={(e) => setCustomComponent(e.target.value)}
+                    className="w-full mt-2 bg-stone-950 border border-stone-800 rounded-xl px-3.5 py-2 text-stone-200 text-xs focus:outline-none focus:border-amber-500"
+                  />
+                )}
+              </div>
+
+              {/* Title */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-stone-300 uppercase font-mono">
+                  {lang === 'ko' ? '문의 제목' : 'Title'}
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder={lang === 'ko' ? '예: 매장 시술 가격 및 예약 가능 시간에 대한 문의' : 'Summary of inquiry'}
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3.5 py-2.5 text-stone-200 text-xs focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              {/* Content */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-stone-300 uppercase font-mono">
+                  {lang === 'ko' ? '상세 문의 내용' : 'Detailed Description'}
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  placeholder={lang === 'ko' ? '문의하실 내용을 상세히 적어주세요. 로그인 유저는 답변을 마이페이지에서 확인하실 수 있습니다.' : 'Describe details'}
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3.5 py-2.5 text-stone-200 text-xs focus:outline-none focus:border-amber-500 resize-none"
+                />
+              </div>
+
+              {/* Debug Info Collapsible Preview */}
+              <div className="bg-stone-950/70 border border-stone-800 rounded-xl overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setShowDebugPreview(!showDebugPreview)}
+                  className="w-full px-3.5 py-2 text-stone-400 hover:text-stone-200 flex items-center justify-between text-[11px] font-mono"
+                >
+                  <span className="flex items-center gap-1.5 text-amber-400/90 font-bold">
+                    <Monitor className="w-3.5 h-3.5" />
+                    {lang === 'ko' ? '자동 수집 정보 미리보기' : 'Auto Debugging Context'}
+                  </span>
+                  {showDebugPreview ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </button>
+                {showDebugPreview && (
+                  <div className="p-3 border-t border-stone-800/80 bg-black/40 font-mono text-[10px] space-y-1 text-stone-400 leading-relaxed">
+                    <p><span className="text-stone-300 font-semibold">User:</span> {currentUser ? `${currentUser.name} (${currentUser.email || 'OAuth'})` : '비회원 (Guest)'}</p>
+                    <p><span className="text-stone-300 font-semibold">URL:</span> {debugInfo.current_url}</p>
+                    <p><span className="text-stone-300 font-semibold">Screen:</span> {debugInfo.screen_resolution}</p>
+                    <p><span className="text-stone-300 font-semibold">UserAgent:</span> {debugInfo.user_agent}</p>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Target Component / Area Selector */}
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-stone-300 flex items-center gap-1.5 uppercase font-mono">
-                <Layout className="w-3.5 h-3.5 text-amber-400" />
-                <span>{lang === 'ko' ? '문의 대상 영역 / 컴포넌트' : 'Target Component'}</span>
-              </label>
-              <select
-                value={targetComponent}
-                onChange={(e) => setTargetComponent(e.target.value)}
-                className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3.5 py-2.5 text-stone-200 text-xs focus:outline-none focus:border-amber-500 transition-colors"
-              >
-                {DEFAULT_COMPONENTS.map((comp) => (
-                  <option key={comp} value={comp}>
-                    {comp}
-                  </option>
-                ))}
-              </select>
-              {targetComponent.includes('기타 / 특정 영역') && (
-                <input
-                  type="text"
-                  placeholder={lang === 'ko' ? '특정 영역이나 컴포넌트명을 직접 입력하세요' : 'Enter target area or component name'}
-                  value={customComponent}
-                  onChange={(e) => setCustomComponent(e.target.value)}
-                  className="w-full mt-2 bg-stone-950 border border-stone-800 rounded-xl px-3.5 py-2 text-stone-200 text-xs focus:outline-none focus:border-amber-500"
-                />
-              )}
-            </div>
-
-            {/* Title */}
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-stone-300 uppercase font-mono">
-                {lang === 'ko' ? '문의 제목' : 'Title'}
-              </label>
-              <input
-                type="text"
-                required
-                placeholder={lang === 'ko' ? '예: 매장 시술 가격 및 예약 가능 시간에 대한 문의' : 'Summary of inquiry'}
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3.5 py-2.5 text-stone-200 text-xs focus:outline-none focus:border-amber-500"
-              />
-            </div>
-
-            {/* Content */}
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-stone-300 uppercase font-mono">
-                {lang === 'ko' ? '상세 문의 내용' : 'Detailed Description'}
-              </label>
-              <textarea
-                required
-                rows={4}
-                placeholder={lang === 'ko' ? '문의하실 내용을 상세히 적어주세요. 로그인 유저는 답변을 마이페이지에서 확인하실 수 있습니다.' : 'Describe details'}
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3.5 py-2.5 text-stone-200 text-xs focus:outline-none focus:border-amber-500 resize-none"
-              />
-            </div>
-
-            {/* Debug Info Collapsible Preview */}
-            <div className="bg-stone-950/70 border border-stone-800 rounded-xl overflow-hidden">
-              <button
-                type="button"
-                onClick={() => setShowDebugPreview(!showDebugPreview)}
-                className="w-full px-3.5 py-2 text-stone-400 hover:text-stone-200 flex items-center justify-between text-[11px] font-mono"
-              >
-                <span className="flex items-center gap-1.5 text-amber-400/90 font-bold">
-                  <Monitor className="w-3.5 h-3.5" />
-                  {lang === 'ko' ? '자동 수집 정보 미리보기' : 'Auto Debugging Context'}
-                </span>
-                {showDebugPreview ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              </button>
-              {showDebugPreview && (
-                <div className="p-3 border-t border-stone-800/80 bg-black/40 font-mono text-[10px] space-y-1 text-stone-400 leading-relaxed">
-                  <p><span className="text-stone-300 font-semibold">User:</span> {currentUser ? `${currentUser.name} (${currentUser.email || 'OAuth'})` : '비회원 (Guest)'}</p>
-                  <p><span className="text-stone-300 font-semibold">URL:</span> {debugInfo.current_url}</p>
-                  <p><span className="text-stone-300 font-semibold">Screen:</span> {debugInfo.screen_resolution}</p>
-                  <p><span className="text-stone-300 font-semibold">UserAgent:</span> {debugInfo.user_agent}</p>
-                </div>
-              )}
-            </div>
-
             {/* Footer Buttons */}
-            <div className="pt-2 flex items-center justify-end gap-3">
+            <div className="bg-stone-950 px-5 sm:px-6 py-3.5 border-t border-stone-800 flex items-center justify-end gap-3 shrink-0 sticky bottom-0 z-10">
               <button
                 type="button"
                 onClick={onClose}

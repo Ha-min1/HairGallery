@@ -191,6 +191,24 @@ export async function PATCH(
       }
     }
 
+    if (status === 'Cancelled' && data) {
+      try {
+        const { checkTelegramSetting, sendTelegramCancellationAlert } = await import('@/lib/telegram');
+        const isEnabled = await checkTelegramSetting('telegram_alert_cancellation');
+        if (isEnabled) {
+          await sendTelegramCancellationAlert({
+            category: '예약 취소',
+            targetName: data.customer_name || '고객',
+            targetContact: data.customer_phone || null,
+            details: `예약일시: ${data.date} (${data.time})`,
+            reason: body.cancelReason || '관리자 예약 취소 처리'
+          });
+        }
+      } catch (tgErr) {
+        console.error('Failed to dispatch telegram cancellation alert:', tgErr);
+      }
+    }
+
     return NextResponse.json({ success: true, reservation: data });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

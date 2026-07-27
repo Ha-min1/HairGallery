@@ -452,9 +452,9 @@ export default function BoardSection({
 
       {/* Post Detail Modal */}
       {selectedPost && (
-        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-stone-900 border border-stone-800 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden text-stone-100 flex flex-col max-h-[88vh]">
-            <div className="bg-stone-950 px-6 py-4 border-b border-stone-800 flex items-center justify-between shrink-0">
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-fadeIn overflow-y-auto">
+          <div className="bg-stone-900 border border-stone-800 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden text-stone-100 flex flex-col max-h-[85vh] sm:max-h-[90vh] my-auto shrink-0">
+            <div className="bg-stone-950 px-5 sm:px-6 py-4 border-b border-stone-800 flex items-center justify-between shrink-0 sticky top-0 z-10">
               <div className="flex items-center gap-2">
                 {selectedPost.is_pinned && (
                   <span className="px-2 py-0.5 bg-gold-500/20 text-gold-400 border border-gold-500/40 rounded text-[10px] font-mono font-bold">
@@ -529,9 +529,9 @@ export default function BoardSection({
 
       {/* Post Write / Edit Modal */}
       {isWriteModalOpen && (
-        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-fadeIn">
-          <div className="bg-stone-900 border border-stone-800 rounded-2xl shadow-2xl w-full max-w-2xl sm:max-w-3xl overflow-hidden text-stone-100 flex flex-col max-h-[92vh] sm:max-h-[88vh]">
-            <div className="bg-stone-950 px-6 py-4 border-b border-stone-800 flex items-center justify-between shrink-0">
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-fadeIn overflow-y-auto">
+          <div className="bg-stone-900 border border-stone-800 rounded-2xl shadow-2xl w-full max-w-2xl sm:max-w-3xl overflow-hidden text-stone-100 flex flex-col max-h-[85vh] sm:max-h-[90vh] my-auto shrink-0">
+            <div className="bg-stone-950 px-5 sm:px-6 py-4 border-b border-stone-800 flex items-center justify-between shrink-0 sticky top-0 z-10">
               <h3 className="font-serif text-base sm:text-lg font-medium text-gold-400 flex items-center gap-2">
                 <Edit3 className="w-4 h-4 sm:w-5 sm:h-5 text-gold-400" />
                 <span>{editingPost ? '저널 글 수정' : '새 저널 작성'}</span>
@@ -547,7 +547,7 @@ export default function BoardSection({
             </div>
 
             <form onSubmit={handleFormSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
-              <div className="p-6 space-y-4 sm:space-y-5 overflow-y-auto flex-1 min-h-0 text-xs sm:text-sm">
+              <div className="p-5 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto flex-1 min-h-0 text-xs sm:text-sm">
                 <div className="space-y-1.5">
                   <label className="text-[11px] sm:text-xs font-bold text-stone-300 uppercase font-mono tracking-wider">
                     제목 *
@@ -568,11 +568,11 @@ export default function BoardSection({
                   </label>
                   <textarea
                     required
-                    rows={6}
+                    rows={5}
                     placeholder="시술 후기, 궁금한 사항, 헤어 스타일 추천 이야기를 상세히 작성해 주세요."
                     value={formContent}
                     onChange={(e) => setFormContent(e.target.value)}
-                    className="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-stone-200 text-xs sm:text-sm focus:outline-none focus:border-gold-500/60 resize-y min-h-[140px] max-h-[300px] tracking-wide leading-relaxed"
+                    className="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-stone-200 text-xs sm:text-sm focus:outline-none focus:border-gold-500/60 resize-y min-h-[120px] max-h-[250px] tracking-wide leading-relaxed"
                   />
                 </div>
 
@@ -658,7 +658,7 @@ export default function BoardSection({
               </div>
 
               {/* Pinned Modal Footer */}
-              <div className="bg-stone-950 px-6 py-4 border-t border-stone-800 flex items-center justify-end gap-3 shrink-0">
+              <div className="bg-stone-950 px-5 sm:px-6 py-4 border-t border-stone-800 flex items-center justify-end gap-3 shrink-0 sticky bottom-0 z-10">
                 <button
                   type="button"
                   onClick={() => setIsWriteModalOpen(false)}

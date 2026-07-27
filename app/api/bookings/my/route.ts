@@ -147,7 +147,7 @@ export async function PATCH(req: NextRequest) {
       // First retrieve to verify ownership
       const { data: reservation, error: fetchError } = await adminClient
         .from('reservations')
-        .select('user_id, status')
+        .select('user_id, status, customer_name, customer_phone, date, time')
         .eq('id', reservationId)
         .single();
 
@@ -173,6 +173,23 @@ export async function PATCH(req: NextRequest) {
         return NextResponse.json({ error: updateError.message }, { status: 500 });
       }
 
+      // Trigger Telegram cancellation alert
+      try {
+        const { checkTelegramSetting, sendTelegramCancellationAlert } = await import('@/lib/telegram');
+        const isEnabled = await checkTelegramSetting('telegram_alert_cancellation');
+        if (isEnabled) {
+          await sendTelegramCancellationAlert({
+            category: '예약 취소',
+            targetName: reservation.customer_name || '회원',
+            targetContact: reservation.customer_phone || null,
+            details: `예약일시: ${reservation.date} (${reservation.time})`,
+            reason: '고객(회원) 직접 취소'
+          });
+        }
+      } catch (tgErr) {
+        console.error('Failed to send telegram cancellation alert:', tgErr);
+      }
+
       return NextResponse.json({ success: true });
     }
 
@@ -186,7 +203,7 @@ export async function PATCH(req: NextRequest) {
       // First retrieve to verify matching details
       const { data: reservation, error: fetchError } = await adminClient
         .from('reservations')
-        .select('customer_name, customer_phone, status, non_member_password')
+        .select('customer_name, customer_phone, status, non_member_password, date, time')
         .eq('id', reservationId)
         .single();
 
@@ -223,6 +240,23 @@ export async function PATCH(req: NextRequest) {
 
       if (updateError) {
         return NextResponse.json({ error: updateError.message }, { status: 500 });
+      }
+
+      // Trigger Telegram cancellation alert
+      try {
+        const { checkTelegramSetting, sendTelegramCancellationAlert } = await import('@/lib/telegram');
+        const isEnabled = await checkTelegramSetting('telegram_alert_cancellation');
+        if (isEnabled) {
+          await sendTelegramCancellationAlert({
+            category: '예약 취소',
+            targetName: reservation.customer_name || '비회원',
+            targetContact: reservation.customer_phone || null,
+            details: `예약일시: ${reservation.date} (${reservation.time})`,
+            reason: '고객(비회원) 직접 취소'
+          });
+        }
+      } catch (tgErr) {
+        console.error('Failed to send telegram cancellation alert:', tgErr);
       }
 
       return NextResponse.json({ success: true });

@@ -106,6 +106,13 @@ export async function PATCH(req: NextRequest) {
 
     if (supabaseUrl && supabaseServiceKey) {
       const supabase = createClient(supabaseUrl, supabaseServiceKey, { auth: { persistSession: false } });
+      
+      let targetInquiry: any = null;
+      if (status === 'cancelled' || status === 'Cancelled') {
+        const { data: existing } = await supabase.from('component_inquiries').select('*').eq('id', id).maybeSingle();
+        targetInquiry = existing;
+      }
+
       const { error } = await supabase
         .from('component_inquiries')
         .update(updatePayload)
@@ -113,6 +120,24 @@ export async function PATCH(req: NextRequest) {
 
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+
+      if (targetInquiry && (status === 'cancelled' || status === 'Cancelled')) {
+        try {
+          const { checkTelegramSetting, sendTelegramCancellationAlert } = await import('@/lib/telegram');
+          const isEnabled = await checkTelegramSetting('telegram_alert_cancellation');
+          if (isEnabled) {
+            await sendTelegramCancellationAlert({
+              category: '문의 취소',
+              targetName: targetInquiry.user_name || '회원/비회원',
+              targetContact: targetInquiry.user_email || null,
+              details: `문의 제목: ${targetInquiry.title || '제목 없음'}`,
+              reason: '관리자 취소 처리'
+            });
+          }
+        } catch (tgErr) {
+          console.error('[Inquiry Cancel Telegram Alert Error]', tgErr);
+        }
       }
     }
 
@@ -141,6 +166,9 @@ export async function DELETE(req: NextRequest) {
 
     if (supabaseUrl && supabaseServiceKey) {
       const supabase = createClient(supabaseUrl, supabaseServiceKey, { auth: { persistSession: false } });
+      
+      const { data: targetInquiry } = await supabase.from('component_inquiries').select('*').eq('id', id).maybeSingle();
+
       const { error } = await supabase
         .from('component_inquiries')
         .delete()
@@ -148,6 +176,24 @@ export async function DELETE(req: NextRequest) {
 
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+
+      if (targetInquiry) {
+        try {
+          const { checkTelegramSetting, sendTelegramCancellationAlert } = await import('@/lib/telegram');
+          const isEnabled = await checkTelegramSetting('telegram_alert_cancellation');
+          if (isEnabled) {
+            await sendTelegramCancellationAlert({
+              category: '문의 삭제',
+              targetName: targetInquiry.user_name || '회원/비회원',
+              targetContact: targetInquiry.user_email || null,
+              details: `문의 제목: ${targetInquiry.title || '제목 없음'}`,
+              reason: '관리자 삭제 처리'
+            });
+          }
+        } catch (tgErr) {
+          console.error('[Inquiry Delete Telegram Alert Error]', tgErr);
+        }
       }
     }
 

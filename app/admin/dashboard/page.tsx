@@ -163,6 +163,9 @@ export default function AdminDashboard() {
   // Telegram Settings States
   const [telegramAlertConfirm, setTelegramAlertConfirm] = useState<boolean>(true);
   const [telegramDailyBriefing, setTelegramDailyBriefing] = useState<boolean>(true);
+  const [telegramAlertGeneralInquiry, setTelegramAlertGeneralInquiry] = useState<boolean>(true);
+  const [telegramAlertComponentInquiry, setTelegramAlertComponentInquiry] = useState<boolean>(true);
+  const [telegramAlertCancellation, setTelegramAlertCancellation] = useState<boolean>(true);
   const [isUpdatingTelegramSettings, setIsUpdatingTelegramSettings] = useState<boolean>(false);
 
   // Announcement States
@@ -495,6 +498,9 @@ export default function AdminDashboard() {
         data.forEach(item => {
           if (item.key === 'telegram_alert_confirm') setTelegramAlertConfirm(item.value);
           if (item.key === 'telegram_daily_briefing') setTelegramDailyBriefing(item.value);
+          if (item.key === 'telegram_alert_general_inquiry') setTelegramAlertGeneralInquiry(item.value);
+          if (item.key === 'telegram_alert_component_inquiry') setTelegramAlertComponentInquiry(item.value);
+          if (item.key === 'telegram_alert_cancellation') setTelegramAlertCancellation(item.value);
         });
       }
     } catch (err) {
@@ -507,13 +513,15 @@ export default function AdminDashboard() {
     try {
       const { error } = await supabase
         .from('admin_settings')
-        .update({ value: !currentValue })
-        .eq('key', key);
+        .upsert({ key, value: !currentValue }, { onConflict: 'key' });
       
       if (error) throw error;
       
       if (key === 'telegram_alert_confirm') setTelegramAlertConfirm(!currentValue);
       if (key === 'telegram_daily_briefing') setTelegramDailyBriefing(!currentValue);
+      if (key === 'telegram_alert_general_inquiry') setTelegramAlertGeneralInquiry(!currentValue);
+      if (key === 'telegram_alert_component_inquiry') setTelegramAlertComponentInquiry(!currentValue);
+      if (key === 'telegram_alert_cancellation') setTelegramAlertCancellation(!currentValue);
     } catch (err: any) {
       console.error('Failed to update setting:', err);
       alert('설정 변경 실패: ' + err.message);
@@ -2908,7 +2916,88 @@ WITH CHECK (
                 </div>
 
                 <div className="bg-stone-950/40 rounded-xl border border-white/5 divide-y divide-white/5 overflow-hidden">
-                  {/* Toggle 1: 예약 확정 알림 */}
+                  {/* Toggle 1: 일반 문의 알림 */}
+                  <div className="p-5 flex justify-between items-center gap-4 hover:bg-white/[0.01] transition-all">
+                    <div>
+                      <h3 className="font-serif text-sm font-semibold text-white flex items-center gap-2">
+                        <span>📩 {lang === 'ko' ? '일반 문의 알림' : 'General Inquiry Alert'}</span>
+                      </h3>
+                      <p className="text-[11px] text-stone-500 font-mono mt-0.5">
+                        {lang === 'ko' ? '신규 일반 문의가 접수되면 상세 내용 및 대시보드 링크를 텔레그램으로 전송합니다.' : 'Sends detailed Telegram alerts for general customer inquiries.'}
+                      </p>
+                    </div>
+                    
+                    <button
+                      type="button"
+                      disabled={isUpdatingTelegramSettings}
+                      onClick={() => handleToggleSetting('telegram_alert_general_inquiry', telegramAlertGeneralInquiry)}
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-250 outline-none ${
+                        telegramAlertGeneralInquiry ? 'bg-indigo-600' : 'bg-stone-700'
+                      } disabled:opacity-50`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-250 ease-in-out ${
+                          telegramAlertGeneralInquiry ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Toggle 2: 컴포넌트 지정 문의 알림 */}
+                  <div className="p-5 flex justify-between items-center gap-4 hover:bg-white/[0.01] transition-all">
+                    <div>
+                      <h3 className="font-serif text-sm font-semibold text-white flex items-center gap-2">
+                        <span>🧩 {lang === 'ko' ? '컴포넌트 지정 문의 알림' : 'Component Inquiry Alert'}</span>
+                      </h3>
+                      <p className="text-[11px] text-stone-500 font-mono mt-0.5">
+                        {lang === 'ko' ? '특정 영역/컴포넌트 문의가 접수되면 해당 컴포넌트명 및 상세 알림을 전송합니다.' : 'Sends Telegram alerts for specific component inquiries.'}
+                      </p>
+                    </div>
+                    
+                    <button
+                      type="button"
+                      disabled={isUpdatingTelegramSettings}
+                      onClick={() => handleToggleSetting('telegram_alert_component_inquiry', telegramAlertComponentInquiry)}
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-250 outline-none ${
+                        telegramAlertComponentInquiry ? 'bg-indigo-600' : 'bg-stone-700'
+                      } disabled:opacity-50`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-250 ease-in-out ${
+                          telegramAlertComponentInquiry ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Toggle 3: 예약 / 문의 취소 알림 */}
+                  <div className="p-5 flex justify-between items-center gap-4 hover:bg-white/[0.01] transition-all">
+                    <div>
+                      <h3 className="font-serif text-sm font-semibold text-white flex items-center gap-2">
+                        <span>🚫 {lang === 'ko' ? '예약 / 문의 취소 알림' : 'Cancellation Alert'}</span>
+                      </h3>
+                      <p className="text-[11px] text-stone-500 font-mono mt-0.5">
+                        {lang === 'ko' ? '예약 또는 문의가 취소/삭제될 때 상세 사유와 함께 실시간 알림을 전송합니다.' : 'Sends Telegram alerts when a reservation or inquiry is cancelled.'}
+                      </p>
+                    </div>
+                    
+                    <button
+                      type="button"
+                      disabled={isUpdatingTelegramSettings}
+                      onClick={() => handleToggleSetting('telegram_alert_cancellation', telegramAlertCancellation)}
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-250 outline-none ${
+                        telegramAlertCancellation ? 'bg-indigo-600' : 'bg-stone-700'
+                      } disabled:opacity-50`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-250 ease-in-out ${
+                          telegramAlertCancellation ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Toggle 4: 예약 확정 알림 */}
                   <div className="p-5 flex justify-between items-center gap-4 hover:bg-white/[0.01] transition-all">
                     <div>
                       <h3 className="font-serif text-sm font-semibold text-white">
@@ -2935,7 +3024,7 @@ WITH CHECK (
                     </button>
                   </div>
 
-                  {/* Toggle 2: 당일 9시 브리핑 */}
+                  {/* Toggle 5: 당일 9시 브리핑 */}
                   <div className="p-5 flex justify-between items-center gap-4 hover:bg-white/[0.01] transition-all">
                     <div>
                       <h3 className="font-serif text-sm font-semibold text-white">
