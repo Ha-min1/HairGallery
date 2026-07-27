@@ -22,6 +22,7 @@ import Header from '@/app/components/Header';
 import HairPortfolioGallery from '@/app/components/HairPortfolioGallery';
 import InstallAppGuide from '@/app/components/InstallAppGuide';
 import InstallAppBanner from '@/app/components/InstallAppBanner';
+import SiteIntroBanner from '@/app/components/SiteIntroBanner';
 
 const TIME_SLOTS_24H = [
   '10:30', '11:30', '12:30', '13:30', '14:30',
@@ -888,6 +889,9 @@ export default function Home() {
 
 
         <div className="max-w-5xl mx-auto py-12 px-4">
+          {/* Official Site Intro / Guide Banner Component */}
+          <SiteIntroBanner lang={lang} />
+
           {/* 도움말 위젯 (Help & Booking Guide Widget) */}
           <div className="mb-8 bg-white border border-stone-200 rounded-2xl shadow-sm overflow-hidden transition-all duration-300">
             {/* Header */}
