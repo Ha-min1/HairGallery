@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
 
     const adminClient = getAdminSupabase();
 
-    // 1. If auth token is provided, verify it and query by user_id
+    // 1. If auth token is provided, verify it and query by user_id or matching phone
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.replace('Bearer ', '');
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -40,8 +40,18 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: 'Unauthorized: Invalid token' }, { status: 401 });
       }
 
+      // Query user profile details from DB if available
+      const { data: userProfile } = await adminClient
+        .from('users')
+        .select('name, phone, email')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      const userPhone = userProfile?.phone || user.user_metadata?.phone || user.phone;
+      const cleanUserPhone = userPhone ? userPhone.replace(/\D/g, '') : null;
+
       // Query reservations matching user_id
-      const { data, error } = await adminClient
+      const { data: idReservations, error: idError } = await adminClient
         .from('reservations')
         .select(`
           *,
@@ -55,11 +65,56 @@ export async function GET(req: NextRequest) {
         .order('date', { ascending: false })
         .order('time', { ascending: false });
 
-      if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+      if (idError) {
+        return NextResponse.json({ error: idError.message }, { status: 500 });
       }
 
-      return NextResponse.json({ reservations: data });
+      const combinedReservations: any[] = [...(idReservations || [])];
+
+      // If user has a clean phone number, also check unlinked reservations (user_id IS NULL) with matching phone
+      if (cleanUserPhone && cleanUserPhone.length >= 8) {
+        const { data: allUnlinked } = await adminClient
+          .from('reservations')
+          .select(`
+            *,
+            services (
+              name,
+              price,
+              duration_minutes
+            )
+          `)
+          .is('user_id', null);
+
+        if (allUnlinked && allUnlinked.length > 0) {
+          const matchingUnlinked = allUnlinked.filter(res => {
+            const resPhone = (res.customer_phone || '').replace(/\D/g, '');
+            return resPhone && resPhone === cleanUserPhone;
+          });
+
+          for (const unlinkedRes of matchingUnlinked) {
+            if (!combinedReservations.some(r => r.id === unlinkedRes.id)) {
+              combinedReservations.push(unlinkedRes);
+              // Auto-link user_id in database for permanent association
+              try {
+                await adminClient
+                  .from('reservations')
+                  .update({ user_id: user.id })
+                  .eq('id', unlinkedRes.id);
+              } catch (linkErr) {
+                console.error('Failed to auto-link reservation user_id:', linkErr);
+              }
+            }
+          }
+        }
+      }
+
+      // Sort combined reservations by date DESC, time DESC
+      combinedReservations.sort((a, b) => {
+        if (a.date !== b.date) return b.date.localeCompare(a.date);
+        return b.time.localeCompare(a.time);
+      });
+
+      return NextResponse.json({ reservations: combinedReservations });
     }
 
     // 2. Otherwise, if name and phone are provided, query by customer details (non-member)

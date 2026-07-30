@@ -2,6 +2,8 @@
  * Telegram Bot Alert Service for The Hair Gallery
  */
 
+import { OUR_SITE_ADDRESS } from './constants';
+
 export async function sendTelegramAdminAlert({
   customerName,
   customerPhone,
@@ -248,7 +250,7 @@ export async function sendTelegramGeneralInquiryAlert({
     return false;
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hairgallery.com';
+  const siteUrl = OUR_SITE_ADDRESS;
   const dashboardLink = `${siteUrl}/admin/dashboard`;
   const contactText = userContact ? userContact : '비회원 (Guest)';
 
@@ -309,7 +311,7 @@ export async function sendTelegramComponentInquiryAlert({
     return false;
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hairgallery.com';
+  const siteUrl = OUR_SITE_ADDRESS;
   const dashboardLink = `${siteUrl}/admin/dashboard`;
   const contactText = userContact ? userContact : '비회원 (Guest)';
 
@@ -371,7 +373,7 @@ export async function sendTelegramCancellationAlert({
     return false;
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hairgallery.com';
+  const siteUrl = OUR_SITE_ADDRESS;
   const dashboardLink = `${siteUrl}/admin/dashboard`;
   const contactText = targetContact ? targetContact : '연락처 미기재';
   const cancelReason = reason ? reason : '고객/관리자 요청 취소';

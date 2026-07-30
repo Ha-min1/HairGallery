@@ -202,7 +202,7 @@ export default function InstallAppBanner({ lang = 'ko' }: InstallAppBannerProps)
                 <div className="p-2.5 bg-stone-900 rounded-xl border border-stone-700/80 flex items-center justify-between gap-2 text-xs">
                   <div className="flex items-center gap-1.5 text-stone-300 font-mono text-[11px]">
                     <Lock className="w-3 h-3 text-emerald-400" />
-                    <span>hairgallery.com 주소창 옆</span>
+                    <span>hairgallery-9wn.pages.dev 주소창 옆</span>
                   </div>
                   <div className="px-2 py-0.5 bg-gold-500/20 border border-gold-400 text-gold-300 font-mono font-bold text-[10px] rounded flex items-center gap-1 animate-pulse">
                     <Share2 className="w-3 h-3 text-gold-400" />

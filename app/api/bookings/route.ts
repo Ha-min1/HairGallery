@@ -61,7 +61,26 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { userId, customerName, customerPhone, serviceId, date, time, password } = body;
+    let { userId, customerName, customerPhone, serviceId, date, time, password } = body;
+
+    // Extract user.id from Bearer auth header if userId was not provided in request body
+    const authHeader = req.headers.get('Authorization');
+    if (!userId && authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.replace('Bearer ', '');
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+        const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+        const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
+          auth: { persistSession: false }
+        });
+        const { data: { user } } = await anonClient.auth.getUser(token);
+        if (user) {
+          userId = user.id;
+        }
+      } catch (authErr) {
+        console.error('Failed to resolve user from auth token:', authErr);
+      }
+    }
 
     // Validate request inputs
     if (!customerName || !customerPhone || !serviceId || !date || !time) {

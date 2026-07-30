@@ -95,18 +95,24 @@ export default function MyPage() {
             .eq('id', session.user.id)
             .maybeSingle();
 
-          if (profile) {
-            setCurrentUser(profile);
-            setEditName(profile.name || '');
-            setEditPhone(profile.phone || '');
-            
-            if (profile.mobile_optimized !== undefined && profile.mobile_optimized !== null) {
-              setMobileOptimized(profile.mobile_optimized);
-            }
+          const activeUser = profile || {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email?.split('@')[0] || '회원',
+            phone: session.user.user_metadata?.phone || '',
+            role: 'USER'
+          };
 
-            await fetchMemberReservations(session.access_token, profile.role);
-            await fetchUserInquiries(session.access_token);
+          setCurrentUser(activeUser);
+          setEditName(activeUser.name || '');
+          setEditPhone(activeUser.phone || '');
+          
+          if (activeUser.mobile_optimized !== undefined && activeUser.mobile_optimized !== null) {
+            setMobileOptimized(activeUser.mobile_optimized);
           }
+
+          await fetchMemberReservations(session.access_token, activeUser.role);
+          await fetchUserInquiries(session.access_token);
         }
       } catch (err) {
         console.error('Error fetching user session:', err);
@@ -126,17 +132,23 @@ export default function MyPage() {
           .eq('id', session.user.id)
           .maybeSingle();
 
-        if (profile) {
-          setCurrentUser(profile);
-          setEditName(profile.name || '');
-          setEditPhone(profile.phone || '');
-          if (profile.mobile_optimized !== undefined && profile.mobile_optimized !== null) {
-            setMobileOptimized(profile.mobile_optimized);
-          }
-          if (!hasLoadedInitialData.current) {
-            await fetchMemberReservations(session.access_token, profile.role);
-            await fetchUserInquiries(session.access_token);
-          }
+        const activeUser = profile || {
+          id: session.user.id,
+          email: session.user.email,
+          name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email?.split('@')[0] || '회원',
+          phone: session.user.user_metadata?.phone || '',
+          role: 'USER'
+        };
+
+        setCurrentUser(activeUser);
+        setEditName(activeUser.name || '');
+        setEditPhone(activeUser.phone || '');
+        if (activeUser.mobile_optimized !== undefined && activeUser.mobile_optimized !== null) {
+          setMobileOptimized(activeUser.mobile_optimized);
+        }
+        if (!hasLoadedInitialData.current) {
+          await fetchMemberReservations(session.access_token, activeUser.role);
+          await fetchUserInquiries(session.access_token);
         }
       } else {
         setCurrentUser(null);
