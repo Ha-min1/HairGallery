@@ -490,18 +490,18 @@ export default function AdminDashboard() {
 
   const loadAdminSettings = async () => {
     try {
-      const { data, error } = await supabase
-        .from('admin_settings')
-        .select('key, value');
-      if (error) throw error;
-      if (data) {
-        data.forEach(item => {
-          if (item.key === 'telegram_alert_confirm') setTelegramAlertConfirm(item.value);
-          if (item.key === 'telegram_daily_briefing') setTelegramDailyBriefing(item.value);
-          if (item.key === 'telegram_alert_general_inquiry') setTelegramAlertGeneralInquiry(item.value);
-          if (item.key === 'telegram_alert_component_inquiry') setTelegramAlertComponentInquiry(item.value);
-          if (item.key === 'telegram_alert_cancellation') setTelegramAlertCancellation(item.value);
-        });
+      const res = await fetch('/api/admin/settings');
+      if (res.ok) {
+        const json = await res.json();
+        if (json.settings) {
+          json.settings.forEach((item: { key: string; value: boolean }) => {
+            if (item.key === 'telegram_alert_confirm') setTelegramAlertConfirm(item.value);
+            if (item.key === 'telegram_daily_briefing') setTelegramDailyBriefing(item.value);
+            if (item.key === 'telegram_alert_general_inquiry') setTelegramAlertGeneralInquiry(item.value);
+            if (item.key === 'telegram_alert_component_inquiry') setTelegramAlertComponentInquiry(item.value);
+            if (item.key === 'telegram_alert_cancellation') setTelegramAlertCancellation(item.value);
+          });
+        }
       }
     } catch (err) {
       console.error('Failed to load admin settings:', err);
@@ -511,12 +511,25 @@ export default function AdminDashboard() {
   const handleToggleSetting = async (key: string, currentValue: boolean) => {
     setIsUpdatingTelegramSettings(true);
     try {
-      const { error } = await supabase
-        .from('admin_settings')
-        .upsert({ key, value: !currentValue }, { onConflict: 'key' });
-      
-      if (error) throw error;
-      
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ key, value: !currentValue })
+      });
+
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.error || '설정 저장 중 오류가 발생했습니다.');
+      }
+
       if (key === 'telegram_alert_confirm') setTelegramAlertConfirm(!currentValue);
       if (key === 'telegram_daily_briefing') setTelegramDailyBriefing(!currentValue);
       if (key === 'telegram_alert_general_inquiry') setTelegramAlertGeneralInquiry(!currentValue);

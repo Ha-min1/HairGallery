@@ -35,9 +35,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: true, message: 'Daily briefing is disabled by settings.' });
     }
 
-    // 2. Determine KST date (UTC+9)
-    const now = new Date();
-    const kstDateStr = new Date(now.getTime() + 9 * 60 * 60 * 1000).toISOString().split('T')[0];
+    // 2. Determine KST date (Asia/Seoul timezone YYYY-MM-DD)
+    const kstDateStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
 
     // 3. Fetch confirmed reservations for KST today
     const { data: reservations, error: resError } = await adminClient
