@@ -174,8 +174,8 @@ export async function POST(req: NextRequest) {
 
     const reservationId = crypto.randomUUID();
     let hashedPass = null;
-    if (!userId && password) {
-      hashedPass = await hashNonMemberPassword(password, reservationId);
+    if (password && String(password).trim().length > 0) {
+      hashedPass = await hashNonMemberPassword(String(password).trim(), reservationId);
     }
 
     // B. Insert reservation. Database partial unique index handles concurrency.

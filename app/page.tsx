@@ -716,7 +716,7 @@ export default function Home() {
           serviceId: selectedServiceId,
           date: selectedDate,
           time: selectedTime,
-          password: (currentUser || session?.user) ? null : nonMemberPassword
+          password: nonMemberPassword ? nonMemberPassword.trim() : null
         }),
       });
 

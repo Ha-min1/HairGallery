@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { hashNonMemberPassword } from '@/lib/crypto';
+import { hashNonMemberPassword, hashNonMemberPasswordLegacy } from '@/lib/crypto';
 
 export const runtime = 'edge';
 
@@ -77,7 +77,7 @@ export async function GET(req: NextRequest) {
         const resPhoneClean = (res.customer_phone || '').replace(/\D/g, '');
         const matchesPhone = cleanUserPhone && cleanUserPhone.length >= 8 && resPhoneClean === cleanUserPhone;
         
-        const matchesName = userName && res.customer_name && res.customer_name.trim() === userName.trim();
+        const matchesName = userName && res.customer_name && res.customer_name.trim().toLowerCase() === userName.trim().toLowerCase();
 
         if (matchesUserId || matchesPhone || matchesName) {
           combinedMap.set(res.id, res);
@@ -116,10 +116,10 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: 'Password parameter is required' }, { status: 400 });
       }
 
-      const searchName = name.trim().replaceAll(' ', '');
+      const searchNameNorm = name.trim().replaceAll(' ', '').toLowerCase();
       const searchPhoneDigits = phone.replace(/\D/g, '');
 
-      // Query candidate reservations by matching customer_name or fetching all for phone filtering
+      // Query all reservations candidate list
       const { data: rawCandidates, error } = await adminClient
         .from('reservations')
         .select(`
@@ -139,16 +139,23 @@ export async function GET(req: NextRequest) {
 
       // Filter candidates by normalized name AND normalized phone digits
       const candidateList = (rawCandidates || []).filter(res => {
-        const resNameNorm = (res.customer_name || '').trim().replaceAll(' ', '');
+        const resNameNorm = (res.customer_name || '').trim().replaceAll(' ', '').toLowerCase();
         const resPhoneDigits = (res.customer_phone || '').replace(/\D/g, '');
         
-        const nameMatches = resNameNorm === searchName;
-        const phoneMatches = searchPhoneDigits.length >= 8 && resPhoneDigits === searchPhoneDigits;
+        const nameMatches = resNameNorm === searchNameNorm;
+        const phoneMatches = searchPhoneDigits.length >= 7 && (
+          resPhoneDigits === searchPhoneDigits ||
+          resPhoneDigits.endsWith(searchPhoneDigits) ||
+          searchPhoneDigits.endsWith(resPhoneDigits)
+        );
 
         return nameMatches && phoneMatches;
       });
 
-      // Filter reservations by matching the password (hash or plaintext compatibility)
+      // Multi-pass password verification (Standard Salt, Legacy Salt & Plaintext compatibility)
+      const inputPass = password.trim();
+      const hashStandard = await hashNonMemberPassword(inputPass);
+
       const filteredReservations = [];
       for (const res of candidateList) {
         if (!res.non_member_password) {
@@ -157,13 +164,21 @@ export async function GET(req: NextRequest) {
           continue;
         }
 
-        const matchHash = await hashNonMemberPassword(password, res.id);
-        if (matchHash === res.non_member_password || res.non_member_password === password) {
+        const hashLegacyNormal = await hashNonMemberPasswordLegacy(inputPass, res.id);
+        const hashLegacyLower = await hashNonMemberPasswordLegacy(inputPass, (res.id || '').toLowerCase());
+
+        const isMatch =
+          res.non_member_password === hashStandard ||
+          res.non_member_password === hashLegacyNormal ||
+          res.non_member_password === hashLegacyLower ||
+          res.non_member_password === inputPass;
+
+        if (isMatch) {
           filteredReservations.push(res);
         }
       }
 
-      // If candidates exist but password didn't match
+      // If candidate bookings exist for name & phone but password didn't match
       if (candidateList.length > 0 && filteredReservations.length === 0) {
         await new Promise(resolve => setTimeout(resolve, 1000));
         return NextResponse.json({ error: '입력하신 비회원 비밀번호가 일치하지 않습니다.' }, { status: 401 });
