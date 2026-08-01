@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
 
     const adminClient = getAdminSupabase();
 
-    // 1. If auth token is provided, verify it and query by user_id or matching phone
+    // 1. If auth token is provided, verify it and query by user_id, name, or matching phone
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.replace('Bearer ', '');
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -47,11 +47,12 @@ export async function GET(req: NextRequest) {
         .eq('id', user.id)
         .maybeSingle();
 
-      const userPhone = userProfile?.phone || user.user_metadata?.phone || user.phone;
+      const userName = userProfile?.name || user.user_metadata?.full_name || user.user_metadata?.name || null;
+      const userPhone = userProfile?.phone || user.user_metadata?.phone || user.phone || null;
       const cleanUserPhone = userPhone ? userPhone.replace(/\D/g, '') : null;
 
-      // Query reservations matching user_id
-      const { data: idReservations, error: idError } = await adminClient
+      // Query all reservations to combine matching results
+      const { data: allReservations, error: idError } = await adminClient
         .from('reservations')
         .select(`
           *,
@@ -61,7 +62,6 @@ export async function GET(req: NextRequest) {
             duration_minutes
           )
         `)
-        .eq('user_id', user.id)
         .order('date', { ascending: false })
         .order('time', { ascending: false });
 
@@ -69,44 +69,36 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: idError.message }, { status: 500 });
       }
 
-      const combinedReservations: any[] = [...(idReservations || [])];
+      const combinedMap = new Map<string, any>();
 
-      // If user has a clean phone number, also check unlinked reservations (user_id IS NULL) with matching phone
-      if (cleanUserPhone && cleanUserPhone.length >= 8) {
-        const { data: allUnlinked } = await adminClient
-          .from('reservations')
-          .select(`
-            *,
-            services (
-              name,
-              price,
-              duration_minutes
-            )
-          `)
-          .is('user_id', null);
+      (allReservations || []).forEach(res => {
+        const matchesUserId = res.user_id === user.id;
+        
+        const resPhoneClean = (res.customer_phone || '').replace(/\D/g, '');
+        const matchesPhone = cleanUserPhone && cleanUserPhone.length >= 8 && resPhoneClean === cleanUserPhone;
+        
+        const matchesName = userName && res.customer_name && res.customer_name.trim() === userName.trim();
 
-        if (allUnlinked && allUnlinked.length > 0) {
-          const matchingUnlinked = allUnlinked.filter(res => {
-            const resPhone = (res.customer_phone || '').replace(/\D/g, '');
-            return resPhone && resPhone === cleanUserPhone;
-          });
+        if (matchesUserId || matchesPhone || matchesName) {
+          combinedMap.set(res.id, res);
 
-          for (const unlinkedRes of matchingUnlinked) {
-            if (!combinedReservations.some(r => r.id === unlinkedRes.id)) {
-              combinedReservations.push(unlinkedRes);
-              // Auto-link user_id in database for permanent association
+          // Auto-link user_id in database if not linked
+          if (!res.user_id) {
+            (async () => {
               try {
                 await adminClient
                   .from('reservations')
                   .update({ user_id: user.id })
-                  .eq('id', unlinkedRes.id);
-              } catch (linkErr) {
-                console.error('Failed to auto-link reservation user_id:', linkErr);
+                  .eq('id', res.id);
+              } catch (err) {
+                console.error('Auto-link error:', err);
               }
-            }
+            })();
           }
         }
-      }
+      });
+
+      const combinedReservations = Array.from(combinedMap.values());
 
       // Sort combined reservations by date DESC, time DESC
       combinedReservations.sort((a, b) => {
@@ -124,7 +116,11 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: 'Password parameter is required' }, { status: 400 });
       }
 
-      const { data, error } = await adminClient
+      const searchName = name.trim().replaceAll(' ', '');
+      const searchPhoneDigits = phone.replace(/\D/g, '');
+
+      // Query candidate reservations by matching customer_name or fetching all for phone filtering
+      const { data: rawCandidates, error } = await adminClient
         .from('reservations')
         .select(`
           *,
@@ -134,8 +130,6 @@ export async function GET(req: NextRequest) {
             duration_minutes
           )
         `)
-        .eq('customer_name', name.trim())
-        .eq('customer_phone', phone.trim())
         .order('date', { ascending: false })
         .order('time', { ascending: false });
 
@@ -143,23 +137,36 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
-      // Filter reservations by matching the password hash
+      // Filter candidates by normalized name AND normalized phone digits
+      const candidateList = (rawCandidates || []).filter(res => {
+        const resNameNorm = (res.customer_name || '').trim().replaceAll(' ', '');
+        const resPhoneDigits = (res.customer_phone || '').replace(/\D/g, '');
+        
+        const nameMatches = resNameNorm === searchName;
+        const phoneMatches = searchPhoneDigits.length >= 8 && resPhoneDigits === searchPhoneDigits;
+
+        return nameMatches && phoneMatches;
+      });
+
+      // Filter reservations by matching the password (hash or plaintext compatibility)
       const filteredReservations = [];
-      for (const res of (data || [])) {
-        if (res.non_member_password) {
-          const matchHash = await hashNonMemberPassword(password, res.id);
-          if (matchHash === res.non_member_password) {
-            filteredReservations.push(res);
-          }
+      for (const res of candidateList) {
+        if (!res.non_member_password) {
+          // If no password set on legacy record, allow viewing
+          filteredReservations.push(res);
+          continue;
+        }
+
+        const matchHash = await hashNonMemberPassword(password, res.id);
+        if (matchHash === res.non_member_password || res.non_member_password === password) {
+          filteredReservations.push(res);
         }
       }
 
-      // If name & phone had bookings but none matched the password, return invalid password
-      const rawCount = data?.length || 0;
-      if (rawCount > 0 && filteredReservations.length === 0) {
-        // Brute-force delay defense: wait 1.5 seconds before rejecting
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        return NextResponse.json({ error: 'Invalid password' }, { status: 401 });
+      // If candidates exist but password didn't match
+      if (candidateList.length > 0 && filteredReservations.length === 0) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return NextResponse.json({ error: '입력하신 비회원 비밀번호가 일치하지 않습니다.' }, { status: 401 });
       }
 
       return NextResponse.json({ reservations: filteredReservations });
