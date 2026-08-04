@@ -15,15 +15,21 @@ export async function GET(req: NextRequest) {
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
     const cronSecret = process.env.CRON_SECRET;
 
+    // Normalize authorization header token (strip optional 'Bearer ' prefix)
+    const tokenFromHeader = authHeader ? authHeader.replace(/^Bearer\s+/i, '').trim() : null;
+
     // Check authorization:
-    // 1) Automatic Vercel Cron trigger (x-vercel-cron header or Authorization: Bearer <CRON_SECRET>)
+    // 1) Automatic Vercel Cron trigger (x-vercel-cron header or user-agent)
     // 2) Manual key parameter via URL query string (?key=...)
-    // 3) Authorization header matching serviceKey or CRON_SECRET
+    // 3) Authorization header matching cronSecret, serviceKey, or botToken
     const isAuthorized =
       isVercelCron ||
       (key && (key === serviceKey || key === botToken || (cronSecret && key === cronSecret))) ||
-      (authHeader && cronSecret && authHeader === `Bearer ${cronSecret}`) ||
-      (authHeader && serviceKey && authHeader === `Bearer ${serviceKey}`);
+      (tokenFromHeader && (
+        (cronSecret && tokenFromHeader === cronSecret) ||
+        (serviceKey && tokenFromHeader === serviceKey) ||
+        (botToken && tokenFromHeader === botToken)
+      ));
 
     if (!isAuthorized) {
       return NextResponse.json({ error: 'Unauthorized: Invalid key or authentication header' }, { status: 401 });
