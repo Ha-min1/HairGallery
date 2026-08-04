@@ -8,15 +8,33 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const key = searchParams.get('key');
+    const authHeader = req.headers.get('authorization');
+    const isVercelCron = req.headers.get('x-vercel-cron') === '1' || req.headers.get('user-agent')?.includes('vercel-cron');
+
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    const cronSecret = process.env.CRON_SECRET;
 
-    if (!key || (key !== serviceKey && key !== botToken)) {
-      return NextResponse.json({ error: 'Unauthorized: Invalid key' }, { status: 401 });
+    // Check authorization:
+    // 1) Automatic Vercel Cron trigger (x-vercel-cron header or Authorization: Bearer <CRON_SECRET>)
+    // 2) Manual key parameter via URL query string (?key=...)
+    // 3) Authorization header matching serviceKey or CRON_SECRET
+    const isAuthorized =
+      isVercelCron ||
+      (key && (key === serviceKey || key === botToken || (cronSecret && key === cronSecret))) ||
+      (authHeader && cronSecret && authHeader === `Bearer ${cronSecret}`) ||
+      (authHeader && serviceKey && authHeader === `Bearer ${serviceKey}`);
+
+    if (!isAuthorized) {
+      return NextResponse.json({ error: 'Unauthorized: Invalid key or authentication header' }, { status: 401 });
     }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return NextResponse.json({ error: 'Server configuration error: Missing Supabase environment variables' }, { status: 500 });
+    }
 
     const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { persistSession: false }
@@ -29,7 +47,7 @@ export async function GET(req: NextRequest) {
       .eq('key', 'telegram_daily_briefing')
       .maybeSingle();
 
-    const isEnabled = settingData ? settingData.value : true;
+    const isEnabled = settingData ? Boolean(settingData.value) : true;
 
     if (!isEnabled) {
       return NextResponse.json({ success: true, message: 'Daily briefing is disabled by settings.' });
@@ -38,7 +56,7 @@ export async function GET(req: NextRequest) {
     // 2. Determine KST date (Asia/Seoul timezone YYYY-MM-DD)
     const kstDateStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
 
-    // 3. Fetch confirmed reservations for KST today
+    // 3. Fetch confirmed reservations for KST today using LEFT JOIN with services table
     const { data: reservations, error: resError } = await adminClient
       .from('reservations')
       .select(`
@@ -46,42 +64,31 @@ export async function GET(req: NextRequest) {
         customer_name,
         customer_phone,
         price,
-        service_id
+        service_id,
+        services!left (
+          name,
+          price
+        )
       `)
-      .eq('date', kstDateStr)
+      .or(`date.eq.${kstDateStr},date.like.${kstDateStr}%`)
       .eq('status', 'Confirmed')
       .order('time', { ascending: true });
 
     if (resError) throw resError;
 
-    // 4. Resolve service names
-    const enrichedReservations = await Promise.all((reservations || []).map(async (res) => {
-      let serviceName = 'Custom Styling';
-      let servicePrice = res.price || 0;
-
-      if (res.service_id) {
-        const { data: serviceData } = await adminClient
-          .from('services')
-          .select('name, price')
-          .eq('id', res.service_id)
-          .maybeSingle();
-        
-        if (serviceData) {
-          serviceName = serviceData.name;
-          if (!res.price) {
-            servicePrice = serviceData.price || 0;
-          }
-        }
-      }
+    // 4. Transform reservations list for telegram notification
+    const enrichedReservations = (reservations || []).map((res: any) => {
+      const serviceName = res.services?.name || 'Custom Styling';
+      const servicePrice = res.price !== null && res.price !== undefined ? res.price : (res.services?.price || 0);
 
       return {
-        time: res.time,
-        customerName: res.customer_name,
-        customerPhone: res.customer_phone,
+        time: res.time ? String(res.time).slice(0, 5) : '10:00',
+        customerName: res.customer_name || '고객',
+        customerPhone: res.customer_phone || null,
         serviceName,
-        price: servicePrice
+        price: Number(servicePrice)
       };
-    }));
+    });
 
     // 5. Send telegram briefing
     const success = await sendTelegramDailyBriefing({
@@ -96,3 +103,4 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
