@@ -25,8 +25,8 @@ import InstallAppBanner from '@/app/components/InstallAppBanner';
 import SiteIntroBanner from '@/app/components/SiteIntroBanner';
 
 const TIME_SLOTS_24H = [
-  '10:30', '11:30', '12:30', '13:30', '14:30',
-  '15:30', '16:30', '17:30', '18:30', '19:30'
+  '10:00', '11:00', '12:00', '13:00', '14:00',
+  '15:00', '16:00', '17:00', '18:00', '19:00'
 ];
 
 export default function Home() {
@@ -1659,7 +1659,7 @@ export default function Home() {
                   <span>BUSINESS HOURS (영업 시간)</span>
                 </div>
                 <p className="text-stone-200 text-xs leading-relaxed">
-                  {lang === 'ko' ? '매일 10:30 - 19:30 (100% 우선 예약제 운영)' : 'Daily 10:30 - 19:30 (100% Reservation Based)'}
+                  {lang === 'ko' ? '매일 10:00 - 19:00 (100% 우선 예약제 운영)' : 'Daily 10:00 - 19:00 (100% Reservation Based)'}
                 </p>
               </div>
 

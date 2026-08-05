@@ -86,8 +86,8 @@ const formatDisplayDate = (dateStr: string) => {
 
 // Standard 24h styling slots
 const TIME_SLOTS = [
-  '10:30', '11:30', '12:30', '13:30', '14:30',
-  '15:30', '16:30', '17:30', '18:30', '19:30'
+  '10:00', '11:00', '12:00', '13:00', '14:00',
+  '15:00', '16:00', '17:00', '18:00', '19:00'
 ];
 
 export default function AdminDashboard() {
@@ -129,7 +129,7 @@ export default function AdminDashboard() {
   const [resCustomerPhone, setResCustomerPhone] = useState<string>('');
   const [resServiceId, setResServiceId] = useState<string>('');
   const [resDate, setResDate] = useState<string>('');
-  const [resTime, setResTime] = useState<string>('10:30');
+  const [resTime, setResTime] = useState<string>('10:00');
   const [resStatus, setResStatus] = useState<string>('Confirmed');
   const [resPrice, setResPrice] = useState<string>('');
 
