@@ -1973,7 +1973,7 @@ WITH CHECK (
                                           ) : null}
                                         </div>
                                         <p className="text-[10px] text-stone-300 font-light">
-                                          {res.serviceName} • ₩{(res.price || 0).toLocaleString()}
+                                          {res.serviceName}
                                         </p>
                                       </div>
 
@@ -2082,7 +2082,7 @@ WITH CHECK (
                                         ) : null}
                                       </div>
                                       <p className="text-[10px] text-stone-300 font-light">
-                                        {res.serviceName} • ₩{(res.price || 0).toLocaleString()}
+                                        {res.serviceName}
                                       </p>
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0">
@@ -2266,10 +2266,6 @@ WITH CHECK (
                         <div className="flex items-center gap-5 flex-wrap w-full sm:w-auto justify-between sm:justify-end">
                           <div className="text-left sm:text-right">
                             <p className="font-semibold text-stone-200">{res.serviceName}</p>
-                            <p className="text-[10px] text-stone-500 mt-0.5 font-mono">
-                              {lang === 'ko' ? '요금: ' : 'Price: '}
-                              {res.price > 1000 ? `₩${res.price.toLocaleString()}` : `$${res.price}`}
-                            </p>
                           </div>
 
                           <div className="flex items-center gap-2 border-l border-white/5 pl-4.5">
@@ -2686,7 +2682,7 @@ WITH CHECK (
               <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
                 <div className="text-left">
                   <h2 className="font-serif text-lg font-semibold text-gold-400 tracking-wide">{t.servicesTab}</h2>
-                  <p className="text-xs text-stone-400">{lang === 'ko' ? '시술 가격표 및 서비스 목록 수정 (전체 컬럼 수정 가능)' : 'Modify services registry and prices (All columns editable)'}</p>
+                  <p className="text-xs text-stone-400">{lang === 'ko' ? '시술 서비스 목록 수정 및 관리' : 'Modify services registry'}</p>
                 </div>
                 <button
                   onClick={() => {
@@ -2738,10 +2734,10 @@ WITH CHECK (
                         <div className="flex items-center justify-between md:justify-end gap-6 w-full md:w-auto shrink-0 border-t md:border-t-0 border-white/5 pt-3.5 md:pt-0">
                           <div className="text-left md:text-right">
                             <span className="text-[10px] font-mono text-stone-400 uppercase block tracking-widest">
-                              {lang === 'ko' ? '단가' : 'Price'}
+                              {lang === 'ko' ? '시술 구분' : 'Service'}
                             </span>
-                            <span className="font-serif font-bold text-white text-base">
-                              {svc.price !== null && svc.price !== undefined ? ('₩' + svc.price.toLocaleString()) : '가격 문의'}
+                            <span className="font-serif font-bold text-gold-400 text-xs">
+                              {lang === 'ko' ? '1:1 맞춤 시술' : 'Custom Service'}
                             </span>
                           </div>
 
@@ -3308,22 +3304,10 @@ WITH CHECK (
                   <option value="" disabled className="bg-stone-900 text-white">{t.selectServicePrompt}</option>
                   {servicesList.map(svc => (
                     <option key={svc.id} value={svc.id} className="bg-stone-900 text-white">
-                      {svc.name} {svc.price !== null && svc.price !== undefined ? `(₩${svc.price.toLocaleString()})` : ""}
+                      {svc.name}
                     </option>
                   ))}
                 </select>
-              </div>
-
-              {/* Custom Price */}
-              <div className="space-y-1.5">
-                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{lang === 'ko' ? '예약 요금 / 금액' : 'Price / Amount'}</label>
-                <input 
-                  type="number"
-                  value={resPrice}
-                  onChange={e => setResPrice(e.target.value)}
-                  placeholder={lang === 'ko' ? "직접 금액 입력 (미입력 가능)" : "Enter custom price (optional)"}
-                  className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white font-mono font-bold"
-                />
               </div>
 
               {/* Date */}
@@ -3701,20 +3685,7 @@ WITH CHECK (
                 </select>
               </div>
 
-              {/* Service Price */}
-              <div className="space-y-1.5 text-left">
-                <label className="font-bold text-stone-400 block font-mono uppercase tracking-wider text-[10px]">{lang === 'ko' ? '단가 / 금액' : 'Price'}</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-550 font-mono">₩</span>
-                  <input 
-                    type="number"
-                    value={svcPrice}
-                    onChange={e => setSvcPrice(e.target.value === '' ? '' : Number(e.target.value))}
-                    placeholder="예: 15000 (빈 칸 설정 시 가격 문의)"
-                    className="w-full pl-7 pr-3 py-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-white font-mono font-bold text-left"
-                  />
-                </div>
-              </div>
+
 
               {/* Duration Minutes */}
               <div className="space-y-1.5 text-left">

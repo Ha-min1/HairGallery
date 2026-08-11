@@ -78,11 +78,9 @@ export async function GET(req: NextRequest) {
         time,
         customer_name,
         customer_phone,
-        price,
         service_id,
         services!left (
-          name,
-          price
+          name
         )
       `)
       .eq('date', kstDateStr)
@@ -93,7 +91,7 @@ export async function GET(req: NextRequest) {
       console.warn('[Cron Daily Briefing] Joined query failed, running plain query fallback:', joinError.message);
       const { data: plainData, error: plainError } = await adminClient
         .from('reservations')
-        .select('id, time, customer_name, customer_phone, price, service_id')
+        .select('id, time, customer_name, customer_phone, service_id')
         .eq('date', kstDateStr)
         .eq('status', 'Confirmed')
         .order('time', { ascending: true });
@@ -109,22 +107,18 @@ export async function GET(req: NextRequest) {
     // 4. Transform & enrich reservations
     const enrichedReservations = await Promise.all((reservations || []).map(async (res: any) => {
       let serviceName = res.services?.name || 'Custom Styling';
-      let servicePrice = res.price !== null && res.price !== undefined ? res.price : (res.services?.price || 0);
 
       // If service name is not available from join and service_id exists, attempt direct lookup
       if (!res.services?.name && res.service_id) {
         try {
           const { data: serviceData } = await adminClient
             .from('services')
-            .select('name, price')
+            .select('name')
             .eq('id', res.service_id)
             .maybeSingle();
 
           if (serviceData) {
             serviceName = serviceData.name || serviceName;
-            if (res.price === null || res.price === undefined) {
-              servicePrice = serviceData.price || 0;
-            }
           }
         } catch (_) {}
       }
@@ -134,7 +128,6 @@ export async function GET(req: NextRequest) {
         customerName: res.customer_name || '고객',
         customerPhone: res.customer_phone || null,
         serviceName,
-        price: Number(servicePrice)
       };
     }));
 

@@ -10,14 +10,13 @@ export async function sendTelegramAdminAlert({
   date,
   time,
   serviceName,
-  price
 }: {
   customerName: string;
   customerPhone: string;
   date: string;
   time: string;
   serviceName: string;
-  price: number;
+  price?: number;
 }) {
   const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
   const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
@@ -28,16 +27,12 @@ export async function sendTelegramAdminAlert({
     return false;
   }
 
-  // Format Korean Currency
-  const formattedPrice = price > 1000 ? `₩${price.toLocaleString()}` : `$${price}`;
-
   const message = `🔔 [더 헤어 갤러리 - 신규 예약 접수]
 --------------------------------
 • 고객명: ${customerName}
 • 연락처: ${customerPhone}
 • 예약일: ${date} (${time})
 • 시술명: ${serviceName}
-• 시술가: ${formattedPrice}
 --------------------------------
 관리자 콘솔에 접속하여 예약을 확정하거나 조율해 주세요.`;
 
@@ -76,14 +71,13 @@ export async function sendTelegramConfirmAlert({
   date,
   time,
   serviceName,
-  price
 }: {
   customerName: string;
   customerPhone: string | null;
   date: string;
   time: string;
   serviceName: string;
-  price: number;
+  price?: number;
 }) {
   const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
   const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
@@ -93,18 +87,16 @@ export async function sendTelegramConfirmAlert({
     return false;
   }
 
-  const formattedPrice = price > 1000 ? `₩${price.toLocaleString()}` : `$${price}`;
   const phoneDisplay = customerPhone || '미기재';
 
   const message = `✅ [더 헤어 갤러리 - 예약 확정 알림]
 --------------------------------
-예약이 확정되었습니다. 확인해 주세요.
 • 고객명: ${customerName}
 • 연락처: ${phoneDisplay}
 • 예약일: ${date} (${time})
 • 시술명: ${serviceName}
-• 시술가: ${formattedPrice}
---------------------------------`;
+--------------------------------
+예약이 확정되었습니다. 확인해 주세요.`;
 
   try {
     const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
@@ -145,7 +137,7 @@ export async function sendTelegramDailyBriefing({
     customerName: string;
     customerPhone?: string | null;
     serviceName: string;
-    price: number;
+    price?: number;
   }[];
 }) {
   const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
@@ -161,9 +153,8 @@ export async function sendTelegramDailyBriefing({
     listContent = '\n금일 확정된 예약이 없습니다.\n';
   } else {
     reservationsList.forEach((res, index) => {
-      const formattedPrice = res.price > 1000 ? `₩${res.price.toLocaleString()}` : `$${res.price}`;
       const phoneDisplay = res.customerPhone || '연락처 미기재';
-      listContent += `\n${index + 1}. ${res.time} - ${res.customerName} (${phoneDisplay})\n   • 시술: ${res.serviceName} (${formattedPrice})\n`;
+      listContent += `\n${index + 1}. ${res.time} - ${res.customerName} (${phoneDisplay})\n   • 시술명: ${res.serviceName}\n`;
     });
   }
 

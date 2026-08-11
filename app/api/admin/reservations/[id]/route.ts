@@ -33,7 +33,6 @@ export async function PATCH(
       serviceId, 
       date, 
       time, 
-      price, 
       userId, 
       sendNotification = true 
     } = body;
@@ -80,7 +79,6 @@ export async function PATCH(
     if (serviceId !== undefined) updatePayload.service_id = serviceId || null;
     if (date !== undefined) updatePayload.date = date;
     if (time !== undefined) updatePayload.time = time;
-    if (price !== undefined) updatePayload.price = price ? Number(price) : null;
     if (userId !== undefined) updatePayload.user_id = userId || null;
 
     if (Object.keys(updatePayload).length === 0) {
@@ -115,21 +113,17 @@ export async function PATCH(
           }
         }
 
-        // 2. Fetch service details for styling description and fallback price
+        // 2. Fetch service details for styling description
         let serviceName = 'Custom Styling';
-        let servicePrice = data.price || 0;
         
         if (data.service_id) {
           const { data: serviceData } = await adminClient
             .from('services')
-            .select('name, price')
+            .select('name')
             .eq('id', data.service_id)
             .maybeSingle();
           if (serviceData) {
             serviceName = serviceData.name;
-            if (!data.price) {
-              servicePrice = serviceData.price || 0;
-            }
           }
         }
 
@@ -141,7 +135,6 @@ export async function PATCH(
             date: data.date,
             time: data.time,
             serviceName,
-            price: servicePrice
           });
         } else {
           console.log(`[Notification Skip] No email found for user_id: ${data.user_id || 'guest'}`);
@@ -155,7 +148,6 @@ export async function PATCH(
             date: data.date,
             time: data.time,
             serviceName,
-            price: servicePrice
           });
         } else {
           console.log('[Notification Skip] No phone number found on reservation record.');
@@ -179,7 +171,6 @@ export async function PATCH(
               date: data.date,
               time: data.time,
               serviceName,
-              price: servicePrice
             });
           }
         } catch (tgErr) {

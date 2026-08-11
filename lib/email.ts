@@ -45,7 +45,7 @@ interface SendConfirmationEmailParams {
   date: string;
   time: string;
   serviceName: string;
-  price: number;
+  price?: number;
 }
 
 /**
@@ -57,17 +57,11 @@ export async function sendBookingConfirmationEmail({
   date,
   time,
   serviceName,
-  price,
 }: SendConfirmationEmailParams) {
   const config = getEmailJSConfig();
 
-  const formattedPrice = new Intl.NumberFormat('ko-KR', {
-    style: 'currency',
-    currency: 'KRW',
-  }).format(price);
-
   if (!config) {
-    console.log(`[MOCK EMAILJS SENT] To: ${toEmail} | Details: ${customerName}, ${date} ${time}, ${serviceName}, ${formattedPrice}`);
+    console.log(`[MOCK EMAILJS SENT] To: ${toEmail} | Details: ${customerName}, ${date} ${time}, ${serviceName}`);
     return { success: true, mock: true };
   }
 
@@ -85,7 +79,6 @@ export async function sendBookingConfirmationEmail({
         booking_date: date,
         booking_time: time,
         service_name: serviceName,
-        price: formattedPrice,
       },
     };
 
@@ -121,7 +114,7 @@ interface SendAdminAlertEmailParams {
   date: string;
   time: string;
   serviceName: string;
-  price: number;
+  price?: number;
 }
 
 /**
@@ -134,20 +127,14 @@ export async function sendAdminBookingAlertEmail({
   date,
   time,
   serviceName,
-  price,
 }: SendAdminAlertEmailParams) {
   const config = getEmailJSConfig();
   
   // Use the admin template ID if configured, otherwise fallback to the client template ID.
   const adminTemplateId = process.env.EMAILJS_ADMIN_TEMPLATE_ID || (config ? config.templateId : '');
 
-  const formattedPrice = new Intl.NumberFormat('ko-KR', {
-    style: 'currency',
-    currency: 'KRW',
-  }).format(price);
-
   if (!config || !adminTemplateId) {
-    console.log(`[MOCK EMAILJS ADMIN ALERT SENT] To: ${toEmail} | Details: Customer ${customerName} (${customerPhone}), ${date} ${time}, ${serviceName}, ${formattedPrice}`);
+    console.log(`[MOCK EMAILJS ADMIN ALERT SENT] To: ${toEmail} | Details: Customer ${customerName} (${customerPhone}), ${date} ${time}, ${serviceName}`);
     return { success: true, mock: true };
   }
 
@@ -166,7 +153,6 @@ export async function sendAdminBookingAlertEmail({
         booking_date: date,
         booking_time: time,
         service_name: serviceName,
-        price: formattedPrice,
       },
     };
 

@@ -70,10 +70,10 @@ export default function PricePage() {
     <div className="min-h-screen bg-stone-50 text-stone-950 flex flex-col font-sans antialiased">
       {/* Dynamic SEO Meta Title */}
       <head>
-        <title>{lang === 'ko' ? '시술 가격 안내 | 더 헤어 갤러리 (THE HAIR GALLERY)' : 'Price Guide | THE HAIR GALLERY'}</title>
+        <title>{lang === 'ko' ? '시술 서비스 안내 | 더 헤어 갤러리 (THE HAIR GALLERY)' : 'Service Guide | THE HAIR GALLERY'}</title>
         <meta 
           name="description" 
-          content={lang === 'ko' ? '더 헤어 갤러리 커트, 염색, 펌, 클리닉, 스타일링, 샴푸, 업스타일 시술별 상세 가격 정보' : 'Detailed haircut and hair treatment price guide for THE HAIR GALLERY'} 
+          content={lang === 'ko' ? '더 헤어 갤러리 커트, 염색, 펌, 클리닉, 스타일링, 샴푸, 업스타일 시술별 상세 서비스 정보' : 'Detailed haircut and hair treatment service guide for THE HAIR GALLERY'} 
         />
       </head>
 

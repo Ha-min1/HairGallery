@@ -1168,7 +1168,7 @@ export default function Home() {
                         className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-50 hover:bg-amber-100 text-gold-700 border border-gold-400/60 rounded-xl text-xs font-bold transition-all shadow-2xs shrink-0 self-start sm:self-auto cursor-pointer"
                       >
                         <Tag className="w-3.5 h-3.5" />
-                        <span>{lang === 'ko' ? '🏷️ 시술별 상세 가격표 보기' : '🏷️ View Detailed Price Guide'}</span>
+                        <span>{lang === 'ko' ? '🏷️ 시술 서비스 메뉴 안내 보기' : '🏷️ View Service Menu Guide'}</span>
                       </button>
                     </div>
 
@@ -1220,10 +1220,10 @@ export default function Home() {
                     <div className="p-3.5 bg-amber-50/60 border border-amber-200/80 rounded-xl text-[11px] text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <span className="flex items-center gap-1.5 font-medium">
                         <span>💡</span>
-                        <span>{lang === 'ko' ? '시술별 디테일한 세부 가변 가격표는 [가격안내] 전용 페이지에서 언제든지 확인할 수 있습니다.' : 'Detailed procedure price guide is available on the Price Guide page.'}</span>
+                        <span>{lang === 'ko' ? '시술별 디테일한 세부 서비스 안내는 [시술안내] 전용 페이지에서 확인할 수 있습니다.' : 'Detailed procedure service guide is available on the Service Guide page.'}</span>
                       </span>
                       <Link href="/price" className="text-amber-950 font-bold underline shrink-0 hover:text-gold-700 text-xs">
-                        {lang === 'ko' ? '가격안내 바로가기 →' : 'Price Guide →'}
+                        {lang === 'ko' ? '시술안내 바로가기 →' : 'Service Guide →'}
                       </Link>
                     </div>
                   </div>
@@ -1689,7 +1689,7 @@ export default function Home() {
               <div className="flex items-center gap-2">
                 <Tag className="w-5 h-5 text-gold-400" />
                 <span className="font-serif font-bold text-sm sm:text-base">
-                  {lang === 'ko' ? '헤어갤러리 시술별 가변 가격안내 (Price Guide)' : 'Hair Gallery Price Guide'}
+                  {lang === 'ko' ? '헤어갤러리 시술 서비스 안내 (Service Guide)' : 'Hair Gallery Service Guide'}
                 </span>
               </div>
               <button
@@ -2050,22 +2050,7 @@ export default function Home() {
                 />
               </div>
 
-              {/* Price */}
-              <div className="space-y-1 text-left">
-                <label className="text-[10px] font-mono text-stone-400 uppercase tracking-widest font-semibold block">
-                  {lang === 'ko' ? '가격 (Price) - 입력하지 않으면 가격문의' : 'Price (Empty for Inquiry)'}
-                </label>
-                <input
-                  type="number"
-                  placeholder={lang === 'ko' ? '가격 문의' : 'Inquiry'}
-                  value={editingService.price !== null && editingService.price !== undefined ? editingService.price : ''}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setEditingService({ ...editingService, price: val === '' ? null : Number(val) });
-                  }}
-                  className="w-full px-3 py-2 border border-stone-200 rounded-lg text-xs focus:ring-1 focus:ring-gold-500 focus:border-gold-500 outline-none bg-stone-50"
-                />
-              </div>
+
 
               {/* Duration */}
               <div className="space-y-1 text-left">

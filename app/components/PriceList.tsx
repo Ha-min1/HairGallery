@@ -435,8 +435,8 @@ export default function PriceList({ lang = 'ko', currentUser = null, isEmbedded 
                             {item.title}
                           </h3>
                           <div className="flex flex-col items-end gap-1 shrink-0">
-                            <span className="inline-block px-2.5 py-1 bg-amber-50 border border-gold-500/30 text-gold-700 rounded-lg text-xs sm:text-sm font-bold font-serif whitespace-nowrap shadow-2xs">
-                              {typeof item.price === 'number' ? `${(item.price as number).toLocaleString()}원` : (item.price || '가격 문의')}
+                            <span className="inline-block px-2.5 py-1 bg-amber-50 border border-gold-500/30 text-gold-700 rounded-lg text-xs font-bold whitespace-nowrap shadow-2xs">
+                              {lang === 'ko' ? '1:1 맞춤 시술' : 'Custom Service'}
                             </span>
                             {item.duration_minutes !== undefined && (
                               <span className="text-[10px] px-2 py-0.5 bg-stone-100 border border-stone-200 text-stone-600 rounded-full font-mono font-semibold">
@@ -486,10 +486,10 @@ export default function PriceList({ lang = 'ko', currentUser = null, isEmbedded 
       <div className="mt-12 p-5 bg-stone-100 rounded-2xl border border-stone-200 text-stone-600 text-xs leading-relaxed space-y-1">
         <p className="font-bold text-stone-800 flex items-center gap-1.5">
           <Clock className="w-4 h-4 text-gold-600" />
-          <span>{lang === 'ko' ? '가격 관련 참고 사항' : 'Price Information Notice'}</span>
+          <span>{lang === 'ko' ? '시술 서비스 참고 사항' : 'Service Information Notice'}</span>
         </p>
-        <p>• {lang === 'ko' ? '표시된 금액은 기본 시술 기준이며, 기장 추가나 특수 영양 앰플 추가 시 현장에서 금액이 조정될 수 있습니다.' : 'Prices displayed are base rates. Additional charges may apply depending on hair length or special ampoules.'}</p>
-        <p>• {lang === 'ko' ? '정확한 커스텀 견적은 원장과의 1:1 상담 시 상세히 안내해 드립니다.' : 'Customized quotes will be detailed during your 1-on-1 consultation with our Salon Director.'}</p>
+        <p>• {lang === 'ko' ? '더 헤어 갤러리는 1:1 전담 시술로 진행되며 모발 상태, 길이, 디자인 특성에 맞춰 정성껏 시술해 드립니다.' : 'THE HAIR GALLERY provides 1:1 custom hair design tailored to your hair condition and style.'}</p>
+        <p>• {lang === 'ko' ? '상세 시술 내용 및 상담은 원장과의 1:1 맞춤 컨설팅 시 자세히 안내해 드립니다.' : 'Detailed procedure steps and consulting are provided during your 1-on-1 session with our Salon Director.'}</p>
       </div>
 
       {/* Admin Add/Edit Price Item Modal */}

@@ -60,7 +60,7 @@ interface SendKakaoNotificationParams {
   date: string;
   time: string;
   serviceName: string;
-  price: number;
+  price?: number;
 }
 
 /**
@@ -72,19 +72,14 @@ export async function sendKakaoBookingNotification({
   date,
   time,
   serviceName,
-  price,
 }: SendKakaoNotificationParams) {
   const config = getSolapiConfig();
   
   // Clean phone number: remove hyphens, Solapi expects only numbers (e.g. "01012345678")
   const cleanedPhone = toPhone.replace(/\D/g, '');
-  const formattedPrice = new Intl.NumberFormat('ko-KR', {
-    style: 'currency',
-    currency: 'KRW',
-  }).format(price);
 
   if (!config) {
-    console.log(`[MOCK KAKAOTALK SENT] To: ${cleanedPhone} | Customer: ${customerName} | Details: ${date} ${time}, ${serviceName}, ${formattedPrice}`);
+    console.log(`[MOCK KAKAOTALK SENT] To: ${cleanedPhone} | Customer: ${customerName} | Details: ${date} ${time}, ${serviceName}`);
     return { success: true, mock: true };
   }
 
@@ -104,8 +99,7 @@ export async function sendKakaoBookingNotification({
           variables: {
             '#{고객명}': customerName,
             '#{예약일시}': `${date} ${time}`,
-            '#{시술명}': serviceName,
-            '#{결제금액}': formattedPrice
+            '#{시술명}': serviceName
           }
         }
       }

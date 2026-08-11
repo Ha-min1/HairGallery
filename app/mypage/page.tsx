@@ -723,15 +723,8 @@ export default function MyPage() {
                                   <h4 className="text-xs font-bold text-stone-900">{service?.name || 'Custom Styling Service'}</h4>
                                 </div>
                                 <div className="text-right shrink-0">
-                                  <span className="text-xs font-bold font-serif block">
-                                    {resv.price !== null && resv.price !== undefined 
-                                      ? `₩${resv.price.toLocaleString()}` 
-                                      : service?.price !== null && service?.price !== undefined
-                                      ? `₩${service.price.toLocaleString()}`
-                                      : (lang === 'ko' ? '가격 문의' : 'Inquiry')}
-                                  </span>
-                                  <span className="text-[9px] text-stone-400 font-mono">
-                                    {(service?.duration_minutes || 60) + (lang === 'ko' ? '분' : 'm')}
+                                  <span className="text-xs font-bold text-stone-600 font-mono block">
+                                    {(service?.duration_minutes || 60) + (lang === 'ko' ? '분 소요' : ' mins')}
                                   </span>
                                 </div>
                               </div>

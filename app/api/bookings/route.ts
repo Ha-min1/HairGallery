@@ -114,8 +114,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Fetch service price and name pre-insert to store in reservations and use for notifications
-    let servicePrice = 0;
+    // Fetch service details pre-insert to store in reservations and use for notifications
     let serviceName = 'Custom Styling';
     let dbServiceId: string | null = null;
 
@@ -148,14 +147,13 @@ export async function POST(req: NextRequest) {
       if (uuidRegex.test(serviceId)) {
         const { data: serviceData } = await adminClient
           .from('services')
-          .select('id, name, price')
+          .select('id, name')
           .eq('id', serviceId)
           .maybeSingle();
 
         if (serviceData) {
           dbServiceId = serviceData.id;
           serviceName = serviceData.name;
-          servicePrice = serviceData.price || 0;
         }
       }
     }
@@ -191,8 +189,7 @@ export async function POST(req: NextRequest) {
           date,
           time,
           status: 'Pending', // Initial state pending salon owner's review
-          non_member_password: hashedPass,
-          price: servicePrice
+          non_member_password: hashedPass
         }
       ])
       .select()
@@ -212,9 +209,6 @@ export async function POST(req: NextRequest) {
     // Trigger admin alert notifications for new booking (awaited to prevent Cloudflare Pages context termination)
     if (data) {
       try {
-        // serviceName and servicePrice are already fetched before insert
-
-
         // B. Query administrators who enabled receive_notifications
         let queryResult;
         try {
@@ -245,7 +239,6 @@ export async function POST(req: NextRequest) {
               date: data.date,
               time: data.time,
               serviceName,
-              price: servicePrice
             });
           }
         }
@@ -258,7 +251,6 @@ export async function POST(req: NextRequest) {
             date: data.date,
             time: data.time,
             serviceName,
-            price: servicePrice
           });
         } catch (tgErr) {
           console.error('Failed to send Telegram admin alert:', tgErr);

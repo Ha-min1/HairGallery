@@ -284,7 +284,7 @@ export default function Header({
             </Link>
           )}
 
-          {/* Price Guide Chip */}
+          {/* Price / Service Guide Chip */}
           {onOpenPriceModal ? (
             <button
               type="button"
@@ -292,7 +292,7 @@ export default function Header({
               className="px-3.5 py-1.5 rounded-full bg-amber-950/40 hover:bg-amber-900/60 border border-gold-500/60 text-gold-300 hover:text-white text-xs font-mono font-bold flex items-center gap-1.5 transition-all shrink-0 cursor-pointer shadow-xs"
             >
               <Tag className="h-3.5 w-3.5 text-gold-400" />
-              <span>{lang === 'ko' ? '🏷️ 시술 가격안내' : '🏷️ Price Guide'}</span>
+              <span>{lang === 'ko' ? '🏷️ 시술 메뉴안내' : '🏷️ Service Menu'}</span>
             </button>
           ) : (
             <Link
@@ -300,7 +300,7 @@ export default function Header({
               className="px-3.5 py-1.5 rounded-full bg-amber-950/40 hover:bg-amber-900/60 border border-gold-500/60 text-gold-300 hover:text-white text-xs font-mono font-bold flex items-center gap-1.5 transition-all shrink-0 cursor-pointer shadow-xs"
             >
               <Tag className="h-3.5 w-3.5 text-gold-400" />
-              <span>{lang === 'ko' ? '🏷️ 시술 가격안내' : '🏷️ Price Guide'}</span>
+              <span>{lang === 'ko' ? '🏷️ 시술 메뉴안내' : '🏷️ Service Menu'}</span>
             </Link>
           )}
 
@@ -397,7 +397,7 @@ export default function Header({
             className="w-full py-2.5 bg-amber-950/60 text-gold-300 border border-gold-500/50 rounded-xl text-xs font-mono font-bold flex items-center justify-center gap-2"
           >
             <Tag className="h-4 w-4 text-gold-400" />
-            <span>{lang === 'ko' ? '🏷️ 시술별 상세 가격안내 바로가기' : '🏷️ View Price Guide Page'}</span>
+            <span>{lang === 'ko' ? '🏷️ 시술별 상세 서비스 안내 바로가기' : '🏷️ View Service Menu Page'}</span>
           </Link>
 
           {isAdmin && (
