@@ -25,8 +25,10 @@ import InstallAppBanner from '@/app/components/InstallAppBanner';
 import SiteIntroBanner from '@/app/components/SiteIntroBanner';
 
 const TIME_SLOTS_24H = [
-  '10:00', '11:00', '12:00', '13:00', '14:00',
-  '15:00', '16:00', '17:00', '18:00', '19:00'
+  '10:00', '10:30', '11:00', '11:30', '12:00', '12:30',
+  '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
+  '16:00', '16:30', '17:00', '17:30', '18:00', '18:30',
+  '19:00', '19:30'
 ];
 
 export default function Home() {
@@ -1358,7 +1360,7 @@ export default function Home() {
                   {isLoadingSlots ? (
                     <div className="text-center py-6 text-xs text-stone-400 font-mono">{t.checkingSchedules}</div>
                   ) : (
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                        {TIME_SLOTS_24H.map(slot => {
                         const isCustomerReserved = bookedTimes.includes(slot) && !closedTimes.includes(slot);
                         const isBooked = bookedTimes.includes(slot);
@@ -1373,7 +1375,7 @@ export default function Home() {
                               type="button"
                               disabled={isCustomerReserved}
                               onClick={() => handleToggleBulkSlot(slot)}
-                              className={`py-2.5 text-xs font-mono font-semibold rounded border transition-colors cursor-pointer ${
+                              className={`py-2.5 text-xs font-mono font-semibold rounded border transition-colors cursor-pointer flex flex-col items-center justify-center ${
                                 isCustomerReserved
                                   ? 'bg-stone-100 text-stone-300 border-stone-100 line-through cursor-not-allowed'
                                   : isAdminClosedInMode
@@ -1381,7 +1383,12 @@ export default function Home() {
                                   : 'bg-white hover:bg-stone-50 border-stone-200 text-stone-700'
                               }`}
                             >
-                              {slot} {isAdminClosedInMode && (lang === 'ko' ? '(마감)' : '(Closed)')}
+                              <span>{slot}</span>
+                              {isAdminClosedInMode && (
+                                <span className="text-[10px] font-sans block leading-tight">
+                                  {lang === 'ko' ? '(마감)' : '(Closed)'}
+                                </span>
+                              )}
                             </button>
                           );
                         }
@@ -1659,7 +1666,7 @@ export default function Home() {
                   <span>BUSINESS HOURS (영업 시간)</span>
                 </div>
                 <p className="text-stone-200 text-xs leading-relaxed">
-                  {lang === 'ko' ? '매일 10:00 - 19:00 (100% 우선 예약제 운영)' : 'Daily 10:00 - 19:00 (100% Reservation Based)'}
+                  {lang === 'ko' ? '매일 10:00 - 19:30 (100% 우선 예약제 운영)' : 'Daily 10:00 - 19:30 (100% Reservation Based)'}
                 </p>
               </div>
 

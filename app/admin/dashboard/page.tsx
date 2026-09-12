@@ -86,8 +86,11 @@ const formatDisplayDate = (dateStr: string) => {
 
 // Standard 24h styling slots
 const TIME_SLOTS = [
-  '10:00', '11:00', '12:00', '13:00', '14:00',
-  '15:00', '16:00', '17:00', '18:00', '19:00'
+  '08:00', '08:30', '09:00', '09:30',
+  '10:00', '10:30', '11:00', '11:30', '12:00', '12:30',
+  '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
+  '16:00', '16:30', '17:00', '17:30', '18:00', '18:30',
+  '19:00', '19:30', '20:00'
 ];
 
 export default function AdminDashboard() {
@@ -1918,27 +1921,21 @@ WITH CHECK (
                   <div className="lg:col-span-7 space-y-3">
                     <div className="bg-stone-950/60 p-4 rounded-xl border border-white/5 max-h-[460px] overflow-y-auto scrollbar-thin">
                       <div className="space-y-2">
-                        {[
-                          '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00',
-                          '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'
-                        ].map((hour) => {
-                          // Find reservations for this day that fall into this hour slot
-                          const hourStr = hour.split(':')[0].padStart(2, '0');
+                        {TIME_SLOTS.map((slot) => {
+                          // Find reservations for this day that fall into this time slot
                           const slotReservations = reservations.filter(res => {
                             if (normDateStr(res.date) !== adminSelectedDate) return false;
-                            const resTimeNorm = normTimeStr(res.time);
-                            const resHour = resTimeNorm.split(':')[0].padStart(2, '0');
-                            return resHour === hourStr;
+                            return normTimeStr(res.time) === slot;
                           });
 
                           // Sort slot reservations ascending (just in case there are multiple)
                           slotReservations.sort((a, b) => normTimeStr(a.time).localeCompare(normTimeStr(b.time)));
 
                           return (
-                            <div key={hour} className="flex gap-4 items-stretch border-b border-white/[0.03] pb-2.5 last:border-b-0 last:pb-0 pt-2.5 first:pt-0">
-                              {/* Hour label */}
+                            <div key={slot} className="flex gap-4 items-stretch border-b border-white/[0.03] pb-2.5 last:border-b-0 last:pb-0 pt-2.5 first:pt-0">
+                              {/* Slot label */}
                               <div className="w-12 text-stone-400 font-mono font-bold text-xs flex items-center shrink-0">
-                                {hour}
+                                {slot}
                               </div>
 
                               {/* Bookings timeline box */}
@@ -2032,7 +2029,7 @@ WITH CHECK (
                                         setResCustomerName('');
                                         setResCustomerPhone('');
                                         setResDate(adminSelectedDate);
-                                        setResTime(hour);
+                                        setResTime(slot);
                                         setResStatus('Confirmed');
                                         setShowResModal(true);
                                       }}
@@ -2049,11 +2046,10 @@ WITH CHECK (
 
                         {/* Off-peak / Other Hours Reservations Fallback */}
                         {(() => {
-                          const standardHours = ['08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20'];
                           const otherReservations = reservations.filter(res => {
                             if (normDateStr(res.date) !== adminSelectedDate) return false;
-                            const resHour = normTimeStr(res.time).split(':')[0].padStart(2, '0');
-                            return !standardHours.includes(resHour);
+                            const resTimeNorm = normTimeStr(res.time);
+                            return !TIME_SLOTS.includes(resTimeNorm);
                           });
 
                           if (otherReservations.length === 0) return null;
@@ -3333,6 +3329,9 @@ WITH CHECK (
                     className="w-full p-2.5 bg-stone-950/80 border border-white/5 rounded-lg outline-none focus:border-indigo-500 text-stone-200 cursor-pointer"
                     style={{ colorScheme: 'dark' }}
                   >
+                    {!TIME_SLOTS.includes(resTime) && resTime && (
+                      <option value={resTime} className="bg-stone-900 text-white">{resTime}</option>
+                    )}
                     {TIME_SLOTS.map(slot => (
                       <option key={slot} value={slot} className="bg-stone-900 text-white">{slot}</option>
                     ))}

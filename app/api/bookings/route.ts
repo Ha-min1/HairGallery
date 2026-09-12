@@ -41,16 +41,26 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    const normSlotTime = (raw: any): string => {
+      if (!raw) return '';
+      const str = String(raw).trim();
+      const parts = str.split(':');
+      if (parts.length >= 2) {
+        return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
+      }
+      return str;
+    };
+
     // Return the list of confirmed slots (bookedSlots) and pending slots separately
     const confirmedSlots = data
       .filter((item: any) => item.status === 'Confirmed' || item.status === 'Completed' || item.customer_name === '예약 마감')
-      .map((item: any) => item.time);
+      .map((item: any) => normSlotTime(item.time));
 
     const pendingSlots = data
       .filter((item: any) => item.status === 'Pending' && item.customer_name !== '예약 마감')
-      .map((item: any) => item.time);
+      .map((item: any) => normSlotTime(item.time));
 
-    const closedSlots = data.filter((item: any) => item.customer_name === '예약 마감').map((item: any) => item.time);
+    const closedSlots = data.filter((item: any) => item.customer_name === '예약 마감').map((item: any) => normSlotTime(item.time));
     return NextResponse.json({ date, bookedSlots: confirmedSlots, pendingSlots, closedSlots });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
